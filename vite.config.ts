@@ -1,0 +1,16 @@
+import { defineConfig } from 'vite';
+import { resolve } from 'node:path';
+
+// GitHub Pages はリポジトリ名がパスに入るため base を固定する
+export default defineConfig({
+  base: '/kyouryuu-hakkutsu/',
+  build: {
+    target: 'es2022',
+    rollupOptions: {
+      input: {
+        index: resolve(import.meta.dirname, 'index.html'),
+        poc1: resolve(import.meta.dirname, 'poc/poc1/index.html'),
+      },
+    },
+  },
+});
