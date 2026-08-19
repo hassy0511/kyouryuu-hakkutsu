@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>POC-2 ほるテスト</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⛏️</text></svg>"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: 'Hiragino Maru Gothic ProN', 'BIZ UDGothic', system-ui, sans-serif;
+        overscroll-behavior: none;
+      }
+      #app,
+      #app canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        touch-action: none;
+      }
+      .panel {
+        position: fixed;
+        background: rgba(20, 25, 35, 0.72);
+        color: #fff;
+        border-radius: 12px;
+        padding: 10px 14px;
+        line-height: 1.5;
+        pointer-events: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      #score {
+        top: max(10px, env(safe-area-inset-top));
+        left: 10px;
+        text-align: center;
+      }
+      #stars {
+        font-size: 30px;
+        color: #ffd75e;
+        line-height: 1.2;
+      }
+      #damage {
+        font-size: 14px;
+      }
+      #help {
+        top: max(10px, env(safe-area-inset-top));
+        right: 10px;
+        font-size: 12px;
+        max-width: 46vw;
+        text-align: right;
+      }
+      #fps-panel {
+        bottom: max(10px, env(safe-area-inset-bottom));
+        left: 10px;
+        font-size: 11px;
+        opacity: 0.8;
+      }
+      #msg {
+        position: fixed;
+        top: 18%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(20, 25, 35, 0.8);
+        color: #fff;
+        font-size: 20px;
+        font-weight: 700;
+        padding: 12px 22px;
+        border-radius: 999px;
+        opacity: 0;
+        transition: opacity 0.25s;
+        pointer-events: none;
+        white-space: nowrap;
+        max-width: 94vw;
+      }
+      #msg.show {
+        opacity: 1;
+      }
+      #tools {
+        position: fixed;
+        bottom: max(14px, env(safe-area-inset-bottom));
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 12px;
+      }
+      button {
+        min-height: 56px;
+        min-width: 120px;
+        padding: 10px 18px;
+        border: 3px solid transparent;
+        border-radius: 16px;
+        background: rgba(20, 25, 35, 0.78);
+        color: #fff;
+        font-size: 18px;
+        font-weight: 700;
+        font-family: inherit;
+        -webkit-tap-highlight-color: transparent;
+      }
+      button.active {
+        border-color: #ffd75e;
+        background: rgba(70, 110, 180, 0.9);
+      }
+      #btn-reset {
+        position: fixed;
+        top: max(10px, env(safe-area-inset-top));
+        left: 50%;
+        transform: translateX(-50%);
+        min-width: 88px;
+        min-height: 48px;
+        font-size: 14px;
+      }
+      #overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 20, 30, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+      }
+      #overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      #overlay .card {
+        background: #fffaf0;
+        color: #3a3226;
+        border-radius: 22px;
+        padding: 28px 40px;
+        text-align: center;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      }
+      #overlay h1 {
+        font-size: 30px;
+        margin-bottom: 6px;
+      }
+      #result-stars {
+        font-size: 44px;
+        color: #e8a800;
+        margin: 4px 0;
+      }
+      #result-text {
+        font-size: 16px;
+        margin-bottom: 16px;
+      }
+      #btn-again {
+        background: #4a90d9;
+        border: none;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <div id="score" class="panel">
+      <div id="stars">★★★</div>
+      <div id="damage">ヒビ 0</div>
+    </div>
+
+    <div id="help" class="panel">
+      ⛏️ ピッケル: はやいけど<br />かせきが われるかも<br />
+      🖌️ ブラシ: ゆっくり あんぜん
+    </div>
+
+    <div id="fps-panel" class="panel">
+      <span id="fps">--</span> FPS / <span id="ms">--</span> ms / さいてい
+      <span id="fps-min">--</span>
+    </div>
+
+    <div id="msg"></div>
+
+    <button id="btn-reset" type="button">🔄 やりなおす</button>
+
+    <div id="tools">
+      <button id="btn-pick" type="button" class="active">⛏️ ピッケル</button>
+      <button id="btn-brush" type="button">🖌️ ブラシ</button>
+    </div>
+
+    <div id="overlay">
+      <div class="card">
+        <h1>🦴 はっけん!!</h1>
+        <div id="result-stars">★★★</div>
+        <div id="result-text"></div>
+        <button id="btn-again" type="button">もういちど ほる</button>
+      </div>
+    </div>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

@@ -10,6 +10,7 @@ export default defineConfig({
       input: {
         index: resolve(import.meta.dirname, 'index.html'),
         poc1: resolve(import.meta.dirname, 'poc/poc1/index.html'),
+        poc2: resolve(import.meta.dirname, 'poc/poc2/index.html'),
       },
     },
   },

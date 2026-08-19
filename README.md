@@ -4,7 +4,7 @@
 
 - 仕様・進行ルール: [CLAUDE.md](./CLAUDE.md) と [docs/](./docs/) を参照
 - プレビュー（GitHub Pages）: https://hassy0511.github.io/kyouryuu-hakkutsu/
-- 現在の進行状況: **POC-1（iPad Safari 描画性能）実施中**
+- 現在の進行状況: **POC-2（掘る操作の手触り）家族試遊待ち**（POC-1 は 60fps で合格）
 
 ## 開発
 
