@@ -1,0 +1,570 @@
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { Sfx } from '../poc2/audio';
+import { SITES, HAKASE_LINES, type SiteDef } from './data';
+
+const WALK_SPEED = 3.4;
+const INTERACT_RANGE = 2.7;
+const TAP_DEFER_MS = 70;
+const ALERT_RANGE = 9;
+
+const el = (id: string): HTMLElement => {
+  const found = document.getElementById(id);
+  if (!found) throw new Error(`#${id} not found`);
+  return found;
+};
+
+// 谷地形。島の固定形状(柱2: 世界は固定)
+export function groundHeight(x: number, z: number): number {
+  const dunes =
+    0.5 * Math.sin(x * 0.16) * Math.cos(z * 0.14) +
+    0.25 * Math.sin(x * 0.4 + 1) * Math.sin(z * 0.3 + 2);
+  const r = Math.hypot(x, z);
+  const openSouth = 1 - THREE.MathUtils.smoothstep(z, 8, 20);
+  const rim = THREE.MathUtils.smoothstep(r, 19, 27) * 7 * openSouth;
+  const beachFlat = THREE.MathUtils.smoothstep(z, 11, 17);
+  return dunes * (1 - beachFlat) * (1 - THREE.MathUtils.smoothstep(r, 19, 23)) + rim;
+}
+
+type SiteState = 'hidden' | 'found' | 'done';
+
+interface Interactable {
+  id: string;
+  kind: 'site' | 'tent' | 'hakase';
+  position: THREE.Vector3;
+  hotspot: THREE.Mesh;
+  site?: SiteDef;
+}
+
+export interface FieldCallbacks {
+  onEnterSite(site: SiteDef): void;
+  onRest(): void;
+  showMsg(text: string): void;
+}
+
+export class FieldMode {
+  readonly scene = new THREE.Scene();
+  readonly camera: THREE.PerspectiveCamera;
+
+  private readonly controls: OrbitControls;
+  private readonly player = new THREE.Group();
+  private readonly terrain: THREE.Mesh;
+  private readonly interactables: Interactable[] = [];
+  private readonly siteStates = new Map<string, SiteState>();
+  private readonly flags = new Map<string, THREE.Group>();
+  private readonly alertEls = new Map<string, HTMLElement>();
+  private moveTarget: THREE.Vector3 | null = null;
+  private pendingInteract: string | null = null;
+  private hakaseLine = 0;
+  private walkPhase = 0;
+  private abort: AbortController | null = null;
+  private readonly camTarget = new THREE.Vector3();
+
+  constructor(
+    private readonly renderer: THREE.WebGLRenderer,
+    private readonly sfx: Sfx,
+    private readonly cb: FieldCallbacks,
+  ) {
+    this.scene.background = new THREE.Color(0x9ed4ef);
+    this.scene.fog = new THREE.Fog(0x9ed4ef, 45, 95);
+    this.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 200);
+    this.camera.position.set(0, 9, 15);
+
+    this.controls = new OrbitControls(this.camera, renderer.domElement);
+    this.controls.enableDamping = true;
+    this.controls.enablePan = false;
+    this.controls.minDistance = 6;
+    this.controls.maxDistance = 16;
+    this.controls.minPolarAngle = THREE.MathUtils.degToRad(25);
+    this.controls.maxPolarAngle = THREE.MathUtils.degToRad(65);
+    this.controls.touches = { ONE: null as unknown as THREE.TOUCH, TWO: THREE.TOUCH.DOLLY_ROTATE };
+    this.controls.mouseButtons = {
+      LEFT: null as unknown as THREE.MOUSE,
+      MIDDLE: THREE.MOUSE.DOLLY,
+      RIGHT: THREE.MOUSE.ROTATE,
+    };
+    this.controls.enabled = false;
+
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+    const sun = new THREE.DirectionalLight(0xfff2d8, 2.0);
+    sun.position.set(24, 30, 14);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.camera.left = -30;
+    sun.shadow.camera.right = 30;
+    sun.shadow.camera.top = 30;
+    sun.shadow.camera.bottom = -30;
+    sun.shadow.camera.far = 80;
+    sun.shadow.bias = -0.0006;
+    this.scene.add(sun);
+
+    // 地形
+    {
+      const geo = new THREE.PlaneGeometry(64, 64, 72, 72);
+      geo.rotateX(-Math.PI / 2);
+      const pos = geo.attributes.position as THREE.BufferAttribute;
+      for (let i = 0; i < pos.count; i++) {
+        pos.setY(i, groundHeight(pos.getX(i), pos.getZ(i)));
+      }
+      geo.computeVertexNormals();
+      this.terrain = new THREE.Mesh(
+        geo,
+        new THREE.MeshStandardMaterial({ color: 0xd8c28e, roughness: 1, flatShading: true }),
+      );
+      this.terrain.receiveShadow = true;
+      this.scene.add(this.terrain);
+
+      const sea = new THREE.Mesh(
+        new THREE.PlaneGeometry(120, 40).rotateX(-Math.PI / 2),
+        new THREE.MeshStandardMaterial({ color: 0x5fb4e0, roughness: 0.4 }),
+      );
+      sea.position.set(0, -0.12, 38);
+      this.scene.add(sea);
+    }
+
+    // 岩と枯れ木(固定配置)
+    {
+      const rockGeo = new THREE.IcosahedronGeometry(1, 0);
+      const rockMat = new THREE.MeshStandardMaterial({
+        color: 0x9b8f7c,
+        roughness: 1,
+        flatShading: true,
+      });
+      for (let i = 0; i < 18; i++) {
+        const angle = i * 2.39996; // 黄金角で散らす(固定)
+        const radius = 6 + ((i * 53) % 14);
+        const x = Math.cos(angle) * radius;
+        const z = Math.sin(angle) * radius * 0.85;
+        if (z > 13) continue;
+        const s = 0.25 + ((i * 29) % 10) / 14;
+        const rock = new THREE.Mesh(rockGeo, rockMat);
+        rock.position.set(x, groundHeight(x, z) + s * 0.3, z);
+        rock.scale.set(s, s * 0.7, s);
+        rock.rotation.y = i * 1.7;
+        rock.castShadow = true;
+        rock.receiveShadow = true;
+        this.scene.add(rock);
+      }
+      const woodMat = new THREE.MeshStandardMaterial({ color: 0x8b7355, roughness: 1 });
+      for (const [x, z, rot] of [
+        [-8, 8, 0.4],
+        [10, 3, 1.9],
+        [-16, -9, 3.1],
+      ] as const) {
+        const tree = new THREE.Group();
+        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.2, 2.4, 7), woodMat);
+        trunk.position.y = 1.2;
+        trunk.castShadow = true;
+        const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.1, 1.3, 6), woodMat);
+        branch.position.set(0.35, 1.9, 0);
+        branch.rotation.z = -0.9;
+        branch.castShadow = true;
+        tree.add(trunk, branch);
+        tree.position.set(x, groundHeight(x, z), z);
+        tree.rotation.y = rot;
+        this.scene.add(tree);
+      }
+    }
+
+    this.buildCamp();
+    this.buildPlayer();
+    for (const site of SITES) {
+      this.siteStates.set(site.id, 'hidden');
+      this.buildSiteClue(site);
+    }
+  }
+
+  private addHotspot(
+    id: string,
+    kind: Interactable['kind'],
+    position: THREE.Vector3,
+    site?: SiteDef,
+  ): void {
+    const hotspot = new THREE.Mesh(
+      new THREE.SphereGeometry(1.5, 8, 6),
+      new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false }),
+    );
+    hotspot.position.copy(position).add(new THREE.Vector3(0, 0.8, 0));
+    this.scene.add(hotspot);
+    this.interactables.push({ id, kind, position: position.clone(), hotspot, site });
+  }
+
+  private buildCamp(): void {
+    const tentPos = new THREE.Vector3(-2.5, groundHeight(-2.5, -3.5), -3.5);
+    const tent = new THREE.Group();
+    const cloth = new THREE.Mesh(
+      new THREE.ConeGeometry(1.6, 2, 6),
+      new THREE.MeshStandardMaterial({ color: 0xe8843c, roughness: 0.9, flatShading: true }),
+    );
+    cloth.position.y = 1;
+    cloth.castShadow = true;
+    const pole = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.05, 0.05, 2.6, 6),
+      new THREE.MeshStandardMaterial({ color: 0x8b7355 }),
+    );
+    pole.position.y = 1.3;
+    tent.add(cloth, pole);
+    tent.position.copy(tentPos);
+    this.scene.add(tent);
+    this.addHotspot('tent', 'tent', tentPos);
+
+    const hakasePos = new THREE.Vector3(-0.5, groundHeight(-0.5, -2), -2);
+    const hakase = new THREE.Group();
+    const coat = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.32, 0.6, 4, 10),
+      new THREE.MeshStandardMaterial({ color: 0xf2ede4, roughness: 0.9 }),
+    );
+    coat.position.y = 0.75;
+    coat.castShadow = true;
+    const head = new THREE.Mesh(
+      new THREE.SphereGeometry(0.26, 12, 10),
+      new THREE.MeshStandardMaterial({ color: 0xf0c8a0, roughness: 0.8 }),
+    );
+    head.position.y = 1.45;
+    const hat = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.3, 0.34, 0.16, 10),
+      new THREE.MeshStandardMaterial({ color: 0xc9b458, roughness: 1 }),
+    );
+    hat.position.y = 1.62;
+    const brim = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.5, 0.5, 0.04, 12),
+      new THREE.MeshStandardMaterial({ color: 0xc9b458, roughness: 1 }),
+    );
+    brim.position.y = 1.55;
+    hakase.add(coat, head, hat, brim);
+    hakase.position.copy(hakasePos);
+    hakase.rotation.y = 0.6;
+    this.scene.add(hakase);
+    this.addHotspot('hakase', 'hakase', hakasePos);
+  }
+
+  private buildPlayer(): void {
+    const body = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.3, 0.5, 4, 10),
+      new THREE.MeshStandardMaterial({ color: 0x4a90d9, roughness: 0.9 }),
+    );
+    body.position.y = 0.65;
+    body.castShadow = true;
+    const head = new THREE.Mesh(
+      new THREE.SphereGeometry(0.26, 12, 10),
+      new THREE.MeshStandardMaterial({ color: 0xf0c8a0, roughness: 0.8 }),
+    );
+    head.position.y = 1.3;
+    head.castShadow = true;
+    const cap = new THREE.Mesh(
+      new THREE.SphereGeometry(0.28, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.MeshStandardMaterial({ color: 0xd94a4a, roughness: 0.9 }),
+    );
+    cap.position.y = 1.34;
+    const bill = new THREE.Mesh(
+      new THREE.BoxGeometry(0.3, 0.05, 0.22),
+      new THREE.MeshStandardMaterial({ color: 0xd94a4a, roughness: 0.9 }),
+    );
+    bill.position.set(0, 1.33, 0.3);
+    this.player.add(body, head, cap, bill);
+    this.player.position.set(0, groundHeight(0, 4), 4);
+    this.scene.add(this.player);
+  }
+
+  private buildSiteClue(site: SiteDef): void {
+    const [x, z] = site.pos;
+    const base = new THREE.Vector3(x, groundHeight(x, z), z);
+    const group = new THREE.Group();
+    const boneMat = new THREE.MeshStandardMaterial({ color: 0xf7f3e8, roughness: 0.6 });
+
+    if (site.clue === 'bone') {
+      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.1, 8), boneMat);
+      shaft.rotation.z = 0.9;
+      shaft.position.y = 0.28;
+      shaft.castShadow = true;
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), boneMat);
+      knob.position.set(0.42, 0.6, 0);
+      group.add(shaft, knob);
+    } else if (site.clue === 'crack') {
+      const mat = new THREE.MeshBasicMaterial({ color: 0x6b5a3f });
+      for (let i = 0; i < 4; i++) {
+        const line = new THREE.Mesh(new THREE.BoxGeometry(0.9 + i * 0.2, 0.02, 0.08), mat);
+        line.position.set((i - 1.5) * 0.2, 0.03 + i * 0.012, (i - 1.5) * 0.25);
+        line.rotation.y = i * 1.2 + 0.3;
+        group.add(line);
+      }
+    } else {
+      const rockMat = new THREE.MeshStandardMaterial({
+        color: 0x8a7f6c,
+        roughness: 1,
+        flatShading: true,
+      });
+      for (let i = 0; i < 5; i++) {
+        const rock = new THREE.Mesh(
+          new THREE.IcosahedronGeometry(0.25 + (i % 3) * 0.1, 0),
+          rockMat,
+        );
+        rock.position.set(Math.cos(i * 2.4) * 0.55, 0.15, Math.sin(i * 2.4) * 0.55);
+        rock.castShadow = true;
+        group.add(rock);
+      }
+      const chip = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 6), boneMat);
+      chip.position.set(0.2, 0.32, 0.1);
+      group.add(chip);
+    }
+    group.position.copy(base);
+    this.scene.add(group);
+    this.addHotspot(site.id, 'site', base, site);
+
+    const alert = document.createElement('div');
+    alert.className = 'site-alert';
+    el('alerts').appendChild(alert);
+    this.alertEls.set(site.id, alert);
+  }
+
+  private plantFlag(site: SiteDef): void {
+    const [x, z] = site.pos;
+    const flag = new THREE.Group();
+    const pole = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.04, 1.6, 6),
+      new THREE.MeshStandardMaterial({ color: 0x8b7355 }),
+    );
+    pole.position.y = 0.8;
+    const cloth = new THREE.Mesh(
+      new THREE.BoxGeometry(0.55, 0.35, 0.03),
+      new THREE.MeshStandardMaterial({ color: 0xd94a4a, roughness: 0.9 }),
+    );
+    cloth.position.set(0.3, 1.3, 0);
+    flag.add(pole, cloth);
+    flag.position.set(x + 0.9, groundHeight(x + 0.9, z + 0.6), z + 0.6);
+    this.scene.add(flag);
+    this.flags.set(site.id, flag);
+  }
+
+  markSiteDone(siteId: string): void {
+    this.siteStates.set(siteId, 'done');
+    const site = SITES.find((s) => s.id === siteId)!;
+    const [x, z] = site.pos;
+    const patch = new THREE.Mesh(
+      new THREE.CircleGeometry(1.3, 18).rotateX(-Math.PI / 2),
+      new THREE.MeshStandardMaterial({ color: 0x9c7f57, roughness: 1 }),
+    );
+    patch.position.set(x, groundHeight(x, z) + 0.03, z);
+    this.scene.add(patch);
+  }
+
+  siteState(siteId: string): SiteState {
+    return this.siteStates.get(siteId)!;
+  }
+
+  activate(): void {
+    this.controls.enabled = true;
+    el('field-ui').classList.remove('hidden');
+    this.abort = new AbortController();
+    const opts = { signal: this.abort.signal };
+    const canvas = this.renderer.domElement;
+
+    const pointers = new Set<number>();
+    let activePointer: number | null = null;
+    let moveStarted = false;
+    let pendingTap: ReturnType<typeof setTimeout> | undefined;
+    const downPos = { x: 0, y: 0 };
+    const cancelPending = (): void => {
+      if (pendingTap !== undefined) {
+        clearTimeout(pendingTap);
+        pendingTap = undefined;
+      }
+    };
+
+    canvas.addEventListener(
+      'pointerdown',
+      (e) => {
+        this.sfx.unlock();
+        pointers.add(e.pointerId);
+        if (pointers.size === 1 && e.button === 0) {
+          activePointer = e.pointerId;
+          moveStarted = false;
+          downPos.x = e.clientX;
+          downPos.y = e.clientY;
+          pendingTap = setTimeout(() => {
+            pendingTap = undefined;
+            if (pointers.size === 1 && activePointer === e.pointerId) {
+              moveStarted = true;
+              this.tap(downPos.x, downPos.y);
+            }
+          }, TAP_DEFER_MS);
+        } else {
+          cancelPending();
+          activePointer = null;
+          moveStarted = false;
+        }
+      },
+      opts,
+    );
+    canvas.addEventListener(
+      'pointermove',
+      (e) => {
+        if (pointers.size !== 1 || e.pointerId !== activePointer) return;
+        downPos.x = e.clientX;
+        downPos.y = e.clientY;
+        // 指を動かし続けている間は行き先を更新(ドラッグ操縦)
+        if (moveStarted) this.tap(e.clientX, e.clientY, true);
+      },
+      opts,
+    );
+    const release = (e: PointerEvent): void => {
+      pointers.delete(e.pointerId);
+      if (e.pointerId === activePointer) {
+        if (pendingTap !== undefined) {
+          cancelPending();
+          if (pointers.size === 0) this.tap(downPos.x, downPos.y);
+        }
+        activePointer = null;
+        moveStarted = false;
+      }
+    };
+    canvas.addEventListener('pointerup', release, opts);
+    canvas.addEventListener('pointercancel', release, opts);
+  }
+
+  deactivate(): void {
+    this.controls.enabled = false;
+    el('field-ui').classList.add('hidden');
+    this.alertEls.forEach((a) => (a.style.display = 'none'));
+    this.abort?.abort();
+    this.abort = null;
+  }
+
+  private tap(clientX: number, clientY: number, dragOnly = false): void {
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const ndc = new THREE.Vector2(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(ndc, this.camera);
+
+    if (!dragOnly) {
+      const hotspots = this.interactables.map((i) => i.hotspot);
+      const hitSpot = raycaster.intersectObjects(hotspots, false)[0];
+      if (hitSpot) {
+        const target = this.interactables.find((i) => i.hotspot === hitSpot.object)!;
+        this.moveTarget = target.position.clone();
+        this.pendingInteract = target.id;
+        return;
+      }
+    }
+    const hitGround = raycaster.intersectObject(this.terrain, false)[0];
+    if (!hitGround) return;
+    const p = hitGround.point;
+    const r = Math.hypot(p.x, p.z);
+    if (r > 21) p.multiplyScalar(21 / r);
+    p.z = Math.min(p.z, 18.5);
+    this.moveTarget = new THREE.Vector3(p.x, 0, p.z);
+    this.pendingInteract = null;
+  }
+
+  private interact(id: string): void {
+    const target = this.interactables.find((i) => i.id === id)!;
+    if (target.kind === 'tent') {
+      this.cb.onRest();
+      return;
+    }
+    if (target.kind === 'hakase') {
+      const line = HAKASE_LINES[this.hakaseLine % HAKASE_LINES.length]!;
+      this.hakaseLine++;
+      this.sfx.hint();
+      this.cb.showMsg(`🎩 はかせ「${line}」`);
+      return;
+    }
+    const site = target.site!;
+    const state = this.siteStates.get(site.id)!;
+    if (state === 'hidden') {
+      this.siteStates.set(site.id, 'found');
+      this.plantFlag(site);
+      this.sfx.fanfare();
+      this.cb.showMsg(`🔍 ${site.discoverText}`);
+    } else if (state === 'found') {
+      this.cb.onEnterSite(site);
+    } else {
+      this.cb.showMsg('🦴 ここは もう ほりつくした げんばだ');
+    }
+  }
+
+  update(dt: number): void {
+    if (this.moveTarget) {
+      const pos = this.player.position;
+      const dx = this.moveTarget.x - pos.x;
+      const dz = this.moveTarget.z - pos.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist > 0.18) {
+        const step = Math.min(WALK_SPEED * dt, dist);
+        pos.x += (dx / dist) * step;
+        pos.z += (dz / dist) * step;
+        const heading = Math.atan2(dx, dz);
+        let delta = heading - this.player.rotation.y;
+        while (delta > Math.PI) delta -= Math.PI * 2;
+        while (delta < -Math.PI) delta += Math.PI * 2;
+        this.player.rotation.y += delta * Math.min(1, dt * 10);
+        this.walkPhase += dt * 11;
+        this.player.position.y =
+          groundHeight(pos.x, pos.z) + Math.abs(Math.sin(this.walkPhase)) * 0.08;
+      } else {
+        this.moveTarget = null;
+        this.player.position.y = groundHeight(pos.x, pos.z);
+      }
+    }
+
+    if (this.pendingInteract) {
+      const target = this.interactables.find((i) => i.id === this.pendingInteract)!;
+      if (this.player.position.distanceTo(target.position) < INTERACT_RANGE) {
+        const id = this.pendingInteract;
+        this.pendingInteract = null;
+        this.moveTarget = null;
+        this.interact(id);
+      }
+    }
+
+    this.camTarget.set(
+      this.player.position.x,
+      this.player.position.y + 1.3,
+      this.player.position.z,
+    );
+    this.controls.target.lerp(this.camTarget, Math.min(1, dt * 6));
+    this.controls.update();
+    this.updateAlerts();
+  }
+
+  private updateAlerts(): void {
+    for (const site of SITES) {
+      const alert = this.alertEls.get(site.id)!;
+      const state = this.siteStates.get(site.id)!;
+      const [x, z] = site.pos;
+      const dist = Math.hypot(this.player.position.x - x, this.player.position.z - z);
+      if (state === 'done' || dist > ALERT_RANGE) {
+        alert.style.display = 'none';
+        continue;
+      }
+      const p = new THREE.Vector3(x, groundHeight(x, z) + 2.4, z).project(this.camera);
+      if (p.z > 1) {
+        alert.style.display = 'none';
+        continue;
+      }
+      alert.style.display = 'block';
+      alert.textContent = state === 'hidden' ? '❗' : '⛏️';
+      alert.style.left = `${((p.x + 1) / 2) * window.innerWidth}px`;
+      alert.style.top = `${((1 - p.y) / 2) * window.innerHeight}px`;
+    }
+  }
+
+  // スモークテスト用
+  playerPos(): [number, number, number] {
+    return this.player.position.toArray() as [number, number, number];
+  }
+  teleport(x: number, z: number): void {
+    this.player.position.set(x, groundHeight(x, z), z);
+    this.moveTarget = null;
+  }
+  forceInteract(id: string): void {
+    this.interact(id);
+  }
+  worldScreen(x: number, y: number, z: number): { x: number; y: number } {
+    const p = new THREE.Vector3(x, y, z).project(this.camera);
+    return { x: ((p.x + 1) / 2) * window.innerWidth, y: ((1 - p.y) / 2) * window.innerHeight };
+  }
+}
