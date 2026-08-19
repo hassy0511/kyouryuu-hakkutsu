@@ -65,6 +65,15 @@ export class Sfx {
     this.noise(0.14, 3200, 0.7, 0.16);
   }
 
+  rub(): void {
+    this.noise(0.1, 2400, 0.6, 0.1);
+  }
+
+  shine(): void {
+    this.tone(1568, 0.12, 'sine', 0.25);
+    this.tone(2093, 0.2, 'sine', 0.2, 0.08);
+  }
+
   hint(): void {
     this.tone(880, 0.09, 'sine', 0.3);
     this.tone(1318, 0.16, 'sine', 0.3, 0.09);
