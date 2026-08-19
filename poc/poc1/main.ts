@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createDino } from './dino';
-import { FpsMeter } from './fps';
+import { FpsMeter } from '../shared/fps';
 
 // 発掘グリッド(02_TECH_SPEC §4 の想定サイズ)
 const GRID_X = 8;
