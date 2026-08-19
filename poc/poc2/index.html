@@ -116,12 +116,47 @@
       }
       #btn-reset {
         position: fixed;
-        top: max(10px, env(safe-area-inset-top));
-        left: 50%;
-        transform: translateX(-50%);
+        bottom: max(14px, env(safe-area-inset-bottom));
+        right: 10px;
         min-width: 88px;
         min-height: 48px;
         font-size: 14px;
+      }
+      #stamina {
+        position: fixed;
+        top: max(10px, env(safe-area-inset-top));
+        left: 50%;
+        transform: translateX(-50%);
+        width: min(46vw, 320px);
+        background: rgba(20, 25, 35, 0.72);
+        color: #fff;
+        border-radius: 12px;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 700;
+        pointer-events: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      #stamina .row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 4px;
+      }
+      #stamina .track {
+        height: 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.2);
+        overflow: hidden;
+      }
+      #stamina-bar {
+        height: 100%;
+        width: 100%;
+        background: #6adf6a;
+        border-radius: 999px;
+        transition:
+          width 0.2s,
+          background 0.3s;
       }
       #overlay {
         position: fixed;
@@ -176,7 +211,13 @@
 
     <div id="help" class="panel">
       ⛏️ ピッケル: はやいけど<br />かせきが われるかも<br />
-      🖌️ ブラシ: ゆっくり あんぜん
+      🖌️ ブラシ: ゆっくり あんぜん<br />
+      ゆび2本: カメラをうごかす
+    </div>
+
+    <div id="stamina">
+      <div class="row"><span>げんき</span><span id="stamina-num">40</span></div>
+      <div class="track"><div id="stamina-bar"></div></div>
     </div>
 
     <div id="fps-panel" class="panel">
@@ -195,7 +236,7 @@
 
     <div id="overlay">
       <div class="card">
-        <h1>🦴 はっけん!!</h1>
+        <h1 id="result-title">🦴 はっけん!!</h1>
         <div id="result-stars">★★★</div>
         <div id="result-text"></div>
         <button id="btn-again" type="button">もういちど ほる</button>

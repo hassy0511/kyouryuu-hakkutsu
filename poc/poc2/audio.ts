@@ -80,4 +80,9 @@ export class Sfx {
     notes.forEach((f, i) => this.tone(f, 0.22, 'triangle', 0.3, i * 0.13));
     this.tone(1047, 0.5, 'triangle', 0.25, notes.length * 0.13);
   }
+
+  fail(): void {
+    this.tone(392, 0.25, 'triangle', 0.25);
+    this.tone(262, 0.45, 'triangle', 0.25, 0.22);
+  }
 }
