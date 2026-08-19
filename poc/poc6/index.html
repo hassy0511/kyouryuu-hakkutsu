@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>POC-6 ピットはっくつ</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🕳️</text></svg>"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: 'Hiragino Maru Gothic ProN', 'BIZ UDGothic', system-ui, sans-serif;
+        overscroll-behavior: none;
+      }
+      #app,
+      #app canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        touch-action: none;
+      }
+      .panel {
+        position: fixed;
+        background: rgba(20, 25, 35, 0.72);
+        color: #fff;
+        border-radius: 12px;
+        padding: 10px 14px;
+        line-height: 1.5;
+        pointer-events: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      #bones {
+        top: max(10px, env(safe-area-inset-top));
+        left: 10px;
+        font-size: 14px;
+        min-width: 170px;
+      }
+      #bones .row {
+        display: flex;
+        gap: 10px;
+        justify-content: space-between;
+      }
+      #bones .row span {
+        color: #ffd75e;
+      }
+      #help {
+        top: max(10px, env(safe-area-inset-top));
+        right: 10px;
+        font-size: 12px;
+        max-width: 44vw;
+        text-align: right;
+      }
+      #fps-panel {
+        bottom: max(10px, env(safe-area-inset-bottom));
+        left: 10px;
+        font-size: 11px;
+        opacity: 0.8;
+      }
+      #msg {
+        position: fixed;
+        top: 15%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(20, 25, 35, 0.82);
+        color: #fff;
+        font-size: 19px;
+        font-weight: 700;
+        padding: 12px 22px;
+        border-radius: 999px;
+        opacity: 0;
+        transition: opacity 0.25s;
+        pointer-events: none;
+        white-space: nowrap;
+        max-width: 96vw;
+        z-index: 20;
+      }
+      #msg.show {
+        opacity: 1;
+      }
+      button {
+        border: 3px solid transparent;
+        border-radius: 16px;
+        background: rgba(20, 25, 35, 0.78);
+        color: #fff;
+        font-weight: 700;
+        font-family: inherit;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #tools {
+        position: fixed;
+        bottom: max(14px, env(safe-area-inset-bottom));
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+      }
+      #tools button {
+        min-height: 56px;
+        min-width: 104px;
+        padding: 10px 14px;
+        font-size: 17px;
+      }
+      #tools button.active {
+        border-color: #ffd75e;
+        background: rgba(70, 110, 180, 0.9);
+      }
+      #btn-reset {
+        position: fixed;
+        bottom: max(14px, env(safe-area-inset-bottom));
+        right: 10px;
+        min-height: 48px;
+        min-width: 96px;
+        font-size: 14px;
+      }
+      #overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 20, 30, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+        z-index: 30;
+      }
+      #overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      #overlay .card {
+        background: #fffaf0;
+        color: #3a3226;
+        border-radius: 22px;
+        padding: 28px 40px;
+        text-align: center;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      }
+      #overlay h1 {
+        font-size: 28px;
+        margin-bottom: 10px;
+      }
+      #result-list {
+        font-size: 18px;
+        margin-bottom: 18px;
+        line-height: 1.9;
+      }
+      #result-list .stars {
+        color: #e8a800;
+      }
+      #btn-again {
+        background: #4a90d9;
+        border: none;
+        width: 100%;
+        min-height: 52px;
+        font-size: 17px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <div id="bones" class="panel">
+      <div class="row"><b>せぼね</b><span id="bone-spine">つちの なか</span></div>
+      <div class="row"><b>あしのほね</b><span id="bone-leg">つちの なか</span></div>
+      <div class="row">
+        <b>すいしょう</b><span>💎×<span id="crystal-count">0</span></span>
+      </div>
+    </div>
+
+    <div id="help" class="panel">
+      ⛏️ ふかいほど かたい!<br />
+      🦴 ホネの したを ほりすぎると グラッ<br />
+      👂 きく: したに なにか あるか わかる<br />
+      ゆび2本: カメラ
+    </div>
+
+    <div id="fps-panel" class="panel">
+      <span id="fps">--</span> FPS / <span id="ms">--</span> ms / さいてい
+      <span id="fps-min">--</span>
+    </div>
+
+    <div id="msg"></div>
+
+    <div id="tools">
+      <button id="btn-pick" type="button" class="active">⛏️ ピッケル</button>
+      <button id="btn-brush" type="button">🖌️ ブラシ</button>
+      <button id="btn-ear" type="button">👂 きく</button>
+    </div>
+    <button id="btn-reset" type="button">🔄 やりなおす</button>
+
+    <div id="overlay">
+      <div class="card">
+        <h1>🦴 ぜんぶ ほりだした!</h1>
+        <div id="result-list"></div>
+        <button id="btn-again" type="button">もういちど</button>
+      </div>
+    </div>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

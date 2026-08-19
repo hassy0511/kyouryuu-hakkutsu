@@ -69,6 +69,21 @@ export class Sfx {
     this.noise(0.1, 2400, 0.6, 0.1);
   }
 
+  knockEmpty(): void {
+    this.tone(320, 0.07, 'triangle', 0.35);
+    this.tone(300, 0.07, 'triangle', 0.3, 0.16);
+  }
+
+  knockFull(): void {
+    this.tone(95, 0.28, 'triangle', 0.5, 0, 70);
+    this.noise(0.12, 500, 1.5, 0.2, 0.02);
+  }
+
+  clank(): void {
+    this.tone(720, 0.09, 'sawtooth', 0.2, 0, 500);
+    this.noise(0.07, 4200, 1.2, 0.25);
+  }
+
   shine(): void {
     this.tone(1568, 0.12, 'sine', 0.25);
     this.tone(2093, 0.2, 'sine', 0.2, 0.08);
