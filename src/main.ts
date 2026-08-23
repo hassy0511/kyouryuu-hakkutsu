@@ -352,6 +352,15 @@ const meter = location.search.includes('debug')
 
 // ---- ループ ------------------------------------------------------------------
 
+// ホーム画面追加でアプリとして動くよう、オフラインキャッシュを登録
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => {
+      // 登録に失敗しても通常のWeb表示で遊べる
+    });
+  });
+}
+
 const clock = new THREE.Clock();
 updateHud();
 
