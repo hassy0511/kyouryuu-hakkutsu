@@ -11,7 +11,7 @@ import { DebrisParticles } from '../poc2/particles';
 const GRID_X = 8;
 const GRID_Z = 8;
 const GRID_DEPTH = 6;
-const CELL = 0.55;
+const CELL = 0.562;
 const PITCH = 0.57;
 // 地表からの深さで色が変わる(ピットの壁に地層が見える)
 const STRATA_COLORS = [0xd9c896, 0xd0b988, 0xb59a76, 0xa8896a, 0xa1704f, 0x965f43];
@@ -278,7 +278,12 @@ class Bone {
       const i = idx(gx, gz, def.layer);
       const crust = new THREE.Mesh(
         crustGeo,
-        new THREE.MeshStandardMaterial({ color: 0x7a6a52, roughness: 1, transparent: true }),
+        new THREE.MeshStandardMaterial({
+          color: 0x8a7a5e,
+          roughness: 1,
+          transparent: true,
+          opacity: 0.78,
+        }),
       );
       crust.position.copy(cellCenter(i));
       crust.visible = false;
@@ -308,6 +313,7 @@ class Bone {
       }
     }
     this.group.position.copy(center);
+    this.group.visible = false; // 掘り当てるまで見えない
     if (!alongX) this.group.rotation.y = Math.PI / 2;
     this.group.traverse((o) => {
       if ((o as THREE.Mesh).isMesh) o.castShadow = true;
@@ -351,6 +357,7 @@ const rocks = new Map<number, Rock>();
     const mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(CELL * 0.62, 0), rockMat.clone());
     mesh.position.copy(cellCenter(i));
     mesh.castShadow = true;
+    mesh.visible = false;
     digGroup.add(mesh);
     rocks.set(i, { hp: ROCK_HP, mesh });
     alive[i] = false;
@@ -374,36 +381,12 @@ let crystalsFound = 0;
     );
     mesh.position.copy(cellCenter(i));
     mesh.rotation.y = 0.5;
+    mesh.visible = false;
     digGroup.add(mesh);
     crystals.set(i, mesh);
     alive[i] = false;
     setSoilMatrix(i, 0);
   }
-}
-
-// 中身(骨・岩・水晶)のマスは、まわりの土がある間は見えない
-function occupantVisible(i: number): boolean {
-  const { gx, gz, layer } = coords(i);
-  const dirs: [number, number, number][] = [
-    [1, 0, 0],
-    [-1, 0, 0],
-    [0, 1, 0],
-    [0, -1, 0],
-    [0, 0, 1],
-    [0, 0, -1],
-  ];
-  if (layer === 0) return true;
-  for (const [dx, dz, dl] of dirs) {
-    const nx = gx + dx;
-    const nz = gz + dz;
-    const nl = layer + dl;
-    if (!inBounds(nx, nz, nl)) continue;
-    const n = idx(nx, nz, nl);
-    if (!alive[n] && !rocks.has(n) && !boneCellOwner.has(n) && !crystals.has(n)) return true;
-    const bc = boneCellOwner.get(n)?.cells.get(n);
-    if (bc && bc.status !== 'hidden') return true;
-  }
-  return false;
 }
 
 // ---- game state -------------------------------------------------------------
@@ -454,11 +437,12 @@ function reveal(i: number): void {
     if (cell.status !== 'hidden') return;
     cell.status = 'crusted';
     cell.crust.visible = true;
+    bone.group.visible = true;
     particles.burst(cellCenter(i), new THREE.Color(0xbfa88a), 5);
     if (!firstRevealShown) {
       firstRevealShown = true;
       sfx.hint();
-      showMsg('🦴 ホネが でてきた! ブラシで こすって みがこう');
+      showMsg('🦴 ホネが でてきた! ⛏️はNG、🖌️ブラシで こすろう');
     }
     updateHud();
   }
@@ -476,7 +460,12 @@ function afterRemoval(removed: number): void {
   ];
   for (const [nx, nz, nl] of around) {
     if (!inBounds(nx, nz, nl)) continue;
-    reveal(idx(nx, nz, nl));
+    const n = idx(nx, nz, nl);
+    reveal(n);
+    const rock = rocks.get(n);
+    if (rock) rock.mesh.visible = true;
+    const crystal = crystals.get(n);
+    if (crystal) crystal.visible = true;
   }
   updateSupports();
 }
@@ -562,7 +551,7 @@ function polish(i: number, amount: number): void {
   const cell = bone.cells.get(i)!;
   if (cell.status !== 'crusted') return;
   cell.progress = Math.min(1, cell.progress + amount);
-  (cell.crust.material as THREE.MeshStandardMaterial).opacity = 1 - cell.progress;
+  (cell.crust.material as THREE.MeshStandardMaterial).opacity = 0.78 * (1 - cell.progress);
   if (cell.progress >= 1) {
     cell.status = 'clean';
     cell.crust.visible = false;
@@ -699,13 +688,13 @@ function raycastCell(clientX: number, clientY: number): number | null {
     }
   }
   for (const [i, rock] of rocks) {
-    if (rock.hp > 0 && occupantVisible(i)) {
+    if (rock.hp > 0 && rock.mesh.visible) {
       targets.push(rock.mesh);
       lookup.set(rock.mesh, i);
     }
   }
   for (const [i, mesh] of crystals) {
-    if (occupantVisible(i)) {
+    if (mesh.visible) {
       targets.push(mesh);
       lookup.set(mesh, i);
     }
@@ -742,7 +731,8 @@ function tapAction(clientX: number, clientY: number): void {
   if (target === null) return;
 
   // 水晶はどの道具でもタップで拾える
-  if (crystals.has(target) && occupantVisible(target)) {
+  const crystalMesh = crystals.get(target);
+  if (crystalMesh && crystalMesh.visible) {
     collectCrystal(target);
     return;
   }
@@ -903,7 +893,21 @@ renderer.setAnimationLoop(() => {
     camera.position.lerpVectors(camFrom, camTo, k);
   }
 
+  const pulse = 0.22 + 0.14 * Math.sin(clock.elapsedTime * 5);
   for (const bone of bones) {
+    for (const cell of bone.cells.values()) {
+      if (cell.status !== 'crusted') continue;
+      const mat = cell.crust.material as THREE.MeshStandardMaterial;
+      if (tool === 'brush') {
+        mat.emissive.setHex(0xffd75e);
+        mat.emissiveIntensity = pulse;
+      } else if (tool === 'pick') {
+        mat.emissive.setHex(0xaa2222);
+        mat.emissiveIntensity = 0.18;
+      } else {
+        mat.emissiveIntensity = 0;
+      }
+    }
     if (bone.wobbleT > 0) {
       bone.wobbleT = Math.max(0, bone.wobbleT - dt);
       bone.group.rotation.z = Math.sin(bone.wobbleT * 30) * 0.05 * bone.wobbleT;

@@ -1,0 +1,1018 @@
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { FpsMeter } from '../shared/fps';
+import { Sfx } from '../poc2/audio';
+import { DebrisParticles } from '../poc2/particles';
+import { PITS, TOTAL_BONES, type FossilDef, type PitDef } from './data';
+
+// POC-7: どうぐと クラフト。げんば3か所を行き来しながら、
+// 道具の消耗(ゆっくり) / 素材集め(き・いし・すいしょう) / なおす・がんじょう化 /
+// がんばん(Lv2でしか掘れない層) = 1回ではクリアできない現場、を検証する。
+
+const GRID_X = 8;
+const GRID_Z = 8;
+const GRID_DEPTH = 6;
+const CELL = 0.562;
+const PITCH = 0.57;
+const STRATA_COLORS = [0xd9c896, 0xd0b988, 0xb59a76, 0xa8896a, 0xa1704f, 0x965f43];
+const BEDROCK_COLOR = 0x6f6a61;
+
+const ACTION_COOLDOWN_MS = 140;
+const DAMAGE_CAP_PER_ACTION = 2;
+const TAP_DEFER_MS = 70;
+const RUB_PROGRESS_PER_PX = 1 / 300;
+const TAP_POLISH_AMOUNT = 0.25;
+const HARD_LAYER_FROM = 4;
+const ROCK_HP = 3;
+const PICK_MAX_HP = 70;
+
+const el = (id: string): HTMLElement => {
+  const found = document.getElementById(id);
+  if (!found) throw new Error(`#${id} not found`);
+  return found;
+};
+
+const idx = (gx: number, gz: number, layer: number): number => (layer * GRID_X + gx) * GRID_Z + gz;
+const coords = (i: number): { gx: number; gz: number; layer: number } => ({
+  gz: i % GRID_Z,
+  gx: Math.floor(i / GRID_Z) % GRID_X,
+  layer: Math.floor(i / (GRID_X * GRID_Z)),
+});
+const cellCenter = (i: number): THREE.Vector3 => {
+  const { gx, gz, layer } = coords(i);
+  return new THREE.Vector3(
+    (gx - (GRID_X - 1) / 2) * PITCH,
+    -(layer + 0.5) * PITCH,
+    (gz - (GRID_Z - 1) / 2) * PITCH,
+  );
+};
+const inBounds = (gx: number, gz: number, layer: number): boolean =>
+  gx >= 0 && gx < GRID_X && gz >= 0 && gz < GRID_Z && layer >= 0 && layer < GRID_DEPTH;
+
+// ---- shared scene -----------------------------------------------------------
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+el('app').appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x9ed4ef);
+scene.fog = new THREE.Fog(0x9ed4ef, 40, 90);
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 200);
+camera.position.set(0, 8.6, 4.6);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, -1, 0);
+controls.enableDamping = true;
+controls.enablePan = false;
+controls.minDistance = 4.5;
+controls.maxDistance = 14;
+controls.minPolarAngle = THREE.MathUtils.degToRad(8);
+controls.maxPolarAngle = THREE.MathUtils.degToRad(52);
+controls.touches = { ONE: null as unknown as THREE.TOUCH, TWO: THREE.TOUCH.DOLLY_ROTATE };
+controls.mouseButtons = {
+  LEFT: null as unknown as THREE.MOUSE,
+  MIDDLE: THREE.MOUSE.DOLLY,
+  RIGHT: THREE.MOUSE.ROTATE,
+};
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.8));
+const sun = new THREE.DirectionalLight(0xfff2d8, 1.9);
+sun.position.set(9, 15, 6);
+sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024);
+sun.shadow.camera.left = -8;
+sun.shadow.camera.right = 8;
+sun.shadow.camera.top = 8;
+sun.shadow.camera.bottom = -8;
+sun.shadow.camera.near = 2;
+sun.shadow.camera.far = 40;
+sun.shadow.bias = -0.0005;
+scene.add(sun);
+
+{
+  const plotHalf = (GRID_X * PITCH) / 2 - 0.03;
+  const shape = new THREE.Shape();
+  shape.moveTo(-40, -40);
+  shape.lineTo(40, -40);
+  shape.lineTo(40, 40);
+  shape.lineTo(-40, 40);
+  shape.closePath();
+  const hole = new THREE.Path();
+  hole.moveTo(-plotHalf, -plotHalf);
+  hole.lineTo(plotHalf, -plotHalf);
+  hole.lineTo(plotHalf, plotHalf);
+  hole.lineTo(-plotHalf, plotHalf);
+  hole.closePath();
+  shape.holes.push(hole);
+  const ground = new THREE.Mesh(
+    new THREE.ShapeGeometry(shape).rotateX(-Math.PI / 2),
+    new THREE.MeshStandardMaterial({ color: 0xd8c28e, roughness: 1 }),
+  );
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  const depth = GRID_DEPTH * PITCH + 0.3;
+  const shell = new THREE.Mesh(
+    new THREE.BoxGeometry(GRID_X * PITCH + 0.12, depth, GRID_Z * PITCH + 0.12),
+    new THREE.MeshStandardMaterial({ color: 0x5c4633, roughness: 1, side: THREE.BackSide }),
+  );
+  shell.position.y = -depth / 2 + 0.02;
+  scene.add(shell);
+
+  const stakeMat = new THREE.MeshStandardMaterial({ color: 0x8a6b47, roughness: 0.9 });
+  const ropeMat = new THREE.MeshStandardMaterial({ color: 0xe8e0c8, roughness: 0.9 });
+  const s = plotHalf + 0.18;
+  for (const [x, z] of [
+    [-s, -s],
+    [s, -s],
+    [s, s],
+    [-s, s],
+  ] as const) {
+    const stake = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.6, 6), stakeMat);
+    stake.position.set(x, 0.3, z);
+    stake.castShadow = true;
+    scene.add(stake);
+  }
+  for (const [x, z, rot] of [
+    [0, -s, 0],
+    [0, s, 0],
+    [-s, 0, Math.PI / 2],
+    [s, 0, Math.PI / 2],
+  ] as const) {
+    const rope = new THREE.Mesh(new THREE.BoxGeometry(s * 2, 0.03, 0.03), ropeMat);
+    rope.position.set(x, 0.5, z);
+    rope.rotation.y = rot;
+    scene.add(rope);
+  }
+}
+
+const particles = new DebrisParticles();
+scene.add(particles.mesh);
+const sfx = new Sfx();
+
+// ---- inventory & tools ------------------------------------------------------
+
+const inv = { wood: 0, stone: 0, crystal: 0 };
+const pick = { level: 1, hp: PICK_MAX_HP, broken: false };
+let collectedBones = 0;
+let collectedAmmonites = 0;
+let finished = false;
+
+let msgTimer: ReturnType<typeof setTimeout> | undefined;
+function showMsg(text: string): void {
+  const msg = el('msg');
+  msg.textContent = text;
+  msg.classList.add('show');
+  clearTimeout(msgTimer);
+  msgTimer = setTimeout(() => msg.classList.remove('show'), 2600);
+}
+
+function updateHud(): void {
+  el('hud-bones').textContent = `${collectedBones}/${TOTAL_BONES}`;
+  el('hud-ammonite').textContent = `${collectedAmmonites}/1`;
+  el('hud-crystal').textContent = `${inv.crystal}`;
+  el('hud-wood').textContent = `${inv.wood}`;
+  el('hud-stone').textContent = `${inv.stone}`;
+  el('btn-pick').textContent = pick.broken ? '⛏️ こわれた…' : `⛏️ Lv${pick.level}`;
+  const bar = el('pick-bar');
+  bar.style.width = `${(pick.hp / PICK_MAX_HP) * 100}%`;
+  bar.style.background = pick.broken
+    ? '#ff6b6b'
+    : pick.hp > PICK_MAX_HP * 0.3
+      ? '#6adf6a'
+      : '#ffd75e';
+  el('craft-repair-cost').textContent = '🪵1 🪨2';
+  el('craft-upgrade-cost').textContent = '🪵2 🪨4 💎1';
+  (el('craft-repair') as HTMLButtonElement).disabled = !(
+    pick.hp < PICK_MAX_HP &&
+    inv.wood >= 1 &&
+    inv.stone >= 2
+  );
+  const upgraded = pick.level >= 2;
+  el('craft-upgrade-row').style.display = upgraded ? 'none' : '';
+  (el('craft-upgrade') as HTMLButtonElement).disabled =
+    upgraded || !(inv.wood >= 2 && inv.stone >= 4 && inv.crystal >= 1);
+}
+
+function wearPick(amount = 1): void {
+  if (pick.broken) return;
+  pick.hp = Math.max(0, pick.hp - amount);
+  if (pick.hp === 0) {
+    pick.broken = true;
+    sfx.crack();
+    showMsg('💔 ピッケルが こわれた! 🛠️つくるで なおそう');
+  }
+  updateHud();
+}
+
+function craftRepair(): void {
+  if (!(pick.hp < PICK_MAX_HP && inv.wood >= 1 && inv.stone >= 2)) return;
+  inv.wood -= 1;
+  inv.stone -= 2;
+  pick.hp = PICK_MAX_HP;
+  pick.broken = false;
+  sfx.shine();
+  showMsg('🛠️ ピッケルを なおした!');
+  updateHud();
+}
+
+function craftUpgrade(): void {
+  if (pick.level >= 2 || !(inv.wood >= 2 && inv.stone >= 4 && inv.crystal >= 1)) return;
+  inv.wood -= 2;
+  inv.stone -= 4;
+  inv.crystal -= 1;
+  pick.level = 2;
+  pick.hp = PICK_MAX_HP;
+  pick.broken = false;
+  sfx.fanfare();
+  showMsg('✨ がんじょうピッケルが かんせい! がんばんも ほれるぞ!');
+  updateHud();
+}
+
+function checkAllDone(): void {
+  if (finished) return;
+  if (collectedBones >= TOTAL_BONES && collectedAmmonites >= 1) {
+    finished = true;
+    setTimeout(() => {
+      el('result-list').innerHTML =
+        `<div>ホネ ${collectedBones}/${TOTAL_BONES} ぜんぶ はっけん!</div>` +
+        `<div>アンモナイト ×${collectedAmmonites}</div>` +
+        `<div>すいしょう 💎×${inv.crystal} / ざいりょう 🪵${inv.wood} 🪨${inv.stone}</div>`;
+      el('overlay').classList.add('show');
+    }, 1500);
+  }
+}
+
+// ---- fossils ----------------------------------------------------------------
+
+type CellStatus = 'hidden' | 'crusted' | 'clean';
+interface FossilCell {
+  status: CellStatus;
+  progress: number;
+  crust: THREE.Mesh;
+}
+
+class FossilPiece {
+  readonly cells = new Map<number, FossilCell>();
+  readonly group = new THREE.Group();
+  damage = 0;
+  collected = false;
+  supportStage = 0;
+  wobbleT = 0;
+  private readonly material: THREE.MeshStandardMaterial;
+
+  constructor(
+    readonly def: FossilDef,
+    parent: THREE.Group,
+  ) {
+    this.material = new THREE.MeshStandardMaterial({
+      color: def.kind === 'ammonite' ? 0xdcc9a8 : 0xf7f3e8,
+      roughness: 0.5,
+    });
+    const crustGeo = new THREE.BoxGeometry(CELL * 0.96, CELL * 0.96, CELL * 0.96);
+    for (const [gx, gz] of def.cells) {
+      const i = idx(gx, gz, def.layer);
+      const crust = new THREE.Mesh(
+        crustGeo,
+        new THREE.MeshStandardMaterial({
+          color: 0x8a7a5e,
+          roughness: 1,
+          transparent: true,
+          opacity: 0.78,
+        }),
+      );
+      crust.position.copy(cellCenter(i));
+      crust.visible = false;
+      parent.add(crust);
+      this.cells.set(i, { status: 'hidden', progress: 0, crust });
+    }
+
+    const center = new THREE.Vector3();
+    for (const [gx, gz] of def.cells) center.add(cellCenter(idx(gx, gz, def.layer)));
+    center.divideScalar(def.cells.length);
+
+    if (def.kind === 'long') {
+      const alongX = def.cells[1]![0] !== def.cells[0]![0];
+      const shaft = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.11, 0.11, PITCH * def.cells.length * 0.86, 10),
+        this.material,
+      );
+      shaft.rotation.z = Math.PI / 2;
+      this.group.add(shaft);
+      const knobGeo = new THREE.SphereGeometry(0.15, 10, 8);
+      for (const sx of [-1, 1]) {
+        for (const sz of [-1, 1]) {
+          const knob = new THREE.Mesh(knobGeo, this.material);
+          knob.position.set((sx * PITCH * def.cells.length * 0.86) / 2, 0, sz * 0.09);
+          this.group.add(knob);
+        }
+      }
+      if (!alongX) this.group.rotation.y = Math.PI / 2;
+    } else if (def.kind === 'blob') {
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 10), this.material);
+      dome.scale.set(1.2, 0.8, 1.2);
+      this.group.add(dome);
+      const snout = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.22, 0.3), this.material);
+      snout.position.set(0.42, -0.06, 0);
+      this.group.add(snout);
+      const dark = new THREE.MeshStandardMaterial({ color: 0x3a3226 });
+      for (const sz of [-1, 1]) {
+        const socket = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), dark);
+        socket.position.set(0.18, 0.12, sz * 0.18);
+        this.group.add(socket);
+      }
+    } else {
+      // アンモナイト: うずまき
+      const coil = new THREE.Mesh(
+        new THREE.TorusGeometry(0.32, 0.13, 8, 16, Math.PI * 1.7),
+        this.material,
+      );
+      coil.rotation.x = -Math.PI / 2;
+      this.group.add(coil);
+      const inner = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.08, 8, 12), this.material);
+      inner.rotation.x = -Math.PI / 2;
+      this.group.add(inner);
+      const tip = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), this.material);
+      tip.position.set(0.32, 0, 0.24);
+      this.group.add(tip);
+    }
+    this.group.position.copy(center);
+    this.group.visible = false;
+    this.group.traverse((o) => {
+      if ((o as THREE.Mesh).isMesh) o.castShadow = true;
+    });
+    parent.add(this.group);
+  }
+
+  stars(): number {
+    return this.damage === 0 ? 3 : this.damage <= 2 ? 2 : 1;
+  }
+  tint(): void {
+    this.material.color.lerpColors(
+      new THREE.Color(this.def.kind === 'ammonite' ? 0xdcc9a8 : 0xf7f3e8),
+      new THREE.Color(0x8f7d66),
+      Math.min(this.damage, 3) / 3,
+    );
+  }
+  celebrate(): void {
+    this.material.emissive.setHex(0xffe28a);
+    this.material.emissiveIntensity = 0.4;
+  }
+}
+
+// ---- pit --------------------------------------------------------------------
+
+interface RockState {
+  hp: number;
+  mesh: THREE.Mesh;
+}
+
+class Pit {
+  readonly root = new THREE.Group();
+  readonly soil: THREE.InstancedMesh;
+  readonly alive: boolean[] = [];
+  private readonly hardHp: number[] = [];
+  private readonly baseColors: THREE.Color[] = [];
+  readonly bedrockSet = new Set<number>();
+  private readonly branchSet = new Set<number>();
+  readonly fossils: FossilPiece[] = [];
+  private readonly cellOwner = new Map<number, FossilPiece>();
+  readonly rocks = new Map<number, RockState>();
+  readonly crystals = new Map<number, THREE.Mesh>();
+  private lastActionAt = 0;
+  private firstRevealShown = false;
+  private lastBedrockMsgAt = 0;
+  private readonly m4 = new THREE.Matrix4();
+
+  constructor(readonly def: PitDef) {
+    scene.add(this.root);
+    this.soil = new THREE.InstancedMesh(
+      new THREE.BoxGeometry(CELL, CELL, CELL),
+      new THREE.MeshStandardMaterial({ roughness: 1 }),
+      GRID_X * GRID_Z * GRID_DEPTH,
+    );
+    this.soil.castShadow = true;
+    this.soil.receiveShadow = true;
+    this.root.add(this.soil);
+
+    for (const [gx, gz, l] of def.bedrock) this.bedrockSet.add(idx(gx, gz, l));
+    for (const [gx, gz, l] of def.branches) this.branchSet.add(idx(gx, gz, l));
+
+    const color = new THREE.Color();
+    for (let i = 0; i < GRID_X * GRID_Z * GRID_DEPTH; i++) {
+      const { gx, gz, layer } = coords(i);
+      if (this.bedrockSet.has(i)) {
+        color.setHex(BEDROCK_COLOR);
+        color.offsetHSL(0, 0, (((gx * 13 + gz * 7) % 8) / 8 - 0.5) * 0.04);
+      } else {
+        color.setHex(STRATA_COLORS[layer]!);
+        color.offsetHSL(0, 0, (((gx * 31 + gz * 17 + layer * 7) % 10) / 10 - 0.5) * 0.05);
+      }
+      this.baseColors.push(color.clone());
+      this.soil.setColorAt(i, color);
+      this.alive.push(true);
+      this.hardHp.push(this.bedrockSet.has(i) || layer >= HARD_LAYER_FROM ? 2 : 1);
+      this.setSoilMatrix(i, 1);
+    }
+
+    for (const fdef of def.fossils) {
+      const fossil = new FossilPiece(fdef, this.root);
+      this.fossils.push(fossil);
+      for (const i of fossil.cells.keys()) {
+        this.cellOwner.set(i, fossil);
+        this.alive[i] = false;
+        this.setSoilMatrix(i, 0);
+      }
+    }
+    {
+      const rockMat = new THREE.MeshStandardMaterial({
+        color: 0x7f7668,
+        roughness: 1,
+        flatShading: true,
+      });
+      for (const [gx, gz, l] of def.rocks) {
+        const i = idx(gx, gz, l);
+        const mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(CELL * 0.62, 0), rockMat.clone());
+        mesh.position.copy(cellCenter(i));
+        mesh.castShadow = true;
+        mesh.visible = false;
+        this.root.add(mesh);
+        this.rocks.set(i, { hp: ROCK_HP, mesh });
+        this.alive[i] = false;
+        this.setSoilMatrix(i, 0);
+      }
+      for (const [gx, gz, l] of def.crystals) {
+        const i = idx(gx, gz, l);
+        const mesh = new THREE.Mesh(
+          new THREE.OctahedronGeometry(CELL * 0.4, 0),
+          new THREE.MeshStandardMaterial({
+            color: 0xc7a6f0,
+            roughness: 0.2,
+            emissive: 0x5a3a8a,
+            emissiveIntensity: 0.35,
+          }),
+        );
+        mesh.position.copy(cellCenter(i));
+        mesh.rotation.y = 0.5;
+        mesh.visible = false;
+        this.root.add(mesh);
+        this.crystals.set(i, mesh);
+        this.alive[i] = false;
+        this.setSoilMatrix(i, 0);
+      }
+    }
+  }
+
+  private setSoilMatrix(i: number, scale: number): void {
+    this.m4.makeScale(scale, scale, scale);
+    this.m4.setPosition(cellCenter(i));
+    this.soil.setMatrixAt(i, this.m4);
+    this.soil.instanceMatrix.needsUpdate = true;
+  }
+
+  private reveal(i: number): void {
+    const fossil = this.cellOwner.get(i);
+    if (!fossil) return;
+    const cell = fossil.cells.get(i)!;
+    if (cell.status !== 'hidden') return;
+    cell.status = 'crusted';
+    cell.crust.visible = true;
+    fossil.group.visible = true;
+    particles.burst(cellCenter(i), new THREE.Color(0xbfa88a), 5);
+    if (!this.firstRevealShown) {
+      this.firstRevealShown = true;
+      sfx.hint();
+      showMsg('🦴 なにか でてきた! ⛏️はNG、🖌️ブラシで こすろう');
+    }
+  }
+
+  private afterRemoval(removed: number): void {
+    const { gx, gz, layer } = coords(removed);
+    for (const [nx, nz, nl] of [
+      [gx + 1, gz, layer],
+      [gx - 1, gz, layer],
+      [gx, gz + 1, layer],
+      [gx, gz - 1, layer],
+      [gx, gz, layer + 1],
+      [gx, gz, layer - 1],
+    ] as const) {
+      if (!inBounds(nx, nz, nl)) continue;
+      const n = idx(nx, nz, nl);
+      this.reveal(n);
+      const rock = this.rocks.get(n);
+      if (rock) rock.mesh.visible = true;
+      const crystal = this.crystals.get(n);
+      if (crystal) crystal.visible = true;
+    }
+    this.updateSupports();
+  }
+
+  private cellSolid(i: number): boolean {
+    if (this.alive[i]) return true;
+    const rock = this.rocks.get(i);
+    if (rock && rock.hp > 0) return true;
+    if (this.crystals.has(i)) return true;
+    const fossil = this.cellOwner.get(i);
+    if (fossil && !fossil.collected) return true;
+    return false;
+  }
+
+  private updateSupports(): void {
+    for (const fossil of this.fossils) {
+      if (fossil.collected) continue;
+      let supported = 0;
+      for (const i of fossil.cells.keys()) {
+        const { gx, gz, layer } = coords(i);
+        if (layer >= GRID_DEPTH - 1 || this.cellSolid(idx(gx, gz, layer + 1))) supported++;
+      }
+      const ratio = supported / fossil.cells.size;
+      const stage = ratio >= 1 ? 0 : ratio >= 0.5 ? 1 : ratio > 0 ? 2 : 3;
+      while (fossil.supportStage < stage) {
+        fossil.supportStage++;
+        if (fossil.supportStage === 1) {
+          fossil.wobbleT = 1.2;
+          sfx.knockFull();
+          showMsg(`⚠️ ${fossil.def.nameJa}が グラグラ… したを ほりすぎ!`);
+        } else {
+          fossil.damage++;
+          fossil.tint();
+          fossil.wobbleT = 1.2;
+          fossil.group.rotation.x += 0.11;
+          fossil.group.position.y -= 0.09;
+          sfx.crack();
+          shake = 1;
+          showMsg(`💥 ${fossil.def.nameJa}が かたむいて ヒビが はいった!`);
+        }
+      }
+    }
+  }
+
+  private removeSoil(i: number): void {
+    this.alive[i] = false;
+    this.setSoilMatrix(i, 0);
+    particles.burst(cellCenter(i), this.baseColors[i]!, 8);
+    if (this.branchSet.has(i)) {
+      this.branchSet.delete(i);
+      inv.wood++;
+      sfx.hint();
+      showMsg('🪵 じょうぶな きのえだを みつけた!');
+      updateHud();
+    }
+    this.afterRemoval(i);
+  }
+
+  private hitCell(i: number): { damaged: boolean } {
+    const fossil = this.cellOwner.get(i);
+    if (fossil) {
+      const cell = fossil.cells.get(i)!;
+      if (cell.status === 'hidden') this.reveal(i);
+      fossil.damage++;
+      fossil.tint();
+      return { damaged: true };
+    }
+    const rock = this.rocks.get(i);
+    if (rock && rock.hp > 0) {
+      rock.hp--;
+      sfx.clank();
+      particles.burst(cellCenter(i), new THREE.Color(0x8f8678), 4);
+      rock.mesh.visible = true;
+      rock.mesh.scale.setScalar(0.7 + rock.hp * 0.15);
+      if (rock.hp === 0) {
+        rock.mesh.visible = false;
+        particles.burst(cellCenter(i), new THREE.Color(0x7f7668), 10);
+        inv.stone += 2;
+        showMsg('🪨 いわを くだいて いし×2 ゲット!');
+        updateHud();
+        this.afterRemoval(i);
+      }
+      return { damaged: false };
+    }
+    if (this.alive[i]) {
+      // がんばんは Lv2 でしか掘れない
+      if (this.bedrockSet.has(i) && pick.level < 2) {
+        sfx.clank();
+        const now = performance.now();
+        if (now - this.lastBedrockMsgAt > 1500) {
+          this.lastBedrockMsgAt = now;
+          showMsg('🧱 カキン! かたすぎる… がんじょうピッケルが いる!');
+        }
+        return { damaged: false };
+      }
+      if (this.hardHp[i]! > 1) {
+        this.hardHp[i]!--;
+        sfx.clank();
+        const c = this.baseColors[i]!.clone().offsetHSL(0, 0, -0.08);
+        this.soil.setColorAt(i, c);
+        if (this.soil.instanceColor) this.soil.instanceColor.needsUpdate = true;
+        return { damaged: false };
+      }
+      this.removeSoil(i);
+    }
+    return { damaged: false };
+  }
+
+  swingPick(target: number): void {
+    const now = performance.now();
+    if (now - this.lastActionAt < ACTION_COOLDOWN_MS) return;
+    this.lastActionAt = now;
+    const { gx, gz, layer } = coords(target);
+
+    let area: [number, number][];
+    if (layer <= 1) {
+      area = [];
+      for (let dx = -1; dx <= 1; dx++)
+        for (let dz = -1; dz <= 1; dz++) area.push([gx + dx, gz + dz]);
+    } else if (layer <= HARD_LAYER_FROM - 1) {
+      area = [
+        [gx, gz],
+        [gx + 1, gz],
+        [gx - 1, gz],
+        [gx, gz + 1],
+        [gx, gz - 1],
+      ];
+    } else {
+      area = [[gx, gz]];
+    }
+
+    let damaged = 0;
+    for (const [ax, az] of area) {
+      if (!inBounds(ax, az, layer)) continue;
+      const i = idx(ax, az, layer);
+      if (!this.cellSolid(i)) continue;
+      const r = this.hitCell(i);
+      if (r.damaged) damaged++;
+      if (damaged >= DAMAGE_CAP_PER_ACTION) break;
+    }
+    sfx.pick();
+    wearPick();
+    if (damaged > 0) {
+      sfx.crack();
+      shake = 1;
+      showMsg('💥 かせきに ピッケルが あたった…!');
+    }
+  }
+
+  polish(i: number, amount: number): void {
+    const fossil = this.cellOwner.get(i);
+    if (!fossil) return;
+    const cell = fossil.cells.get(i)!;
+    if (cell.status !== 'crusted') return;
+    cell.progress = Math.min(1, cell.progress + amount);
+    (cell.crust.material as THREE.MeshStandardMaterial).opacity = 0.78 * (1 - cell.progress);
+    if (cell.progress >= 1) {
+      cell.status = 'clean';
+      cell.crust.visible = false;
+      sfx.shine();
+      particles.burst(cellCenter(i), new THREE.Color(0xfff2b8), 8);
+      this.checkFossil(fossil);
+    }
+  }
+
+  private checkFossil(fossil: FossilPiece): void {
+    if (fossil.collected) return;
+    for (const cell of fossil.cells.values()) if (cell.status !== 'clean') return;
+    fossil.collected = true;
+    fossil.celebrate();
+    sfx.fanfare();
+    if (fossil.def.kind === 'ammonite') collectedAmmonites++;
+    else collectedBones++;
+    showMsg(
+      `${fossil.def.kind === 'ammonite' ? '🐚' : '🦴'} ${fossil.def.nameJa}を ほりだした! ${'★'.repeat(fossil.stars())}${'☆'.repeat(3 - fossil.stars())}`,
+    );
+    updateHud();
+    this.updateSupports();
+    checkAllDone();
+  }
+
+  knock(target: number): void {
+    const { gx, gz, layer } = coords(target);
+    let something = false;
+    for (let l = layer + 1; l < GRID_DEPTH; l++) {
+      const i = idx(gx, gz, l);
+      if (this.cellOwner.has(i) || this.crystals.has(i) || (this.rocks.get(i)?.hp ?? 0) > 0) {
+        something = true;
+        break;
+      }
+    }
+    if (something) {
+      sfx.knockFull();
+      showMsg('👂 …ゴツッ! このしたに なにか あるぞ!');
+    } else {
+      sfx.knockEmpty();
+      showMsg('👂 コンコン… なにも いなさそう');
+    }
+  }
+
+  collectCrystal(i: number): boolean {
+    const mesh = this.crystals.get(i);
+    if (!mesh || !mesh.visible) return false;
+    this.crystals.delete(i);
+    mesh.visible = false;
+    inv.crystal++;
+    sfx.shine();
+    particles.burst(cellCenter(i), new THREE.Color(0xd8b8ff), 10);
+    showMsg('💎 すいしょうを みつけた!');
+    updateHud();
+    this.afterRemoval(i);
+    return true;
+  }
+
+  raycastCell(clientX: number, clientY: number): number | null {
+    const rect = renderer.domElement.getBoundingClientRect();
+    const ndc = new THREE.Vector2(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(ndc, camera);
+    const targets: THREE.Object3D[] = [this.soil];
+    const lookup = new Map<THREE.Object3D, number>();
+    for (const fossil of this.fossils) {
+      for (const [i, cell] of fossil.cells) {
+        if (cell.crust.visible) {
+          targets.push(cell.crust);
+          lookup.set(cell.crust, i);
+        }
+      }
+    }
+    for (const [i, rock] of this.rocks) {
+      if (rock.hp > 0 && rock.mesh.visible) {
+        targets.push(rock.mesh);
+        lookup.set(rock.mesh, i);
+      }
+    }
+    for (const [i, mesh] of this.crystals) {
+      if (mesh.visible) {
+        targets.push(mesh);
+        lookup.set(mesh, i);
+      }
+    }
+    const hits = raycaster.intersectObjects(targets, false);
+    for (const hit of hits) {
+      if (hit.object === this.soil) {
+        if (hit.instanceId !== undefined && this.alive[hit.instanceId]) return hit.instanceId;
+        continue;
+      }
+      const found = lookup.get(hit.object);
+      if (found !== undefined) return found;
+    }
+    return null;
+  }
+
+  crustedAt(i: number): boolean {
+    return this.cellOwner.get(i)?.cells.get(i)?.status === 'crusted';
+  }
+
+  updateFrame(dt: number, currentTool: string, time: number): void {
+    const pulse = 0.22 + 0.14 * Math.sin(time * 5);
+    for (const fossil of this.fossils) {
+      for (const cell of fossil.cells.values()) {
+        if (cell.status !== 'crusted') continue;
+        const mat = cell.crust.material as THREE.MeshStandardMaterial;
+        if (currentTool === 'brush') {
+          mat.emissive.setHex(0xffd75e);
+          mat.emissiveIntensity = pulse;
+        } else if (currentTool === 'pick') {
+          mat.emissive.setHex(0xaa2222);
+          mat.emissiveIntensity = 0.18;
+        } else {
+          mat.emissiveIntensity = 0;
+        }
+      }
+      if (fossil.wobbleT > 0) {
+        fossil.wobbleT = Math.max(0, fossil.wobbleT - dt);
+        fossil.group.rotation.z = Math.sin(fossil.wobbleT * 30) * 0.05 * fossil.wobbleT;
+      }
+    }
+  }
+}
+
+const pits = PITS.map((def) => new Pit(def));
+let activePitIndex = 0;
+function activePit(): Pit {
+  return pits[activePitIndex]!;
+}
+function switchPit(index: number): void {
+  activePitIndex = index;
+  pits.forEach((pit, i) => (pit.root.visible = i === index));
+  for (let i = 0; i < pits.length; i++) {
+    el(`tab-pit${i + 1}`).classList.toggle('active', i === index);
+  }
+  showMsg(`⛺ ${PITS[index]!.nameJa}に やってきた`);
+}
+
+// ---- actions ----------------------------------------------------------------
+
+type Tool = 'pick' | 'brush' | 'ear';
+let tool: Tool = 'pick';
+let shake = 0;
+
+function setTool(next: Tool): void {
+  tool = next;
+  el('btn-pick').classList.toggle('active', next === 'pick');
+  el('btn-brush').classList.toggle('active', next === 'brush');
+  el('btn-ear').classList.toggle('active', next === 'ear');
+}
+
+function tapAction(clientX: number, clientY: number): void {
+  if (finished) return;
+  const pit = activePit();
+  const target = pit.raycastCell(clientX, clientY);
+  if (target === null) return;
+
+  if (pit.collectCrystal(target)) return;
+  if (tool === 'pick') {
+    if (pick.broken) {
+      showMsg('💔 ピッケルが こわれてる… 🛠️つくるで なおそう');
+      return;
+    }
+    pit.swingPick(target);
+  } else if (tool === 'ear') {
+    pit.knock(target);
+  } else {
+    if (pit.crustedAt(target)) {
+      sfx.rub();
+      pit.polish(target, TAP_POLISH_AMOUNT);
+    } else {
+      sfx.rub();
+    }
+  }
+}
+
+// ---- input ------------------------------------------------------------------
+
+const pointers = new Set<number>();
+let activePointer: number | null = null;
+let actionStarted = false;
+let pendingTap: ReturnType<typeof setTimeout> | undefined;
+const downPos = { x: 0, y: 0 };
+let lastRubAt = 0;
+
+function cancelPendingTap(): void {
+  if (pendingTap !== undefined) {
+    clearTimeout(pendingTap);
+    pendingTap = undefined;
+  }
+}
+
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  sfx.unlock();
+  pointers.add(e.pointerId);
+  if (pointers.size === 1 && e.button === 0) {
+    activePointer = e.pointerId;
+    actionStarted = false;
+    downPos.x = e.clientX;
+    downPos.y = e.clientY;
+    pendingTap = setTimeout(() => {
+      pendingTap = undefined;
+      if (pointers.size === 1 && activePointer === e.pointerId) {
+        actionStarted = true;
+        tapAction(downPos.x, downPos.y);
+      }
+    }, TAP_DEFER_MS);
+  } else {
+    cancelPendingTap();
+    activePointer = null;
+    actionStarted = false;
+  }
+});
+renderer.domElement.addEventListener('pointermove', (e) => {
+  if (pointers.size !== 1 || e.pointerId !== activePointer) return;
+  const prevX = downPos.x;
+  const prevY = downPos.y;
+  downPos.x = e.clientX;
+  downPos.y = e.clientY;
+  if (!actionStarted) return;
+
+  if (tool === 'pick') {
+    tapAction(e.clientX, e.clientY);
+    return;
+  }
+  if (tool === 'brush') {
+    const pit = activePit();
+    const target = pit.raycastCell(e.clientX, e.clientY);
+    if (target === null || !pit.crustedAt(target)) return;
+    const dist = Math.hypot(e.clientX - prevX, e.clientY - prevY);
+    pit.polish(target, dist * RUB_PROGRESS_PER_PX);
+    const now = performance.now();
+    if (now - lastRubAt > 120) {
+      lastRubAt = now;
+      sfx.rub();
+      particles.burst(cellCenter(target), new THREE.Color(0xcbb391), 2);
+    }
+  }
+});
+const release = (e: PointerEvent): void => {
+  pointers.delete(e.pointerId);
+  if (e.pointerId === activePointer) {
+    if (pendingTap !== undefined) {
+      cancelPendingTap();
+      if (pointers.size === 0) tapAction(downPos.x, downPos.y);
+    }
+    activePointer = null;
+    actionStarted = false;
+  }
+};
+renderer.domElement.addEventListener('pointerup', release);
+renderer.domElement.addEventListener('pointercancel', release);
+renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
+
+el('btn-pick').addEventListener('click', () => setTool('pick'));
+el('btn-brush').addEventListener('click', () => setTool('brush'));
+el('btn-ear').addEventListener('click', () => setTool('ear'));
+el('btn-craft').addEventListener('click', () => el('craft').classList.add('show'));
+el('craft-close').addEventListener('click', () => el('craft').classList.remove('show'));
+el('craft-repair').addEventListener('click', craftRepair);
+el('craft-upgrade').addEventListener('click', craftUpgrade);
+el('btn-reset').addEventListener('click', () => window.location.reload());
+el('btn-again').addEventListener('click', () => window.location.reload());
+for (let i = 0; i < 3; i++) {
+  el(`tab-pit${i + 1}`).addEventListener('click', () => switchPit(i));
+}
+
+document.addEventListener('gesturestart', (e) => e.preventDefault());
+document.addEventListener('dblclick', (e) => e.preventDefault());
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// ---- debug hooks ------------------------------------------------------------
+
+(window as unknown as Record<string, unknown>).__poc7 = {
+  cellScreen: (gx: number, gz: number, layer: number) => {
+    const p = cellCenter(idx(gx, gz, layer)).project(camera);
+    return { x: ((p.x + 1) / 2) * window.innerWidth, y: ((1 - p.y) / 2) * window.innerHeight };
+  },
+  pickCell: (gx: number, gz: number, layer: number) => activePit().swingPick(idx(gx, gz, layer)),
+  polishCell: (gx: number, gz: number, layer: number, amount: number) =>
+    activePit().polish(idx(gx, gz, layer), amount),
+  switchPit: (i: number) => switchPit(i),
+  collectCrystalAt: (gx: number, gz: number, layer: number) =>
+    activePit().collectCrystal(idx(gx, gz, layer)),
+  wear: (n: number) => wearPick(n),
+  craft: (what: 'repair' | 'upgrade') => (what === 'repair' ? craftRepair() : craftUpgrade()),
+  state: () => ({
+    inv: { ...inv },
+    pick: { ...pick },
+    collectedBones,
+    collectedAmmonites,
+    finished,
+    activePit: activePitIndex,
+    fossils: pits.flatMap((pit) =>
+      pit.fossils.map((f) => ({
+        pit: pit.def.id,
+        id: f.def.id,
+        collected: f.collected,
+        damage: f.damage,
+      })),
+    ),
+  }),
+  setTool: (t: Tool) => setTool(t),
+};
+
+// ---- loop -------------------------------------------------------------------
+
+const meter = new FpsMeter(el('fps'), el('ms'), el('fps-min'));
+const clock = new THREE.Clock();
+updateHud();
+setTool('pick');
+switchPit(0);
+showMsg('⛏️ ほって、あつめて、どうぐを そだてよう!');
+
+const camFrom = new THREE.Vector3(9, 6, 10);
+const camTo = new THREE.Vector3(0, 8.6, 4.6);
+let introT = 0;
+camera.position.copy(camFrom);
+
+renderer.setAnimationLoop(() => {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  particles.update(dt);
+
+  if (introT < 1) {
+    introT = Math.min(1, introT + dt / 1.4);
+    const k = introT * introT * (3 - 2 * introT);
+    camera.position.lerpVectors(camFrom, camTo, k);
+  }
+
+  activePit().updateFrame(dt, tool, clock.elapsedTime);
+
+  if (shake > 0) {
+    shake = Math.max(0, shake - dt * 3.2);
+    activePit().root.position.set(
+      (Math.random() - 0.5) * 0.1 * shake,
+      (Math.random() - 0.5) * 0.06 * shake,
+      0,
+    );
+  } else {
+    activePit().root.position.set(0, 0, 0);
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+  meter.tick();
+});

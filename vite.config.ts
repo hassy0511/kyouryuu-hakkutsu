@@ -14,6 +14,7 @@ export default defineConfig({
         poc4: resolve(import.meta.dirname, 'poc/poc4/index.html'),
         poc5: resolve(import.meta.dirname, 'poc/poc5/index.html'),
         poc6: resolve(import.meta.dirname, 'poc/poc6/index.html'),
+        poc7: resolve(import.meta.dirname, 'poc/poc7/index.html'),
       },
     },
   },

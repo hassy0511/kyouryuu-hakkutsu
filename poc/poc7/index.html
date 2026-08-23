@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>POC-7 どうぐとクラフト</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛠️</text></svg>"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: 'Hiragino Maru Gothic ProN', 'BIZ UDGothic', system-ui, sans-serif;
+        overscroll-behavior: none;
+      }
+      #app,
+      #app canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        touch-action: none;
+      }
+      .panel {
+        position: fixed;
+        background: rgba(20, 25, 35, 0.72);
+        color: #fff;
+        border-radius: 12px;
+        padding: 10px 14px;
+        line-height: 1.5;
+        pointer-events: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      #hud {
+        top: max(10px, env(safe-area-inset-top));
+        left: 10px;
+        font-size: 14px;
+        min-width: 150px;
+      }
+      #hud .row {
+        display: flex;
+        gap: 10px;
+        justify-content: space-between;
+      }
+      #hud .row span {
+        color: #ffd75e;
+      }
+      #help {
+        top: max(10px, env(safe-area-inset-top));
+        right: 10px;
+        font-size: 12px;
+        max-width: 40vw;
+        text-align: right;
+      }
+      #fps-panel {
+        bottom: max(10px, env(safe-area-inset-bottom));
+        left: 10px;
+        font-size: 11px;
+        opacity: 0.8;
+      }
+      #tabs {
+        position: fixed;
+        top: max(10px, env(safe-area-inset-top));
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+        z-index: 10;
+      }
+      #tabs button {
+        min-height: 48px;
+        min-width: 92px;
+        font-size: 14px;
+      }
+      #msg {
+        position: fixed;
+        top: 16%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(20, 25, 35, 0.82);
+        color: #fff;
+        font-size: 18px;
+        font-weight: 700;
+        padding: 12px 22px;
+        border-radius: 999px;
+        opacity: 0;
+        transition: opacity 0.25s;
+        pointer-events: none;
+        white-space: nowrap;
+        max-width: 96vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        z-index: 20;
+      }
+      #msg.show {
+        opacity: 1;
+      }
+      button {
+        border: 3px solid transparent;
+        border-radius: 16px;
+        background: rgba(20, 25, 35, 0.78);
+        color: #fff;
+        font-weight: 700;
+        font-family: inherit;
+        -webkit-tap-highlight-color: transparent;
+      }
+      button.active {
+        border-color: #ffd75e;
+        background: rgba(70, 110, 180, 0.9);
+      }
+      #tools {
+        position: fixed;
+        bottom: max(14px, env(safe-area-inset-bottom));
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+      }
+      #tools button {
+        min-height: 56px;
+        min-width: 100px;
+        padding: 10px 12px;
+        font-size: 16px;
+      }
+      #pick-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      #pick-track {
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(20, 25, 35, 0.6);
+        overflow: hidden;
+      }
+      #pick-bar {
+        height: 100%;
+        width: 100%;
+        background: #6adf6a;
+        border-radius: 999px;
+        transition:
+          width 0.2s,
+          background 0.3s;
+      }
+      #btn-reset {
+        position: fixed;
+        bottom: max(14px, env(safe-area-inset-bottom));
+        right: 10px;
+        min-height: 48px;
+        min-width: 92px;
+        font-size: 13px;
+      }
+      #btn-craft {
+        position: fixed;
+        bottom: max(14px, env(safe-area-inset-bottom));
+        left: 10px;
+        min-height: 56px;
+        min-width: 100px;
+        font-size: 16px;
+        border-color: #7fb2e8;
+        z-index: 5;
+      }
+      #craft {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 20, 30, 0.55);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 40;
+      }
+      #craft.show {
+        display: flex;
+      }
+      #craft .card {
+        background: #fffaf0;
+        color: #3a3226;
+        border-radius: 22px;
+        padding: 24px 28px;
+        width: min(92vw, 420px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      }
+      #craft h1 {
+        font-size: 22px;
+        text-align: center;
+        margin-bottom: 14px;
+      }
+      #craft .recipe {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        background: #f3ead8;
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+      }
+      #craft .recipe b {
+        font-size: 15px;
+      }
+      #craft .recipe small {
+        display: block;
+        color: #7a6f5a;
+      }
+      #craft .recipe button {
+        background: #4a90d9;
+        border: none;
+        min-height: 48px;
+        min-width: 84px;
+        font-size: 15px;
+      }
+      #craft .recipe button:disabled {
+        background: #b5aa95;
+        opacity: 0.7;
+      }
+      #craft-close {
+        width: 100%;
+        min-height: 48px;
+        background: #8a7f6c;
+        border: none;
+        font-size: 15px;
+        margin-top: 4px;
+      }
+      #overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 20, 30, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+        z-index: 30;
+      }
+      #overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      #overlay .card {
+        background: #fffaf0;
+        color: #3a3226;
+        border-radius: 22px;
+        padding: 28px 40px;
+        text-align: center;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      }
+      #overlay h1 {
+        font-size: 26px;
+        margin-bottom: 10px;
+      }
+      #result-list {
+        font-size: 17px;
+        margin-bottom: 18px;
+        line-height: 1.9;
+      }
+      #btn-again {
+        background: #4a90d9;
+        border: none;
+        width: 100%;
+        min-height: 52px;
+        font-size: 17px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <div id="hud" class="panel">
+      <div class="row"><b>🦴 ホネ</b><span id="hud-bones">0/5</span></div>
+      <div class="row"><b>🐚 アンモナイト</b><span id="hud-ammonite">0/1</span></div>
+      <div class="row"><b>💎 すいしょう</b><span id="hud-crystal">0</span></div>
+      <div class="row"><b>🪵 き</b><span id="hud-wood">0</span></div>
+      <div class="row"><b>🪨 いし</b><span id="hud-stone">0</span></div>
+    </div>
+
+    <div id="tabs">
+      <button id="tab-pit1" type="button" class="active">げんば1</button>
+      <button id="tab-pit2" type="button">げんば2</button>
+      <button id="tab-pit3" type="button">げんば3</button>
+    </div>
+
+    <div id="help" class="panel">
+      ⛏️は つかうと へる → 🛠️で なおす<br />
+      🧱 がんばんは がんじょうピッケルで<br />
+      💎と ざいりょうで パワーアップ<br />
+      ゆび2本: カメラ
+    </div>
+
+    <div id="fps-panel" class="panel">
+      <span id="fps">--</span> FPS / <span id="ms">--</span> ms / さいてい
+      <span id="fps-min">--</span>
+    </div>
+
+    <div id="msg"></div>
+
+    <button id="btn-craft" type="button">🛠️ つくる</button>
+    <div id="tools">
+      <div id="pick-wrap">
+        <button id="btn-pick" type="button" class="active">⛏️ Lv1</button>
+        <div id="pick-track"><div id="pick-bar"></div></div>
+      </div>
+      <button id="btn-brush" type="button">🖌️ ブラシ</button>
+      <button id="btn-ear" type="button">👂 きく</button>
+    </div>
+    <button id="btn-reset" type="button">🔄 リセット</button>
+
+    <div id="craft">
+      <div class="card">
+        <h1>🛠️ どうぐづくり</h1>
+        <div class="recipe">
+          <div>
+            <b>ピッケルを なおす</b>
+            <small>ざいりょう: <span id="craft-repair-cost"></span></small>
+          </div>
+          <button id="craft-repair" type="button">なおす</button>
+        </div>
+        <div class="recipe" id="craft-upgrade-row">
+          <div>
+            <b>がんじょうピッケル</b>
+            <small>がんばんが ほれる! <span id="craft-upgrade-cost"></span></small>
+          </div>
+          <button id="craft-upgrade" type="button">つくる</button>
+        </div>
+        <button id="craft-close" type="button">とじる</button>
+      </div>
+    </div>
+
+    <div id="overlay">
+      <div class="card">
+        <h1>🎉 ぜんぶ ほりだした!</h1>
+        <div id="result-list"></div>
+        <button id="btn-again" type="button">もういちど</button>
+      </div>
+    </div>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
