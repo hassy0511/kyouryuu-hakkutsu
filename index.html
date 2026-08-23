@@ -113,6 +113,24 @@
         font-size: 11px;
         opacity: 0.8;
       }
+      .bone-label {
+        position: fixed;
+        transform: translate(-50%, -100%);
+        background: rgba(20, 25, 35, 0.82);
+        color: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 4px 10px;
+        border-radius: 999px;
+        pointer-events: none;
+        white-space: nowrap;
+        z-index: 5;
+      }
+      .bone-label.ready {
+        background: rgba(232, 168, 0, 0.92);
+        color: #3a2a00;
+        animation: bob 0.8s ease-in-out infinite alternate;
+      }
       .site-alert {
         position: fixed;
         transform: translate(-50%, -100%);
@@ -546,6 +564,19 @@
         background: #b5aa95;
         opacity: 0.7;
       }
+      .recipe.teaser {
+        border: 2px dashed #b5a888;
+        background: #f8f2e4;
+        color: #9a8f7a;
+      }
+      .recipe .have-ok {
+        color: #3d8a3d;
+        font-weight: 700;
+      }
+      .recipe .have-ng {
+        color: #b04040;
+        font-weight: 700;
+      }
       #craft-pick-status {
         text-align: center;
         font-size: 14px;
@@ -563,6 +594,7 @@
       <span>💎 <b id="hud-crystal">0</b></span>
       <span>🪵 <b id="hud-wood">0</b></span>
       <span>🪨 <b id="hud-stone">0</b></span>
+      <span>🔩 <b id="hud-iron">0</b></span>
     </div>
     <div id="msg"></div>
     <div id="fps-panel" class="panel">
@@ -588,6 +620,7 @@
         🦴 したを ほりすぎると グラッ<br />
         ゆび2本: カメラ
       </div>
+      <div id="pit-labels"></div>
       <div id="pit-tools">
         <div id="pick-wrap">
           <button id="btn-pick" type="button" class="active">⛏️ Lv1</button>
@@ -696,6 +729,13 @@
             <small>がんばんが ほれる! <span id="craft-upgrade-cost"></span></small>
           </div>
           <button id="craft-upgrade" type="button">つくる</button>
+        </div>
+        <div class="recipe teaser hidden" id="craft-teaser">
+          <div>
+            <b>？？？の ピッケル</b>
+            <small>つぎの しまで レシピが みつかるかも…</small>
+          </div>
+          <button type="button" disabled>？？？</button>
         </div>
         <button id="craft-close" class="closer" type="button">とじる</button>
       </div>

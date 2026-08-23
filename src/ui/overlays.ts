@@ -165,16 +165,32 @@ export class Overlays {
 
   refreshCraft(): void {
     const tool = this.state.tool;
+    const inv = this.state.inv;
     el('craft-pick-status').textContent = tool.broken
       ? 'こわれている…'
       : `⛏️ Lv${tool.level}（あと ${tool.hp} かい）`;
-    el('craft-repair-cost').textContent = `🪵${RECIPES.repair.wood} 🪨${RECIPES.repair.stone}`;
-    el('craft-upgrade-cost').textContent =
-      `🪵${RECIPES.upgrade.wood} 🪨${RECIPES.upgrade.stone} 💎${RECIPES.upgrade.crystal}`;
+    const costHtml = (parts: [string, number, number][]): string =>
+      parts
+        .map(
+          ([emoji, have, need]) =>
+            `${emoji}<span class="${have >= need ? 'have-ok' : 'have-ng'}">${have}/${need}</span>`,
+        )
+        .join(' ');
+    el('craft-repair-cost').innerHTML = costHtml([
+      ['🪵', inv.wood, RECIPES.repair.wood],
+      ['🪨', inv.stone, RECIPES.repair.stone],
+    ]);
+    el('craft-upgrade-cost').innerHTML = costHtml([
+      ['🪵', inv.wood, RECIPES.upgrade.wood],
+      ['🔩', inv.iron, RECIPES.upgrade.iron],
+      ['💎', inv.crystal, RECIPES.upgrade.crystal],
+    ]);
     (el('craft-repair') as HTMLButtonElement).disabled =
       !this.state.canAfford(RECIPES.repair) || (!tool.broken && tool.hp >= PICK_MAX_HP);
+    // レシピは「一段階うえ」まで見せる: Lv1=がんじょうのレシピ / Lv2=？？？の予告だけ
     const upgraded = tool.level >= 2;
     el('craft-upgrade-row').style.display = upgraded ? 'none' : '';
+    el('craft-teaser').classList.toggle('hidden', !upgraded);
     (el('craft-upgrade') as HTMLButtonElement).disabled =
       upgraded || !this.state.canAfford(RECIPES.upgrade);
   }

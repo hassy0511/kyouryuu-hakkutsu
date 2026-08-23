@@ -59,6 +59,7 @@ function updateHud(): void {
   el('hud-crystal').textContent = `${state.inv.crystal}`;
   el('hud-wood').textContent = `${state.inv.wood}`;
   el('hud-stone').textContent = `${state.inv.stone}`;
+  el('hud-iron').textContent = `${state.inv.iron}`;
   const tool = state.tool;
   el('btn-pick').textContent = tool.broken ? '⛏️ こわれた…' : `⛏️ Lv${tool.level}`;
   const bar = el('pick-bar');

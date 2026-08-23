@@ -50,6 +50,7 @@ export interface PitDef {
   rocks: [number, number, number][];
   crystals: [number, number, number][];
   branches: [number, number, number][];
+  ores: [number, number, number][];
   bedrock: [number, number, number][];
 }
 
@@ -59,7 +60,7 @@ export const KNOWLEDGE = speciesJson.knowledge as KnowledgeDef[];
 export const PITS = pitsJson.pits as PitDef[];
 export const RECIPES = pitsJson.recipes as {
   repair: { wood: number; stone: number };
-  upgrade: { wood: number; stone: number; crystal: number };
+  upgrade: { wood: number; iron: number; crystal: number };
 };
 export const PICK_MAX_HP = pitsJson.pickMaxHp as number;
 export const STORY = storyJson;
@@ -85,14 +86,14 @@ export interface PitSave {
   removed: number[];
   hardHits: [number, number][];
   fossils: Record<string, FossilSave>;
-  rocks: [number, number][];
+  rocks: number[][];
   crystalsTaken: number[];
   branchesTaken: number[];
 }
 
 interface SaveData {
   version: number;
-  inv: { wood: number; stone: number; crystal: number };
+  inv: { wood: number; stone: number; crystal: number; iron: number };
   tool: { level: number; hp: number; broken: boolean };
   fossilStars: Record<string, number>;
   restored: Record<string, number>;
@@ -105,7 +106,7 @@ interface SaveData {
 function defaults(): SaveData {
   return {
     version: SAVE_VERSION,
-    inv: { wood: 0, stone: 0, crystal: 0 },
+    inv: { wood: 0, stone: 0, crystal: 0, iron: 0 },
     tool: { level: 1, hp: PICK_MAX_HP, broken: false },
     fossilStars: {},
     restored: {},
@@ -134,7 +135,13 @@ export class GameState {
       if (!raw) return false;
       const parsed = JSON.parse(raw) as SaveData;
       if (parsed.version !== SAVE_VERSION) return false; // 将来ここでマイグレーション
-      this.data = { ...defaults(), ...parsed };
+      const base = defaults();
+      this.data = {
+        ...base,
+        ...parsed,
+        inv: { ...base.inv, ...parsed.inv },
+        tool: { ...base.tool, ...parsed.tool },
+      };
       return true;
     } catch {
       return false;
@@ -208,7 +215,7 @@ export class GameState {
   get tool(): SaveData['tool'] {
     return this.data.tool;
   }
-  addMaterial(kind: 'wood' | 'stone' | 'crystal', amount = 1): void {
+  addMaterial(kind: 'wood' | 'stone' | 'crystal' | 'iron', amount = 1): void {
     this.data.inv[kind] += amount;
     this.changed();
   }
@@ -218,17 +225,19 @@ export class GameState {
     if (this.data.tool.hp === 0) this.data.tool.broken = true;
     this.changed();
   }
-  canAfford(cost: { wood?: number; stone?: number; crystal?: number }): boolean {
+  canAfford(cost: { wood?: number; stone?: number; crystal?: number; iron?: number }): boolean {
     return (
       this.data.inv.wood >= (cost.wood ?? 0) &&
       this.data.inv.stone >= (cost.stone ?? 0) &&
-      this.data.inv.crystal >= (cost.crystal ?? 0)
+      this.data.inv.crystal >= (cost.crystal ?? 0) &&
+      this.data.inv.iron >= (cost.iron ?? 0)
     );
   }
-  spend(cost: { wood?: number; stone?: number; crystal?: number }): void {
+  spend(cost: { wood?: number; stone?: number; crystal?: number; iron?: number }): void {
     this.data.inv.wood -= cost.wood ?? 0;
     this.data.inv.stone -= cost.stone ?? 0;
     this.data.inv.crystal -= cost.crystal ?? 0;
+    this.data.inv.iron -= cost.iron ?? 0;
     this.changed();
   }
   repairPick(): void {

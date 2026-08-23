@@ -166,10 +166,12 @@ interface RockState {
   hp: number;
   mesh: THREE.Mesh;
   flash: number;
+  kind: 'stone' | 'iron';
+  origIndex: number;
 }
 
 interface Pickup {
-  kind: 'wood' | 'stone' | 'crystal' | 'fossil';
+  kind: 'wood' | 'stone' | 'crystal' | 'iron' | 'fossil';
   mesh: THREE.Object3D;
   base: THREE.Vector3;
   phase: number;
@@ -217,6 +219,8 @@ export class PitMode {
   private introT = 0;
   private readonly camFrom = new THREE.Vector3(9, 6, 10);
   private readonly camTo = new THREE.Vector3(0, 8.6, 4.6);
+
+  private readonly labels = new Map<FossilPiece, HTMLElement>();
 
   constructor(
     private readonly renderer: THREE.WebGLRenderer,
@@ -308,17 +312,29 @@ export class PitMode {
       roughness: 1,
       flatShading: true,
     });
-    for (const [gx, gz, l] of def.rocks) {
+    const oreMat = new THREE.MeshStandardMaterial({
+      color: 0x454b57,
+      roughness: 0.55,
+      metalness: 0.35,
+      flatShading: true,
+    });
+    let origIndex = 0;
+    const addBoulder = (gx: number, gz: number, l: number, kind: 'stone' | 'iron'): void => {
       const i = idx(gx, gz, l);
-      const mesh = new THREE.Mesh(new THREE.IcosahedronGeometry(CELL * 0.62, 0), rockMat.clone());
+      const mesh = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(CELL * 0.62, 0),
+        (kind === 'iron' ? oreMat : rockMat).clone(),
+      );
       mesh.position.copy(cellCenter(i));
       mesh.castShadow = true;
       mesh.visible = false;
       this.root.add(mesh);
-      this.rocks.set(i, { hp: ROCK_HP, mesh, flash: 0 });
+      this.rocks.set(i, { hp: ROCK_HP, mesh, flash: 0, kind, origIndex: origIndex++ });
       this.alive[i] = false;
       this.setSoilMatrix(i, 0);
-    }
+    };
+    for (const [gx, gz, l] of def.rocks) addBoulder(gx, gz, l, 'stone');
+    for (const [gx, gz, l] of def.ores) addBoulder(gx, gz, l, 'iron');
     for (const [gx, gz, l] of def.crystals) {
       const i = idx(gx, gz, l);
       const mesh = new THREE.Mesh(
@@ -341,6 +357,17 @@ export class PitMode {
     }
 
     this.restoreFrom(state.pitSave(def.id));
+
+    const labelHost = document.getElementById('pit-labels');
+    if (labelHost) {
+      for (const fossil of this.fossils) {
+        const label = document.createElement('div');
+        label.className = 'bone-label';
+        label.style.display = 'none';
+        labelHost.appendChild(label);
+        this.labels.set(fossil, label);
+      }
+    }
   }
 
   private buildSurroundings(): void {
@@ -434,10 +461,14 @@ export class PitMode {
     }
     for (const i of save.branchesTaken) this.branchSet.delete(i);
     // 岩: 現在位置とHPを反映
-    const rockStates = [...this.rocks.values()];
+    const rockStates = [...this.rocks.values()].sort((a, b) => a.origIndex - b.origIndex);
     this.rocks.clear();
-    save.rocks.forEach(([cell, hp], n) => {
-      const rock = rockStates[n];
+    save.rocks.forEach((entry, n) => {
+      const [a, b, c] = entry;
+      const legacy = entry.length === 2;
+      const rock = rockStates[legacy ? n : a!];
+      const cell = legacy ? a! : b!;
+      const hp = legacy ? b! : c!;
       if (!rock) return;
       rock.hp = hp;
       rock.mesh.position.copy(cellCenter(cell));
@@ -513,13 +544,15 @@ export class PitMode {
       removed,
       hardHits,
       fossils,
-      rocks: [...this.rocks.entries()].map(([cell, rock]) => [cell, rock.hp]),
+      rocks: [...this.rocks.entries()].map(([cell, rock]) => [rock.origIndex, cell, rock.hp]),
       crystalsTaken: [...this.crystalsTaken],
       branchesTaken: [...this.branchesTaken],
     };
   }
 
   dispose(): void {
+    for (const label of this.labels.values()) label.remove();
+    this.labels.clear();
     this.controls.dispose();
     this.scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
@@ -717,8 +750,9 @@ export class PitMode {
       if (rock.hp === 0) {
         rock.mesh.visible = false;
         this.particles.burst(cellCenter(i), new THREE.Color(0x7f7668), 10);
-        this.spawnPickup('stone', cellCenter(i), 0.16);
-        this.spawnPickup('stone', cellCenter(i), -0.16);
+        const drop = rock.kind === 'iron' ? 'iron' : 'stone';
+        this.spawnPickup(drop, cellCenter(i), 0.16);
+        this.spawnPickup(drop, cellCenter(i), -0.16);
         this.afterRemoval(i);
       }
       return { damaged: false };
@@ -848,6 +882,16 @@ export class PitMode {
         new THREE.MeshStandardMaterial({ color: 0x9c7040, roughness: 1 }),
       );
       mesh.rotation.z = 1.2;
+    } else if (kind === 'iron') {
+      mesh = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(0.14, 0),
+        new THREE.MeshStandardMaterial({
+          color: 0x454b57,
+          roughness: 0.5,
+          metalness: 0.4,
+          flatShading: true,
+        }),
+      );
     } else {
       mesh = new THREE.Mesh(
         new THREE.IcosahedronGeometry(0.13, 0),
@@ -874,6 +918,10 @@ export class PitMode {
       this.state.addMaterial('stone');
       this.sfx.hint();
       this.cb.showMsg('🪨 いしを ひろった!');
+    } else if (p.kind === 'iron') {
+      this.state.addMaterial('iron');
+      this.sfx.clank();
+      this.cb.showMsg('🔩 くろがねいしを てにいれた!');
     } else if (p.kind === 'crystal') {
       this.state.addMaterial('crystal');
       const home = this.crystalHome.get(p.mesh as THREE.Mesh);
@@ -1158,6 +1206,42 @@ export class PitMode {
       );
     } else {
       this.root.position.set(0, 0, 0);
+    }
+
+    // 骨名ラベル: 露出=？？？ / 1マスみがくと名前判明 / 完了=タップ
+    for (const [fossil, label] of this.labels) {
+      if (fossil.collected) {
+        label.style.display = 'none';
+        continue;
+      }
+      const cells = [...fossil.cells.values()];
+      const revealed = cells.some((c) => c.status !== 'hidden');
+      if (!revealed) {
+        label.style.display = 'none';
+        continue;
+      }
+      const cleanCount = cells.filter((c) => c.status === 'clean').length;
+      if (fossil.ready) {
+        label.textContent = `✨ ${this.fossilName(fossil)}!`;
+        label.classList.add('ready');
+      } else if (cleanCount > 0) {
+        label.textContent = this.fossilName(fossil);
+        label.classList.remove('ready');
+      } else {
+        label.textContent = '？？？のホネ';
+        label.classList.remove('ready');
+      }
+      const p = fossil.group.position
+        .clone()
+        .add(new THREE.Vector3(0, 0.8, 0))
+        .project(this.camera);
+      if (p.z > 1) {
+        label.style.display = 'none';
+        continue;
+      }
+      label.style.display = 'block';
+      label.style.left = `${((p.x + 1) / 2) * window.innerWidth}px`;
+      label.style.top = `${((1 - p.y) / 2) * window.innerHeight}px`;
     }
 
     this.controls.update();
