@@ -160,6 +160,7 @@ const pick = { level: 1, hp: PICK_MAX_HP, broken: false };
 let collectedBones = 0;
 let collectedAmmonites = 0;
 let finished = false;
+let firstPickupMsgShown = false;
 
 let msgTimer: ReturnType<typeof setTimeout> | undefined;
 function showMsg(text: string): void {
@@ -260,6 +261,8 @@ class FossilPiece {
   readonly group = new THREE.Group();
   damage = 0;
   collected = false;
+  ready = false; // みがき完了、タップで取り出せる
+  readyBaseY = 0;
   supportStage = 0;
   wobbleT = 0;
   private readonly material: THREE.MeshStandardMaterial;
@@ -370,6 +373,16 @@ interface RockState {
   mesh: THREE.Mesh;
 }
 
+// 出土品。タップで「ひろう」まで世界に浮いている
+interface Pickup {
+  kind: 'wood' | 'stone' | 'crystal' | 'fossil';
+  mesh: THREE.Object3D;
+  base: THREE.Vector3;
+  phase: number;
+  collecting: number; // -1=待機 / 0..1=取得アニメ進行
+  fossil?: FossilPiece;
+}
+
 class Pit {
   readonly root = new THREE.Group();
   readonly soil: THREE.InstancedMesh;
@@ -382,6 +395,7 @@ class Pit {
   private readonly cellOwner = new Map<number, FossilPiece>();
   readonly rocks = new Map<number, RockState>();
   readonly crystals = new Map<number, THREE.Mesh>();
+  readonly pickups: Pickup[] = [];
   private lastActionAt = 0;
   private firstRevealShown = false;
   private lastBedrockMsgAt = 0;
@@ -489,6 +503,143 @@ class Pit {
     }
   }
 
+  spawnPickup(kind: Pickup['kind'], pos: THREE.Vector3, offset = 0): void {
+    let mesh: THREE.Object3D;
+    if (kind === 'wood') {
+      mesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.07, 0.34, 6),
+        new THREE.MeshStandardMaterial({ color: 0x9c7040, roughness: 1 }),
+      );
+      mesh.rotation.z = 1.2;
+    } else {
+      mesh = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(0.13, 0),
+        new THREE.MeshStandardMaterial({ color: 0x8f8678, roughness: 1, flatShading: true }),
+      );
+    }
+    mesh.position.copy(pos);
+    this.root.add(mesh);
+    this.pickups.push({
+      kind,
+      mesh,
+      base: pos.clone().add(new THREE.Vector3(offset, 0.1, -offset * 0.5)),
+      phase: Math.abs(offset) * 7,
+      collecting: -1,
+    });
+    if (!firstPickupMsgShown) {
+      firstPickupMsgShown = true;
+      showMsg('✨ なにか でてきた! タップして ひろおう');
+    }
+  }
+
+  private completePickup(p: Pickup): void {
+    if (p.kind === 'wood') {
+      inv.wood++;
+      sfx.hint();
+      showMsg('🪵 きのえだを ひろった!');
+    } else if (p.kind === 'stone') {
+      inv.stone++;
+      sfx.hint();
+      showMsg('🪨 いしを ひろった!');
+    } else if (p.kind === 'crystal') {
+      inv.crystal++;
+      sfx.shine();
+      showMsg('💎 すいしょうを てにいれた!');
+    } else if (p.fossil) {
+      const fossil = p.fossil;
+      fossil.collected = true;
+      if (fossil.def.kind === 'ammonite') collectedAmmonites++;
+      else collectedBones++;
+      sfx.fanfare();
+      showMsg(
+        `${fossil.def.kind === 'ammonite' ? '🐚' : '🦴'} ${fossil.def.nameJa}を てにいれた! ${'★'.repeat(fossil.stars())}${'☆'.repeat(3 - fossil.stars())}`,
+      );
+      this.updateSupports();
+      checkAllDone();
+    }
+    updateHud();
+  }
+
+  // タップ位置に出土品/取り出せる化石があれば取得アニメを開始する
+  tryPickup(clientX: number, clientY: number): boolean {
+    const rect = renderer.domElement.getBoundingClientRect();
+    const ndc = new THREE.Vector2(
+      ((clientX - rect.left) / rect.width) * 2 - 1,
+      -((clientY - rect.top) / rect.height) * 2 + 1,
+    );
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(ndc, camera);
+    const idleItems = this.pickups.filter((p) => p.collecting < 0);
+    const meshes = idleItems.map((p) => p.mesh);
+    const readyFossils = this.fossils.filter((f) => f.ready && !f.collected);
+    const groups = readyFossils.map((f) => f.group);
+    const hits = raycaster.intersectObjects([...meshes, ...groups], true);
+    const hit = hits[0];
+    if (!hit) return false;
+    for (const p of idleItems) {
+      let obj: THREE.Object3D | null = hit.object;
+      while (obj) {
+        if (obj === p.mesh) {
+          p.collecting = 0;
+          sfx.rub();
+          return true;
+        }
+        obj = obj.parent;
+      }
+    }
+    for (const f of readyFossils) {
+      let obj: THREE.Object3D | null = hit.object;
+      while (obj) {
+        if (obj === f.group) {
+          this.pickups.push({
+            kind: 'fossil',
+            mesh: f.group,
+            base: f.group.position.clone(),
+            phase: 0,
+            collecting: 0,
+            fossil: f,
+          });
+          f.ready = false;
+          sfx.rub();
+          return true;
+        }
+        obj = obj.parent;
+      }
+    }
+    return false;
+  }
+
+  updatePickups(dt: number, time: number): void {
+    for (let n = this.pickups.length - 1; n >= 0; n--) {
+      const p = this.pickups[n]!;
+      if (p.collecting < 0) {
+        p.mesh.position.set(
+          p.base.x,
+          p.base.y + 0.1 + Math.sin(time * 3 + p.phase) * 0.06,
+          p.base.z,
+        );
+        p.mesh.rotation.y += dt * 1.5;
+      } else {
+        p.collecting = Math.min(1, p.collecting + dt / 0.55);
+        const k = p.collecting;
+        p.mesh.position.set(p.base.x, p.base.y + k * 1.6, p.base.z);
+        p.mesh.rotation.y += dt * 9;
+        p.mesh.scale.setScalar(Math.max(0.001, 1 - k * k));
+        if (p.collecting >= 1) {
+          particles.burst(p.mesh.position.clone(), new THREE.Color(0xfff2b8), 6);
+          this.root.remove(p.mesh);
+          this.pickups.splice(n, 1);
+          this.completePickup(p);
+        }
+      }
+    }
+    for (const f of this.fossils) {
+      if (f.ready && !f.collected) {
+        f.group.position.y = f.readyBaseY + Math.sin(time * 3) * 0.05;
+      }
+    }
+  }
+
   private afterRemoval(removed: number): void {
     const { gx, gz, layer } = coords(removed);
     for (const [nx, nz, nl] of [
@@ -505,7 +656,22 @@ class Pit {
       const rock = this.rocks.get(n);
       if (rock) rock.mesh.visible = true;
       const crystal = this.crystals.get(n);
-      if (crystal) crystal.visible = true;
+      if (crystal) {
+        // 露出した水晶はころんと転がり出て、拾えるようになる
+        this.crystals.delete(n);
+        crystal.visible = true;
+        this.pickups.push({
+          kind: 'crystal',
+          mesh: crystal,
+          base: crystal.position.clone(),
+          phase: n % 7,
+          collecting: -1,
+        });
+        if (!firstPickupMsgShown) {
+          firstPickupMsgShown = true;
+          showMsg('✨ なにか でてきた! タップして ひろおう');
+        }
+      }
     }
     this.updateSupports();
   }
@@ -556,10 +722,8 @@ class Pit {
     particles.burst(cellCenter(i), this.baseColors[i]!, 8);
     if (this.branchSet.has(i)) {
       this.branchSet.delete(i);
-      inv.wood++;
       sfx.hint();
-      showMsg('🪵 じょうぶな きのえだを みつけた!');
-      updateHud();
+      this.spawnPickup('wood', cellCenter(i));
     }
     this.afterRemoval(i);
   }
@@ -583,9 +747,8 @@ class Pit {
       if (rock.hp === 0) {
         rock.mesh.visible = false;
         particles.burst(cellCenter(i), new THREE.Color(0x7f7668), 10);
-        inv.stone += 2;
-        showMsg('🪨 いわを くだいて いし×2 ゲット!');
-        updateHud();
+        this.spawnPickup('stone', cellCenter(i), 0.16);
+        this.spawnPickup('stone', cellCenter(i), -0.16);
         this.afterRemoval(i);
       }
       return { damaged: false };
@@ -672,19 +835,13 @@ class Pit {
   }
 
   private checkFossil(fossil: FossilPiece): void {
-    if (fossil.collected) return;
+    if (fossil.collected || fossil.ready) return;
     for (const cell of fossil.cells.values()) if (cell.status !== 'clean') return;
-    fossil.collected = true;
+    fossil.ready = true;
+    fossil.readyBaseY = fossil.group.position.y;
     fossil.celebrate();
-    sfx.fanfare();
-    if (fossil.def.kind === 'ammonite') collectedAmmonites++;
-    else collectedBones++;
-    showMsg(
-      `${fossil.def.kind === 'ammonite' ? '🐚' : '🦴'} ${fossil.def.nameJa}を ほりだした! ${'★'.repeat(fossil.stars())}${'☆'.repeat(3 - fossil.stars())}`,
-    );
-    updateHud();
-    this.updateSupports();
-    checkAllDone();
+    sfx.shine();
+    showMsg(`✨ ${fossil.def.nameJa}が とりだせる! タップしよう`);
   }
 
   knock(target: number): void {
@@ -704,20 +861,6 @@ class Pit {
       sfx.knockEmpty();
       showMsg('👂 コンコン… なにも いなさそう');
     }
-  }
-
-  collectCrystal(i: number): boolean {
-    const mesh = this.crystals.get(i);
-    if (!mesh || !mesh.visible) return false;
-    this.crystals.delete(i);
-    mesh.visible = false;
-    inv.crystal++;
-    sfx.shine();
-    particles.burst(cellCenter(i), new THREE.Color(0xd8b8ff), 10);
-    showMsg('💎 すいしょうを みつけた!');
-    updateHud();
-    this.afterRemoval(i);
-    return true;
   }
 
   raycastCell(clientX: number, clientY: number): number | null {
@@ -742,12 +885,6 @@ class Pit {
       if (rock.hp > 0 && rock.mesh.visible) {
         targets.push(rock.mesh);
         lookup.set(rock.mesh, i);
-      }
-    }
-    for (const [i, mesh] of this.crystals) {
-      if (mesh.visible) {
-        targets.push(mesh);
-        lookup.set(mesh, i);
       }
     }
     const hits = raycaster.intersectObjects(targets, false);
@@ -820,10 +957,11 @@ function setTool(next: Tool): void {
 function tapAction(clientX: number, clientY: number): void {
   if (finished) return;
   const pit = activePit();
+  // 出土品・取り出せる化石はどの道具でもタップで拾える
+  if (pit.tryPickup(clientX, clientY)) return;
   const target = pit.raycastCell(clientX, clientY);
   if (target === null) return;
 
-  if (pit.collectCrystal(target)) return;
   if (tool === 'pick') {
     if (pick.broken) {
       showMsg('💔 ピッケルが こわれてる… 🛠️つくるで なおそう');
@@ -952,8 +1090,23 @@ window.addEventListener('resize', () => {
   polishCell: (gx: number, gz: number, layer: number, amount: number) =>
     activePit().polish(idx(gx, gz, layer), amount),
   switchPit: (i: number) => switchPit(i),
-  collectCrystalAt: (gx: number, gz: number, layer: number) =>
-    activePit().collectCrystal(idx(gx, gz, layer)),
+  collectAllPickups: () => {
+    const pit = activePit();
+    for (const f of pit.fossils) {
+      if (f.ready && !f.collected) {
+        pit.pickups.push({
+          kind: 'fossil',
+          mesh: f.group,
+          base: f.group.position.clone(),
+          phase: 0,
+          collecting: 0.99,
+          fossil: f,
+        });
+        f.ready = false;
+      }
+    }
+    for (const p of pit.pickups) if (p.collecting < 0) p.collecting = 0.99;
+  },
   wear: (n: number) => wearPick(n),
   craft: (what: 'repair' | 'upgrade') => (what === 'repair' ? craftRepair() : craftUpgrade()),
   state: () => ({
@@ -1000,6 +1153,7 @@ renderer.setAnimationLoop(() => {
   }
 
   activePit().updateFrame(dt, tool, clock.elapsedTime);
+  activePit().updatePickups(dt, clock.elapsedTime);
 
   if (shake > 0) {
     shake = Math.max(0, shake - dt * 3.2);
