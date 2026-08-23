@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Sfx } from './core/audio';
-import { GameState, PICK_MAX_HP, STORY, speciesById, type PitDef } from './core/state';
+import { GameState, PICK_MAX_HP, RECIPES, STORY, speciesById, type PitDef } from './core/state';
 import { FpsMeter } from './ui/fps';
 import { FieldMode } from './game/field';
 import { PitMode } from './game/pit';
@@ -18,9 +18,22 @@ const TAP_DEFER_MS = 70;
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 el('app').appendChild(renderer.domElement);
+
+// iPad Safari はツールバーの出入りで「100%」と実表示域がズレるため、
+// #app(全画面固定)の実サイズからキャンバスを合わせる
+function fitViewport(): void {
+  const w = el('app').clientWidth || window.innerWidth;
+  const h = el('app').clientHeight || window.innerHeight;
+  renderer.setSize(w, h);
+  for (const camera of [field?.camera, pit?.camera]) {
+    if (camera) {
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+  }
+}
 
 const sfx = new Sfx();
 const state = new GameState();
@@ -61,7 +74,7 @@ function updateHud(): void {
   el('hud-stone').textContent = `${state.inv.stone}`;
   el('hud-iron').textContent = `${state.inv.iron}`;
   const tool = state.tool;
-  el('btn-pick').textContent = tool.broken ? '⛏️ こわれた…' : `⛏️ Lv${tool.level}`;
+  el('btn-pick').textContent = tool.broken ? '✋ てで ほる' : `⛏️ Lv${tool.level}`;
   const bar = el('pick-bar');
   bar.style.width = `${(tool.hp / PICK_MAX_HP) * 100}%`;
   bar.style.background = tool.broken
@@ -92,6 +105,18 @@ const field = new FieldMode(renderer, sfx, state, {
     sfx.hint();
     if (state.allRestored() && !state.flag('ceremonyDone')) {
       queueMsgs(STORY.hakase.preCeremony);
+      return;
+    }
+    // 詰み防止: ピッケルが こわれて 修理素材も 足りないときは 分けてくれる
+    if (state.tool.broken && !state.canAfford(RECIPES.repair)) {
+      const giveWood = Math.max(0, RECIPES.repair.wood - state.inv.wood);
+      const giveStone = Math.max(0, RECIPES.repair.stone - state.inv.stone);
+      if (giveWood > 0) state.addMaterial('wood', giveWood);
+      if (giveStone > 0) state.addMaterial('stone', giveStone);
+      queueMsgs([
+        '🎩 はかせ「よわったのう… わしの よびの ざいりょうを わけてやろう」',
+        `🎁 ${giveWood > 0 ? `🪵×${giveWood} ` : ''}${giveStone > 0 ? `🪨×${giveStone}` : ''}を もらった! テントで なおそう`,
+      ]);
       return;
     }
     showMsg(`🎩 はかせ「${state.nextHint(STORY.hakase.hints)}」`);
@@ -148,6 +173,7 @@ function enterPit(def: PitDef): void {
   });
   el('pit-ui').classList.remove('hidden');
   setTool('pick');
+  fitViewport();
 }
 
 function exitPit(): void {
@@ -250,13 +276,9 @@ el('btn-notebook').addEventListener('click', () => overlays.openNotebook());
 
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 document.addEventListener('dblclick', (e) => e.preventDefault());
-window.addEventListener('resize', () => {
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  for (const camera of [field.camera, pit?.camera].filter(Boolean) as THREE.PerspectiveCamera[]) {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-  }
-});
+window.addEventListener('resize', fitViewport);
+window.visualViewport?.addEventListener('resize', fitViewport);
+window.addEventListener('orientationchange', () => setTimeout(fitViewport, 150));
 
 // ---- タイトル・オープニング ---------------------------------------------------
 
@@ -329,6 +351,7 @@ const meter = location.search.includes('debug')
   pitCellScreen: (gx: number, gz: number, l: number) => pit?.cellScreen(gx, gz, l),
   pitDump: () => pit?.debugDump(),
   exitPit: () => exitPit(),
+  wear: (n: number) => state.wearPick(n),
   openMuseum: () => overlays.openMuseum(),
   openNotebook: () => overlays.openNotebook(),
   debugFinish: () => {
@@ -364,6 +387,7 @@ if ('serviceWorker' in navigator) {
 
 const clock = new THREE.Clock();
 updateHud();
+fitViewport();
 
 renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.05);

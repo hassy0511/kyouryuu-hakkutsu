@@ -557,8 +557,8 @@ export class FieldMode {
       }
       alert.style.display = 'block';
       alert.textContent = state === 'hidden' ? '❗' : '⛏️';
-      alert.style.left = `${((p.x + 1) / 2) * window.innerWidth}px`;
-      alert.style.top = `${((1 - p.y) / 2) * window.innerHeight}px`;
+      alert.style.left = `${((p.x + 1) / 2) * this.renderer.domElement.clientWidth}px`;
+      alert.style.top = `${((1 - p.y) / 2) * this.renderer.domElement.clientHeight}px`;
     }
   }
 

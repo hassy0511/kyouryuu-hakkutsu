@@ -215,6 +215,8 @@ export class PitMode {
   private readonly bedrockPulse = new Map<number, number>();
   private lastActionAt = 0;
   private lastBedrockMsgAt = 0;
+  private lastBareMsgAt = 0;
+  private readonly bareDents = new Set<number>();
   private readonly m4 = new THREE.Matrix4();
   private introT = 0;
   private readonly camFrom = new THREE.Vector3(9, 6, 10);
@@ -758,6 +760,25 @@ export class PitMode {
       return { damaged: false };
     }
     if (this.alive[i]) {
+      const bare = this.state.tool.broken;
+      if (bare && (this.bedrockSet.has(i) || coords(i).layer >= HARD_LAYER_FROM)) {
+        this.sfx.knockEmpty();
+        const now = performance.now();
+        if (now - this.lastBareMsgAt > 1200) {
+          this.lastBareMsgAt = now;
+          this.cb.showMsg('✋ かたくて てでは ほれない… ピッケルを なおそう');
+        }
+        return { damaged: false };
+      }
+      if (bare && !this.bareDents.has(i)) {
+        // 素手は おそい: やわらかい土も 2回
+        this.bareDents.add(i);
+        this.sfx.rub();
+        const c = this.baseColors[i]!.clone().offsetHSL(0, 0, -0.06);
+        this.soil.setColorAt(i, c);
+        if (this.soil.instanceColor) this.soil.instanceColor.needsUpdate = true;
+        return { damaged: false };
+      }
       if (this.bedrockSet.has(i) && this.state.tool.level < 2) {
         this.sfx.clank();
         this.bedrockPulse.set(i, 1);
@@ -788,7 +809,9 @@ export class PitMode {
     const { gx, gz, layer } = coords(target);
 
     let area: [number, number][];
-    if (layer <= 1) {
+    if (this.state.tool.broken) {
+      area = [[gx, gz]];
+    } else if (layer <= 1) {
       area = [];
       for (let dx = -1; dx <= 1; dx++)
         for (let dz = -1; dz <= 1; dz++) area.push([gx + dx, gz + dz]);
@@ -814,7 +837,12 @@ export class PitMode {
       if (damaged >= DAMAGE_CAP_PER_ACTION) break;
     }
     this.sfx.pick();
+    const wasBroken = this.state.tool.broken;
     this.state.wearPick();
+    if (!wasBroken && this.state.tool.broken) {
+      this.sfx.fail();
+      this.cb.showMsg('💔 ピッケルが こわれた! ✋でも ほれるが、⛺で なおすと はやいぞ');
+    }
     if (damaged > 0) {
       this.sfx.crack();
       this.shake = 1;
@@ -1066,9 +1094,9 @@ export class PitMode {
     const target = this.raycastCell(clientX, clientY);
     if (target === null) return;
     if (this.tool === 'pick') {
-      if (this.state.tool.broken) {
-        this.cb.showMsg('💔 ピッケルが こわれてる… ⛺テントで なおそう');
-        return;
+      if (this.state.tool.broken && !this.state.data.flags['bareHandsMsg']) {
+        this.state.setFlag('bareHandsMsg');
+        this.cb.showMsg('✋ こわれても てで ゆっくり ほれるぞ(かたい層は むり)');
       }
       this.swingPick(target);
     } else if (this.tool === 'ear') {
@@ -1108,7 +1136,9 @@ export class PitMode {
 
   cellScreen(gx: number, gz: number, layer: number): { x: number; y: number } {
     const p = cellCenter(idx(gx, gz, layer)).project(this.camera);
-    return { x: ((p.x + 1) / 2) * window.innerWidth, y: ((1 - p.y) / 2) * window.innerHeight };
+    const w = this.renderer.domElement.clientWidth;
+    const h = this.renderer.domElement.clientHeight;
+    return { x: ((p.x + 1) / 2) * w, y: ((1 - p.y) / 2) * h };
   }
   debugPick(gx: number, gz: number, layer: number): void {
     this.swingPick(idx(gx, gz, layer));
@@ -1240,8 +1270,8 @@ export class PitMode {
         continue;
       }
       label.style.display = 'block';
-      label.style.left = `${((p.x + 1) / 2) * window.innerWidth}px`;
-      label.style.top = `${((1 - p.y) / 2) * window.innerHeight}px`;
+      label.style.left = `${((p.x + 1) / 2) * this.renderer.domElement.clientWidth}px`;
+      label.style.top = `${((1 - p.y) / 2) * this.renderer.domElement.clientHeight}px`;
     }
 
     this.controls.update();
