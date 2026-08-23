@@ -1,0 +1,269 @@
+{
+  "pits": [
+    {
+      "id": "p1",
+      "nameJa": "すなはまの げんば",
+      "pos": [6, 15],
+      "clue": "bone",
+      "discoverText": "すなはまに ホネが つきでてる! ここに なにか ねむってる!",
+      "fossils": [
+        {
+          "speciesId": "spinosaurus",
+          "boneId": "spine",
+          "kind": "long",
+          "layer": 2,
+          "cells": [
+            [2, 3],
+            [3, 3],
+            [4, 3],
+            [5, 3]
+          ]
+        },
+        {
+          "speciesId": "spinosaurus",
+          "boneId": "tail",
+          "kind": "long",
+          "layer": 3,
+          "cells": [
+            [5, 4],
+            [5, 5],
+            [5, 6]
+          ]
+        }
+      ],
+      "rocks": [[1, 5, 1]],
+      "crystals": [[6, 1, 2]],
+      "branches": [
+        [2, 6, 0],
+        [6, 5, 0],
+        [4, 1, 1]
+      ],
+      "bedrock": []
+    },
+    {
+      "id": "p2",
+      "nameJa": "ひびわれの げんば",
+      "pos": [-13, -2],
+      "clue": "crack",
+      "discoverText": "じめんに おおきな ひび! この したに なにか ねむってる!",
+      "fossils": [
+        {
+          "speciesId": "triceratops",
+          "boneId": "horns",
+          "kind": "blob",
+          "layer": 3,
+          "cells": [
+            [2, 2],
+            [3, 2],
+            [2, 3],
+            [3, 3]
+          ]
+        },
+        {
+          "speciesId": "triceratops",
+          "boneId": "frill",
+          "kind": "long",
+          "layer": 2,
+          "cells": [
+            [5, 4],
+            [5, 5],
+            [5, 6]
+          ]
+        }
+      ],
+      "rocks": [
+        [2, 2, 2],
+        [6, 2, 1]
+      ],
+      "crystals": [[0, 6, 3]],
+      "branches": [
+        [6, 6, 0],
+        [1, 1, 0]
+      ],
+      "bedrock": []
+    },
+    {
+      "id": "p3",
+      "nameJa": "がけしたの げんば",
+      "pos": [13, -11],
+      "clue": "rubble",
+      "discoverText": "がけから くずれた いわの なか、ホネの かけら! なにか ねむってる!",
+      "fossils": [
+        {
+          "speciesId": "tyrannosaurus",
+          "boneId": "jaw",
+          "kind": "blob",
+          "layer": 4,
+          "cells": [
+            [4, 3],
+            [5, 3],
+            [4, 4],
+            [5, 4]
+          ]
+        },
+        {
+          "speciesId": "tyrannosaurus",
+          "boneId": "spine",
+          "kind": "long",
+          "layer": 2,
+          "cells": [
+            [1, 5],
+            [2, 5],
+            [3, 5]
+          ]
+        }
+      ],
+      "rocks": [
+        [3, 1, 1],
+        [6, 6, 2]
+      ],
+      "crystals": [[1, 1, 2]],
+      "branches": [[6, 3, 0]],
+      "bedrock": [
+        [4, 3, 3],
+        [5, 3, 3],
+        [4, 4, 3],
+        [5, 4, 3]
+      ]
+    },
+    {
+      "id": "p4",
+      "nameJa": "うみべの がんばん げんば",
+      "pos": [-8, 9],
+      "clue": "shell",
+      "discoverText": "うずまきの かたちの いし…? これは かせきだ! ここに なにか ねむってる!",
+      "fossils": [
+        {
+          "speciesId": "spinosaurus",
+          "boneId": "skull",
+          "kind": "blob",
+          "layer": 3,
+          "cells": [
+            [5, 2],
+            [6, 2],
+            [5, 3],
+            [6, 3]
+          ]
+        },
+        {
+          "speciesId": "spinosaurus",
+          "boneId": "sail",
+          "kind": "long",
+          "layer": 2,
+          "cells": [
+            [1, 4],
+            [2, 4],
+            [3, 4]
+          ]
+        },
+        {
+          "speciesId": "ammonite",
+          "boneId": "shell",
+          "kind": "ammonite",
+          "layer": 1,
+          "cells": [
+            [6, 6],
+            [7, 6],
+            [6, 7],
+            [7, 7]
+          ]
+        }
+      ],
+      "rocks": [[3, 1, 2]],
+      "crystals": [[0, 0, 1]],
+      "branches": [
+        [4, 6, 0],
+        [1, 7, 0]
+      ],
+      "bedrock": []
+    },
+    {
+      "id": "p5",
+      "nameJa": "おかのうえの げんば",
+      "pos": [9, 4],
+      "clue": "crack",
+      "discoverText": "ひびの したから かたい てざわり…! ここに なにか ねむってる!",
+      "fossils": [
+        {
+          "speciesId": "triceratops",
+          "boneId": "spine",
+          "kind": "long",
+          "layer": 3,
+          "cells": [
+            [2, 4],
+            [3, 4],
+            [4, 4],
+            [5, 4]
+          ]
+        },
+        {
+          "speciesId": "triceratops",
+          "boneId": "legs",
+          "kind": "long",
+          "layer": 4,
+          "cells": [
+            [3, 1],
+            [3, 2],
+            [3, 3]
+          ]
+        }
+      ],
+      "rocks": [
+        [5, 6, 1],
+        [1, 2, 3]
+      ],
+      "crystals": [],
+      "branches": [
+        [6, 0, 0],
+        [0, 5, 0]
+      ],
+      "bedrock": []
+    },
+    {
+      "id": "p6",
+      "nameJa": "おくちの ふかい げんば",
+      "pos": [-4, -13],
+      "clue": "rubble",
+      "discoverText": "おおきな ホネの かけらが ごろごろ…! おおものが ねむってる!",
+      "fossils": [
+        {
+          "speciesId": "tyrannosaurus",
+          "boneId": "legs",
+          "kind": "long",
+          "layer": 5,
+          "cells": [
+            [2, 3],
+            [3, 3],
+            [4, 3]
+          ]
+        },
+        {
+          "speciesId": "tyrannosaurus",
+          "boneId": "tail",
+          "kind": "long",
+          "layer": 4,
+          "cells": [
+            [6, 4],
+            [6, 5],
+            [6, 6]
+          ]
+        }
+      ],
+      "rocks": [
+        [4, 6, 2],
+        [1, 4, 1]
+      ],
+      "crystals": [[7, 1, 3]],
+      "branches": [[3, 7, 0]],
+      "bedrock": [
+        [2, 3, 4],
+        [3, 3, 4]
+      ]
+    }
+  ],
+  "recipes": {
+    "repair": { "wood": 1, "stone": 2 },
+    "upgrade": { "wood": 2, "stone": 4, "crystal": 1 }
+  },
+  "pickMaxHp": 140
+}

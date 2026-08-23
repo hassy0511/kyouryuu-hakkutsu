@@ -2,85 +2,698 @@
 <html lang="ja">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>きょうりゅう はっくつ博物館（開発ビルド）</title>
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>ほねほり調査隊</title>
     <link
       rel="icon"
-      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦕</text></svg>"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🦴</text></svg>"
     />
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
       body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
         font-family: 'Hiragino Maru Gothic ProN', 'BIZ UDGothic', system-ui, sans-serif;
-        max-width: 640px;
-        margin: 0 auto;
-        padding: 32px 20px;
-        background: #fdf6e3;
-        color: #3a3226;
-        line-height: 1.8;
+        overscroll-behavior: none;
+        background: #9ed4ef;
       }
-      h1 {
-        font-size: 24px;
-      }
-      a.card {
+      #app,
+      #app canvas {
+        width: 100%;
+        height: 100%;
         display: block;
-        background: #fff;
-        border: 2px solid #d9c9a3;
-        border-radius: 14px;
-        padding: 18px 20px;
-        margin: 14px 0;
-        text-decoration: none;
-        color: inherit;
+        touch-action: none;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .panel {
+        position: fixed;
+        background: rgba(20, 25, 35, 0.72);
+        color: #fff;
+        border-radius: 12px;
+        padding: 10px 14px;
+        line-height: 1.5;
+        pointer-events: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      button {
+        border: 3px solid transparent;
+        border-radius: 16px;
+        background: rgba(20, 25, 35, 0.78);
+        color: #fff;
+        font-weight: 700;
+        font-family: inherit;
+        font-size: 16px;
+        -webkit-tap-highlight-color: transparent;
+      }
+      button.active {
+        border-color: #ffd75e;
+        background: rgba(70, 110, 180, 0.9);
+      }
+      .primary {
+        background: #4a90d9;
+        border: none;
+      }
+
+      /* ---- HUD ---- */
+      #hud {
+        top: max(10px, env(safe-area-inset-top));
+        left: 10px;
+        font-size: 13px;
+        display: flex;
+        gap: 12px;
+      }
+      #hud b {
+        color: #ffd75e;
+      }
+      #msg {
+        position: fixed;
+        top: 15%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(20, 25, 35, 0.85);
+        color: #fff;
         font-size: 18px;
         font-weight: 700;
+        padding: 12px 22px;
+        border-radius: 999px;
+        opacity: 0;
+        transition: opacity 0.25s;
+        pointer-events: none;
+        white-space: nowrap;
+        max-width: 96vw;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        z-index: 25;
       }
-      a.card small {
+      #msg.show {
+        opacity: 1;
+      }
+      #fps-panel {
+        bottom: max(10px, env(safe-area-inset-bottom));
+        left: 10px;
+        font-size: 11px;
+        opacity: 0.8;
+      }
+      .site-alert {
+        position: fixed;
+        transform: translate(-50%, -100%);
+        font-size: 36px;
+        pointer-events: none;
+        display: none;
+        filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.4));
+        animation: bob 0.9s ease-in-out infinite alternate;
+        z-index: 5;
+      }
+      @keyframes bob {
+        from {
+          margin-top: 0;
+        }
+        to {
+          margin-top: -10px;
+        }
+      }
+      @keyframes floaty {
+        from {
+          transform: translateY(0);
+        }
+        to {
+          transform: translateY(-10px);
+        }
+      }
+      #btn-notebook {
+        position: fixed;
+        bottom: max(14px, env(safe-area-inset-bottom));
+        right: 10px;
+        min-height: 56px;
+        min-width: 110px;
+        border-color: #7fb2e8;
+        z-index: 6;
+      }
+      #field-help {
+        top: max(10px, env(safe-area-inset-top));
+        right: 10px;
+        font-size: 12px;
+        max-width: 42vw;
+        text-align: right;
+      }
+
+      /* ---- ピットUI ---- */
+      #pit-tools {
+        position: fixed;
+        bottom: max(14px, env(safe-area-inset-bottom));
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+        z-index: 6;
+      }
+      #pit-tools button {
+        min-height: 56px;
+        min-width: 100px;
+        padding: 10px 12px;
+      }
+      #pick-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      #pick-track {
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(20, 25, 35, 0.6);
+        overflow: hidden;
+      }
+      #pick-bar {
+        height: 100%;
+        width: 100%;
+        background: #6adf6a;
+        border-radius: 999px;
+        transition:
+          width 0.2s,
+          background 0.3s;
+      }
+      #btn-back {
+        position: fixed;
+        bottom: max(14px, env(safe-area-inset-bottom));
+        right: 10px;
+        min-height: 56px;
+        min-width: 100px;
+        z-index: 6;
+      }
+      #pit-help {
+        top: max(10px, env(safe-area-inset-top));
+        right: 10px;
+        font-size: 12px;
+        max-width: 42vw;
+        text-align: right;
+      }
+
+      /* ---- オーバーレイ共通 ---- */
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 20, 30, 0.6);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 30;
+        padding: 16px;
+      }
+      .overlay.show {
+        display: flex;
+      }
+      .card {
+        background: #fffaf0;
+        color: #3a3226;
+        border-radius: 22px;
+        padding: 22px 24px;
+        width: min(94vw, 560px);
+        max-height: 88vh;
+        overflow-y: auto;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      }
+      .card h1 {
+        font-size: 22px;
+        text-align: center;
+        margin-bottom: 12px;
+      }
+      .card .closer {
+        width: 100%;
+        min-height: 48px;
+        background: #8a7f6c;
+        border: none;
+        margin-top: 10px;
+      }
+      .dim {
+        color: #9a8f7a;
+      }
+      .gold {
+        color: #e8a800;
+      }
+
+      /* ---- タイトル ---- */
+      #ov-title {
+        background: linear-gradient(#9ed4ef, #e8d9a0 70%, #d4bd8a);
+        flex-direction: column;
+        gap: 14px;
+        z-index: 50;
+      }
+      #title-logo {
+        font-size: clamp(38px, 9vw, 64px);
+        font-weight: 900;
+        color: #5c4633;
+        text-shadow: 0 4px 0 rgba(255, 255, 255, 0.6);
+        letter-spacing: 0.05em;
+      }
+      #title-sub {
+        font-size: 16px;
+        color: #6b5a3f;
+        margin-bottom: 12px;
+      }
+      #title-dino {
+        font-size: 72px;
+        animation: floaty 1.2s ease-in-out infinite alternate;
+      }
+      #ov-title button {
+        min-width: 240px;
+        min-height: 60px;
+        font-size: 19px;
+      }
+      #title-buttons,
+      #title-confirm {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+      }
+      #title-confirm p {
+        color: #a04040;
+        font-weight: 700;
+      }
+      #title-credit {
+        position: absolute;
+        bottom: 14px;
+        font-size: 11px;
+        color: #8a7a5e;
+      }
+
+      /* ---- 手紙 ---- */
+      #ov-letter .card {
+        background: #fdf3d8;
+        border: 2px solid #d9c9a3;
+        font-size: 17px;
+        line-height: 2;
+      }
+      #letter-body p {
+        margin-bottom: 4px;
+      }
+
+      /* ---- ノート ---- */
+      #nb-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      #nb-tabs button {
+        flex: 1;
+        min-height: 48px;
+        background: #e8dcc0;
+        color: #6b5a3f;
+        border: none;
+        font-size: 15px;
+      }
+      #nb-tabs button.active {
+        background: #4a90d9;
+        color: #fff;
+      }
+      .nb-page {
+        background: #fff;
+        border: 2px solid #e8dcc0;
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+      }
+      .nb-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 18px;
+        margin-bottom: 6px;
+      }
+      .nb-emoji {
+        font-size: 34px;
+      }
+      .nb-emoji.sil {
+        filter: grayscale(1) brightness(0.35);
+      }
+      .nb-row {
+        font-size: 14px;
+        margin: 2px 0;
+      }
+      .nb-fact {
+        font-size: 14px;
+        background: #fdf3d8;
+        border-radius: 10px;
+        padding: 8px 10px;
+        margin: 6px 0;
+      }
+      .nb-bones {
+        list-style: none;
+        font-size: 13px;
+      }
+      .nb-page.blank {
+        border-style: dashed;
+      }
+
+      /* ---- 博物館 ---- */
+      #museum-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+      }
+      .mu-card {
+        background: #fff;
+        border: 2px solid #e8dcc0;
+        border-radius: 14px;
+        padding: 12px;
+        text-align: center;
+        font-size: 14px;
+      }
+      .mu-card .mu-emoji {
+        font-size: 44px;
+      }
+      .mu-card .mu-emoji.sil {
+        filter: grayscale(1) brightness(0.35);
+      }
+      .mu-card .mu-emoji.glow {
+        animation: floaty 0.9s ease-in-out infinite alternate;
+      }
+      .mu-card button {
+        margin-top: 6px;
+        min-height: 48px;
+        width: 100%;
+        background: #4a90d9;
+        border: none;
+        font-size: 14px;
+      }
+      .mu-card.gold-base {
+        border-color: #e8a800;
+        background: #fff8e0;
+      }
+      .mu-card.wing {
+        border-style: dashed;
+        color: #9a8f7a;
+      }
+
+      /* ---- 復元 ---- */
+      #asm-slots {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+        background: #efe6d0;
+        border-radius: 14px;
+        padding: 14px;
+        margin-bottom: 12px;
+        min-height: 70px;
+      }
+      .asm-slot {
+        min-width: 120px;
+        min-height: 44px;
+        border: 2px dashed #b5a888;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        color: #9a8f7a;
+        transition: all 0.25s;
+      }
+      .asm-slot.filled {
+        border-style: solid;
+        border-color: #4a90d9;
+        background: #fff;
+        color: #3a3226;
+        transform: scale(1.05);
+      }
+      .asm-slot.feature {
+        border-color: #e8a800;
+        background: #fff8e0;
+      }
+      #asm-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+      }
+      .asm-chip {
+        min-height: 52px;
+        background: #4a90d9;
+        border: none;
+        font-size: 14px;
+        padding: 8px 14px;
+      }
+      .asm-chip:disabled {
+        opacity: 0.35;
+      }
+
+      /* ---- 復元完了 ---- */
+      #ov-celebrate .card {
+        text-align: center;
+        overflow: hidden;
+        position: relative;
+      }
+      #cel-emoji {
+        font-size: 90px;
+        animation: floaty 0.8s ease-in-out infinite alternate;
+      }
+      #cel-name {
+        font-size: 28px;
+        font-weight: 900;
+        margin: 4px 0;
+      }
+      #cel-stars {
+        font-size: 30px;
+        color: #e8a800;
+      }
+      #cel-fact,
+      #cel-learn {
+        font-size: 14px;
+        background: #fdf3d8;
+        border-radius: 10px;
+        padding: 8px 10px;
+        margin: 6px 0;
+        text-align: left;
+      }
+      #cel-confetti span {
+        position: absolute;
+        top: -12px;
+        width: 10px;
+        height: 14px;
+        border-radius: 3px;
+        animation: fall 2.4s linear infinite;
+      }
+      @keyframes fall {
+        to {
+          transform: translateY(90vh) rotate(540deg);
+        }
+      }
+
+      /* ---- 開館式 ---- */
+      #ov-ceremony .card {
+        text-align: center;
+        font-size: 16px;
+        line-height: 1.9;
+      }
+      #ceremony-body .letter {
+        background: #fdf3d8;
+        border: 2px solid #d9c9a3;
+        border-radius: 12px;
+        padding: 12px;
+        margin: 10px 0;
+      }
+      #ceremony-body .trophy {
+        font-size: 80px;
+        animation: floaty 1s ease-in-out infinite alternate;
+      }
+
+      /* ---- クラフト ---- */
+      .recipe {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        background: #f3ead8;
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+      }
+      .recipe b {
+        font-size: 15px;
+      }
+      .recipe small {
         display: block;
-        font-weight: 400;
-        font-size: 13px;
         color: #7a6f5a;
       }
-      p.note {
-        font-size: 13px;
-        color: #7a6f5a;
+      .recipe button {
+        background: #4a90d9;
+        border: none;
+        min-height: 48px;
+        min-width: 84px;
+        font-size: 15px;
+      }
+      .recipe button:disabled {
+        background: #b5aa95;
+        opacity: 0.7;
+      }
+      #craft-pick-status {
+        text-align: center;
+        font-size: 14px;
+        margin-bottom: 10px;
+        color: #6b5a3f;
       }
     </style>
   </head>
   <body>
-    <h1>🦕 きょうりゅう はっくつ博物館（開発ビルド）</h1>
-    <p>開発中のテストページ一覧です。</p>
+    <div id="app"></div>
 
-    <a class="card" href="./poc/poc7/">
-      POC-7 どうぐとクラフト（さいしん）
-      <small>げんば3か所・道具の消耗と修理・がんじょうピッケルで岩盤の奥へ・アンモナイト</small>
-    </a>
+    <!-- 共通HUD -->
+    <div id="hud" class="panel">
+      <span>🦴 <b id="hud-bones">0/13</b></span>
+      <span>💎 <b id="hud-crystal">0</b></span>
+      <span>🪵 <b id="hud-wood">0</b></span>
+      <span>🪨 <b id="hud-stone">0</b></span>
+    </div>
+    <div id="msg"></div>
+    <div id="fps-panel" class="panel">
+      <span id="fps">--</span> FPS / さいてい <span id="fps-min">--</span> /
+      <span id="ms">--</span>ms
+    </div>
 
-    <a class="card" href="./poc/poc6/">
-      POC-6 ピットはっくつ
-      <small
-        >地面をその場で掘り下げる。深いほど固い・岩と水晶・グラグラ支えルール・ノック探査</small
-      >
-    </a>
+    <!-- フィールドUI -->
+    <div id="field-ui" class="hidden">
+      <div id="field-help" class="panel">
+        タップ: あるく / しらべる<br />
+        ゆび2本: カメラ<br />
+        ⛺テント: どうぐづくり
+      </div>
+      <div id="alerts"></div>
+      <button id="btn-notebook" type="button">📖 ノート</button>
+    </div>
 
-    <a class="card" href="./poc/poc5/">
-      POC-5 みがきテスト
-      <small>ピッケルで掘る×ブラシでみがく。「こすり」と「ゲージ」の2モード切替</small>
-    </a>
+    <!-- ピットUI -->
+    <div id="pit-ui" class="hidden">
+      <div id="pit-help" class="panel">
+        ⛏️ ふかいほど かたい!<br />
+        🦴 したを ほりすぎると グラッ<br />
+        ゆび2本: カメラ
+      </div>
+      <div id="pit-tools">
+        <div id="pick-wrap">
+          <button id="btn-pick" type="button" class="active">⛏️ Lv1</button>
+          <div id="pick-track"><div id="pick-bar"></div></div>
+        </div>
+        <button id="btn-brush" type="button">🖌️ ブラシ</button>
+        <button id="btn-ear" type="button">👂 きく</button>
+      </div>
+      <button id="btn-back" type="button">🏝️ もどる</button>
+    </div>
 
-    <a class="card" href="./poc/poc4/">
-      POC-4 カセキ島スライス（あそべます）
-      <small>島を歩いて ❗ を見つけて掘る。探す→掘る→集めるの通しプレイ</small>
-    </a>
+    <!-- タイトル -->
+    <div id="ov-title" class="overlay show">
+      <div id="title-dino">🦕</div>
+      <div id="title-logo">ほねほり調査隊</div>
+      <div id="title-sub"></div>
+      <div id="title-buttons">
+        <button id="title-continue" class="primary" type="button">▶ つづきから</button>
+        <button id="title-new" type="button">🆕 さいしょから</button>
+      </div>
+      <div id="title-confirm" class="hidden">
+        <p>いままでの きろくが きえるよ? ほんとうに さいしょから?</p>
+        <button id="title-confirm-yes" type="button">はい、きえてもいい</button>
+        <button id="title-confirm-no" class="primary" type="button">やっぱり やめる</button>
+      </div>
+      <div id="title-credit">かせきはかせと つくる ほりほりゲーム（かいはつちゅう）</div>
+    </div>
 
-    <a class="card" href="./poc/poc2/">
-      POC-2 ほるテスト（あそべます）
-      <small>タップ・スワイプで掘って、かせきを見つける。ピッケル／ブラシ切替・★判定つき</small>
-    </a>
+    <!-- はかせの手紙 -->
+    <div id="ov-letter" class="overlay">
+      <div class="card">
+        <h1>✉️ 1つうの てがみ</h1>
+        <div id="letter-body"></div>
+        <button id="letter-next" class="closer primary" type="button">島へ いく ▶</button>
+      </div>
+    </div>
 
-    <a class="card" href="./poc/poc1/">
-      POC-1 びょうが性能テスト（✅ 合格）
-      <small>iPad Safari で FPS を確認する（ボクセル 8×8×6 ＋ 恐竜1体 ＋ かげ）</small>
-    </a>
+    <!-- はかせのノート -->
+    <div id="ov-notebook" class="overlay">
+      <div class="card">
+        <h1>📖 はかせの たんけんノート</h1>
+        <div id="nb-tabs">
+          <button id="nb-tab-dino" type="button">きょうりゅう</button>
+          <button id="nb-tab-era" type="button">じだい</button>
+          <button id="nb-tab-know" type="button">ちしき</button>
+        </div>
+        <div id="nb-body"></div>
+        <button id="nb-close" class="closer" type="button">とじる</button>
+      </div>
+    </div>
 
-    <p class="note">ゲーム本体はまだありません。POC 完了後に M1 から実装します。</p>
+    <!-- 博物館 -->
+    <div id="ov-museum" class="overlay">
+      <div class="card">
+        <h1>🏛️ ゆめの はくぶつかん</h1>
+        <div id="museum-cards"></div>
+        <button id="museum-close" class="closer" type="button">そとに でる</button>
+      </div>
+    </div>
+
+    <!-- 復元 -->
+    <div id="ov-assembly" class="overlay">
+      <div class="card">
+        <h1 id="asm-title">ふくげんしよう!</h1>
+        <div id="asm-slots"></div>
+        <div id="asm-chips"></div>
+      </div>
+    </div>
+
+    <!-- 復元完了 -->
+    <div id="ov-celebrate" class="overlay">
+      <div class="card">
+        <div id="cel-confetti"></div>
+        <div id="cel-emoji">🦖</div>
+        <div id="cel-name"></div>
+        <div id="cel-stars"></div>
+        <div id="cel-fact"></div>
+        <div id="cel-learn"></div>
+        <button id="celebrate-close" class="closer primary" type="button">🏛️ てんじを みる</button>
+      </div>
+    </div>
+
+    <!-- 開館式 -->
+    <div id="ov-ceremony" class="overlay">
+      <div class="card">
+        <div id="ceremony-body"></div>
+        <button id="ceremony-next" class="closer primary" type="button">つぎへ ▶</button>
+      </div>
+    </div>
+
+    <!-- クラフト -->
+    <div id="ov-craft" class="overlay">
+      <div class="card">
+        <h1>🛠️ どうぐづくり</h1>
+        <div id="craft-pick-status"></div>
+        <div class="recipe">
+          <div>
+            <b>ピッケルを なおす</b>
+            <small>ざいりょう: <span id="craft-repair-cost"></span></small>
+          </div>
+          <button id="craft-repair" type="button">なおす</button>
+        </div>
+        <div class="recipe" id="craft-upgrade-row">
+          <div>
+            <b>がんじょうピッケル</b>
+            <small>がんばんが ほれる! <span id="craft-upgrade-cost"></span></small>
+          </div>
+          <button id="craft-upgrade" type="button">つくる</button>
+        </div>
+        <button id="craft-close" class="closer" type="button">とじる</button>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
