@@ -15,7 +15,7 @@ const GRID_DEPTH = 6;
 const CELL = 0.562;
 const PITCH = 0.57;
 const STRATA_COLORS = [0xd9c896, 0xd0b988, 0xb59a76, 0xa8896a, 0xa1704f, 0x965f43];
-const BEDROCK_COLOR = 0x6f6a61;
+const BEDROCK_COLOR = 0x555a63;
 
 const ACTION_COOLDOWN_MS = 140;
 const DAMAGE_CAP_PER_ACTION = 2;
@@ -371,6 +371,7 @@ class FossilPiece {
 interface RockState {
   hp: number;
   mesh: THREE.Mesh;
+  flash: number;
 }
 
 // 出土品。タップで「ひろう」まで世界に浮いている
@@ -399,6 +400,7 @@ class Pit {
   private lastActionAt = 0;
   private firstRevealShown = false;
   private lastBedrockMsgAt = 0;
+  private readonly bedrockPulse = new Map<number, number>();
   private readonly m4 = new THREE.Matrix4();
 
   constructor(readonly def: PitDef) {
@@ -454,7 +456,7 @@ class Pit {
         mesh.castShadow = true;
         mesh.visible = false;
         this.root.add(mesh);
-        this.rocks.set(i, { hp: ROCK_HP, mesh });
+        this.rocks.set(i, { hp: ROCK_HP, mesh, flash: 0 });
         this.alive[i] = false;
         this.setSoilMatrix(i, 0);
       }
@@ -548,6 +550,10 @@ class Pit {
     } else if (p.fossil) {
       const fossil = p.fossil;
       fossil.collected = true;
+      for (const i of fossil.cells.keys()) {
+        const { gx, gz } = coords(i);
+        this.settleColumn(gx, gz);
+      }
       if (fossil.def.kind === 'ammonite') collectedAmmonites++;
       else collectedBones++;
       sfx.fanfare();
@@ -640,7 +646,7 @@ class Pit {
     }
   }
 
-  private afterRemoval(removed: number): void {
+  private exposeNeighbors(removed: number): void {
     const { gx, gz, layer } = coords(removed);
     for (const [nx, nz, nl] of [
       [gx + 1, gz, layer],
@@ -671,8 +677,67 @@ class Pit {
           firstPickupMsgShown = true;
           showMsg('✨ なにか でてきた! タップして ひろおう');
         }
+        const { gx: cx, gz: cz } = coords(n);
+        this.settleColumn(cx, cz);
       }
     }
+  }
+
+  // 支えを失った土はくずれ、岩は下まで落ちる(浮いたまま残らない)
+  private settleColumn(gx: number, gz: number): void {
+    for (let l = GRID_DEPTH - 2; l >= 0; l--) {
+      const i = idx(gx, gz, l);
+      const below = idx(gx, gz, l + 1);
+      if (this.cellSolid(below)) continue;
+      if (this.alive[i] && !this.bedrockSet.has(i)) {
+        // 土くずれ
+        this.alive[i] = false;
+        this.setSoilMatrix(i, 0);
+        particles.burst(cellCenter(i), this.baseColors[i]!, 6);
+        sfx.rub();
+        if (this.branchSet.has(i)) {
+          this.branchSet.delete(i);
+          this.spawnPickup('wood', cellCenter(i));
+        }
+        this.exposeNeighbors(i);
+        continue;
+      }
+      const rock = this.rocks.get(i);
+      if (rock && rock.hp > 0) {
+        // 岩は落下。一番下で骨に当たるとヒビ
+        let l2 = l + 1;
+        while (l2 < GRID_DEPTH && !this.cellSolid(idx(gx, gz, l2))) l2++;
+        const destLayer = l2 - 1;
+        if (destLayer > l) {
+          const dest = idx(gx, gz, destLayer);
+          this.rocks.delete(i);
+          this.rocks.set(dest, rock);
+          rock.mesh.position.copy(cellCenter(dest));
+          rock.mesh.visible = true;
+          particles.burst(cellCenter(dest), new THREE.Color(0x8f8678), 6);
+          sfx.knockFull();
+          if (l2 < GRID_DEPTH) {
+            const under = idx(gx, gz, l2);
+            const fossil = this.cellOwner.get(under);
+            if (fossil && !fossil.collected) {
+              fossil.damage++;
+              fossil.tint();
+              fossil.wobbleT = 1.2;
+              sfx.crack();
+              shake = 1;
+              showMsg(`💥 いわが おちて ${fossil.def.nameJa}に ヒビが!`);
+            }
+          }
+          this.exposeNeighbors(dest);
+        }
+      }
+    }
+  }
+
+  private afterRemoval(removed: number): void {
+    this.exposeNeighbors(removed);
+    const { gx, gz } = coords(removed);
+    this.settleColumn(gx, gz);
     this.updateSupports();
   }
 
@@ -741,9 +806,10 @@ class Pit {
     if (rock && rock.hp > 0) {
       rock.hp--;
       sfx.clank();
-      particles.burst(cellCenter(i), new THREE.Color(0x8f8678), 4);
+      particles.burst(cellCenter(i), new THREE.Color(0x8f8678), 6);
       rock.mesh.visible = true;
-      rock.mesh.scale.setScalar(0.7 + rock.hp * 0.15);
+      rock.mesh.scale.setScalar(0.6 + rock.hp * 0.14);
+      rock.flash = 1;
       if (rock.hp === 0) {
         rock.mesh.visible = false;
         particles.burst(cellCenter(i), new THREE.Color(0x7f7668), 10);
@@ -757,8 +823,9 @@ class Pit {
       // がんばんは Lv2 でしか掘れない
       if (this.bedrockSet.has(i) && pick.level < 2) {
         sfx.clank();
+        this.bedrockPulse.set(i, 1);
         const now = performance.now();
-        if (now - this.lastBedrockMsgAt > 1500) {
+        if (now - this.lastBedrockMsgAt > 900) {
           this.lastBedrockMsgAt = now;
           showMsg('🧱 カキン! かたすぎる… がんじょうピッケルが いる!');
         }
@@ -904,6 +971,20 @@ class Pit {
   }
 
   updateFrame(dt: number, currentTool: string, time: number): void {
+    for (const rock of this.rocks.values()) {
+      if (rock.flash > 0) {
+        rock.flash = Math.max(0, rock.flash - dt * 5);
+        (rock.mesh.material as THREE.MeshStandardMaterial).emissive.setHex(0xffffff);
+        (rock.mesh.material as THREE.MeshStandardMaterial).emissiveIntensity = rock.flash * 0.7;
+      }
+    }
+    for (const [i, p] of this.bedrockPulse) {
+      const next = Math.max(0, p - dt * 4);
+      const s = 1 + Math.sin(p * Math.PI) * 0.08;
+      this.setSoilMatrix(i, this.alive[i] ? s : 0);
+      if (next <= 0) this.bedrockPulse.delete(i);
+      else this.bedrockPulse.set(i, next);
+    }
     const pulse = 0.22 + 0.14 * Math.sin(time * 5);
     for (const fossil of this.fossils) {
       for (const cell of fossil.cells.values()) {
@@ -1116,6 +1197,7 @@ window.addEventListener('resize', () => {
     collectedAmmonites,
     finished,
     activePit: activePitIndex,
+    rockCells: [...activePit().rocks.entries()].filter(([, r]) => r.hp > 0).map(([i]) => coords(i)),
     fossils: pits.flatMap((pit) =>
       pit.fossils.map((f) => ({
         pit: pit.def.id,
@@ -1126,6 +1208,7 @@ window.addEventListener('resize', () => {
     ),
   }),
   setTool: (t: Tool) => setTool(t),
+  aliveAt: (gx: number, gz: number, layer: number) => activePit().alive[idx(gx, gz, layer)],
 };
 
 // ---- loop -------------------------------------------------------------------
