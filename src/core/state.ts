@@ -7,6 +7,7 @@ import storyJson from '../data/story.json';
 export interface BoneDef {
   id: string;
   nameJa: string;
+  feature: string;
 }
 export interface SpeciesDef {
   id: string;

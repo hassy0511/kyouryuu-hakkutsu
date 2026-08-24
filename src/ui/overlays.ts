@@ -110,13 +110,13 @@ export class Overlays {
         const boneRows = sp.bones
           .map((b) =>
             this.state.hasBone(sp.id, b.id)
-              ? `<li>✅ ${b.nameJa}</li>`
+              ? `<li>✅ ${b.nameJa}<div class="dim">🔍 ${b.feature}</div></li>`
               : `<li class="dim">❓ まだ みつけていない</li>`,
           )
           .join('');
         return `<div class="nb-page">
-          <div class="nb-head"><span class="nb-emoji sil">${sp.emoji}</span><b>なぞの きょうりゅう</b></div>
-          <div class="nb-row">ホネ ${collected}/${sp.bones.length} — ぜんぶ あつめて ふくげんすると なまえが わかる!</div>
+          <div class="nb-head"><span class="nb-emoji sil">${sp.emoji}</span><b>${sp.nameJa}</b></div>
+          <div class="nb-row">ホネ ${collected}/${sp.bones.length} — ぜんぶ あつめて はくぶつかんで ふくげんしよう!</div>
           <ul class="nb-bones">${boneRows}</ul>
         </div>`;
       }
@@ -237,10 +237,11 @@ export class Overlays {
           <button data-restore="${sp.id}" type="button">✨ ふくげんする</button>
         </div>`;
       }
+      const found = this.state.collectedCount(sp.id);
       return `<div class="mu-card">
         <div class="mu-emoji sil">${sp.emoji}</div>
-        <b>じゅんびちゅう</b>
-        <div class="dim">ホネ ${this.state.collectedCount(sp.id)}/${sp.bones.length}</div>
+        <b>${found > 0 ? sp.nameJa : 'じゅんびちゅう'}</b>
+        <div class="dim">ホネ ${found}/${sp.bones.length}</div>
       </div>`;
     }).join('');
     el('museum-cards').innerHTML =
@@ -290,7 +291,7 @@ export class Overlays {
         placed++;
         if (boneId === sp.featureBone && sp.id !== 'ammonite') {
           this.hooks.showMsg(
-            `⭐ ${sp.bones.find((b) => b.id === boneId)?.nameJa}… ${sp.nameJa}だ!`,
+            `⭐ とくちょうの ${sp.bones.find((b) => b.id === boneId)?.nameJa}! ${sp.nameJa}らしく なってきた!`,
           );
         }
         if (placed === sp.bones.length) {

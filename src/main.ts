@@ -54,7 +54,11 @@ function displayMsg(text: string): void {
   }, 2600);
 }
 function showMsg(text: string): void {
-  msgQueue.length = 0;
+  // 連続メッセージ(鑑定など)の再生中は割り込まず、後ろに並べて取りこぼしを防ぐ
+  if (msgQueue.length > 0) {
+    msgQueue.push(text);
+    return;
+  }
   displayMsg(text);
 }
 function queueMsgs(lines: string[]): void {
@@ -146,8 +150,9 @@ function enterPit(def: PitDef): void {
       const bone = sp.bones.find((b) => b.id === boneId);
       const starsText = '★'.repeat(boneStars) + '☆'.repeat(3 - boneStars);
       const lines = [
-        `${sp.id === 'ammonite' ? '🐚' : '🦴'} ${bone?.nameJa}を てにいれた! ${starsText}`,
+        `${sp.id === 'ammonite' ? '🐚' : '🦴'} これは… ${sp.nameJa}の 「${bone?.nameJa}」だ! ${starsText}`,
       ];
+      if (bone?.feature) lines.push(`🔍 ${bone.feature}`);
       if (!state.flag(`learn:${speciesId}`)) {
         state.setFlag(`learn:${speciesId}`);
         lines.push(`📝 ${sp.learn}`);

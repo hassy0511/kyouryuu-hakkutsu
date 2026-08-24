@@ -2,14 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Sfx } from '../core/audio';
 import { DebrisParticles } from './particles';
-import {
-  GameState,
-  boneKey,
-  speciesById,
-  type FossilDef,
-  type PitDef,
-  type PitSave,
-} from '../core/state';
+import { GameState, boneKey, type FossilDef, type PitDef, type PitSave } from '../core/state';
 
 // ピット方式の発掘シーン。POC-7 で検証したルール一式:
 // 層で掘り味が変わる / がんばんは Lv2 / 岩・水晶・枝 / 支えルール / 崩落 / タップで拾う
@@ -669,18 +662,13 @@ export class PitMode {
               fossil.wobbleT = 1.2;
               this.sfx.crack();
               this.shake = 1;
-              this.cb.showMsg(`💥 いわが おちて ${this.fossilName(fossil)}に ヒビが!`);
+              this.cb.showMsg('💥 いわが おちて ホネに ヒビが!');
             }
           }
           this.exposeNeighbors(dest);
         }
       }
     }
-  }
-
-  private fossilName(fossil: FossilPiece): string {
-    const species = speciesById(fossil.def.speciesId);
-    return species.bones.find((b) => b.id === fossil.def.boneId)?.nameJa ?? 'ホネ';
   }
 
   private updateSupports(): void {
@@ -698,7 +686,7 @@ export class PitMode {
         if (fossil.supportStage === 1) {
           fossil.wobbleT = 1.2;
           this.sfx.knockFull();
-          this.cb.showMsg(`⚠️ ${this.fossilName(fossil)}が グラグラ… したを ほりすぎ!`);
+          this.cb.showMsg('⚠️ ホネが グラグラ… したを ほりすぎ!');
         } else {
           fossil.damage++;
           fossil.tint();
@@ -707,7 +695,7 @@ export class PitMode {
           fossil.group.position.y -= 0.09;
           this.sfx.crack();
           this.shake = 1;
-          this.cb.showMsg(`💥 ${this.fossilName(fossil)}が かたむいて ヒビが はいった!`);
+          this.cb.showMsg('💥 ホネが かたむいて ヒビが はいった!');
         }
       }
     }
@@ -873,7 +861,7 @@ export class PitMode {
     fossil.readyBaseY = fossil.group.position.y;
     fossil.celebrate();
     this.sfx.shine();
-    this.cb.showMsg(`✨ ${this.fossilName(fossil)}が とりだせる! タップしよう`);
+    this.cb.showMsg('✨ ホネが ぜんぶ ほりだせた! タップで とりあげよう');
   }
 
   knock(target: number): void {
@@ -1250,13 +1238,9 @@ export class PitMode {
         label.style.display = 'none';
         continue;
       }
-      const cleanCount = cells.filter((c) => c.status === 'clean').length;
       if (fossil.ready) {
-        label.textContent = `✨ ${this.fossilName(fossil)}!`;
+        label.textContent = '✨ ほりだせる!';
         label.classList.add('ready');
-      } else if (cleanCount > 0) {
-        label.textContent = this.fossilName(fossil);
-        label.classList.remove('ready');
       } else {
         label.textContent = '？？？のホネ';
         label.classList.remove('ready');
