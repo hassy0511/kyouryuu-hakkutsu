@@ -353,7 +353,19 @@ export class FieldMode {
     const group = new THREE.Group();
     const boneMat = new THREE.MeshStandardMaterial({ color: 0xf7f3e8, roughness: 0.6 });
 
-    if (pit.clue === 'bone') {
+    if (pit.clue === 'none') {
+      // 完全埋没型: 地表の手がかりは ほぼゼロ(小石が3つだけ)
+      const pebbleMat = new THREE.MeshStandardMaterial({
+        color: 0xa79a82,
+        roughness: 1,
+        flatShading: true,
+      });
+      for (let i = 0; i < 3; i++) {
+        const pebble = new THREE.Mesh(new THREE.IcosahedronGeometry(0.08, 0), pebbleMat);
+        pebble.position.set(Math.cos(i * 2.1) * 0.3, 0.05, Math.sin(i * 2.1) * 0.3);
+        group.add(pebble);
+      }
+    } else if (pit.clue === 'bone') {
       const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.1, 8), boneMat);
       shaft.rotation.z = 0.9;
       shaft.position.y = 0.28;
@@ -578,7 +590,9 @@ export class FieldMode {
       const state = this.siteState(pit.id);
       const [x, z] = pit.pos;
       const dist = Math.hypot(this.player.position.x - x, this.player.position.z - z);
-      if (state === 'done' || dist > ALERT_RANGE) {
+      // 完全埋没型は 目印が出る範囲が せまい(そばまで来ないと 気づけない)
+      const range = pit.clue === 'none' && state === 'hidden' ? 2.6 : ALERT_RANGE;
+      if (state === 'done' || dist > range) {
         alert.style.display = 'none';
         continue;
       }
@@ -588,7 +602,7 @@ export class FieldMode {
         continue;
       }
       alert.style.display = 'block';
-      alert.textContent = state === 'hidden' ? '❗' : '⛏️';
+      alert.textContent = state === 'hidden' ? (pit.clue === 'none' ? '❓' : '❗') : '⛏️';
       alert.style.left = `${((p.x + 1) / 2) * this.renderer.domElement.clientWidth}px`;
       alert.style.top = `${((1 - p.y) / 2) * this.renderer.domElement.clientHeight}px`;
     }

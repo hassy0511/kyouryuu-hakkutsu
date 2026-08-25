@@ -141,7 +141,7 @@ interface Pickup {
 export interface PitCallbacks {
   showMsg(text: string): void;
   onExit(): void;
-  onBedrockBlocked(): void;
+  onGateBlocked(look: string): void;
   onBoneCollected(speciesId: string, boneId: string, stars: number): void;
   onFirstReveal(): void;
 }
@@ -743,7 +743,7 @@ export class PitMode {
         const now = performance.now();
         if (now - this.lastBedrockMsgAt > 900) {
           this.lastBedrockMsgAt = now;
-          this.cb.onBedrockBlocked();
+          this.cb.onGateBlocked(lockedGate.look);
         }
         if (newMark) this.cb.showMsg('📝 ノートの「きになるリスト」に かきとめた');
         return { damaged: false };

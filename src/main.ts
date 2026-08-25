@@ -139,7 +139,16 @@ function enterPit(def: PitDef): void {
   pit = new PitMode(renderer, sfx, def, state, {
     showMsg,
     onExit: exitPit,
-    onBedrockBlocked() {
+    onGateBlocked(look) {
+      if (look === 'redrock') {
+        if (!state.flag('redrockSeen')) {
+          state.setFlag('redrockSeen');
+          queueMsgs(['🟥 ガキイイン!! びくとも しない…', ...STORY.hakase.redrockBlocked]);
+        } else {
+          showMsg('🟥 ガキイイン! あかい がんばんは いまの どうぐでは ほれない…');
+        }
+        return;
+      }
       if (!state.flag('bedrockSeen')) {
         state.setFlag('bedrockSeen');
         queueMsgs(['🧱 カキン! かたすぎる…', ...STORY.hakase.bedrockBlocked]);

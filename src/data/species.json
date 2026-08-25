@@ -143,6 +143,41 @@
           "feature": "くるくる うずまき。ここが うみだった しょうこ!"
         }
       ]
+    },
+    {
+      "id": "iguanodon",
+      "nameJa": "イグアノドン",
+      "emoji": "🦕",
+      "era": "cretaceous",
+      "diet": "くさを たべた（そうしょく）",
+      "lengthM": 10,
+      "lengthNote": "バス 1だいぶん!",
+      "featureBone": "thumb",
+      "hidden": true,
+      "funFact": "せかいで さいしょに なまえが ついた きょうりゅうの ひとつ!",
+      "learn": "おやゆびの スパイクは、むかし はなの ツノと まちがえられて いたんだよ。",
+      "bones": [
+        {
+          "id": "thumb",
+          "nameJa": "おやゆびのスパイク",
+          "feature": "とがった おやゆび! みを まもる ひみつの ぶき"
+        },
+        {
+          "id": "jaw",
+          "nameJa": "あご",
+          "feature": "はっぱを すりつぶす たいらな ハが ぎっしり"
+        },
+        {
+          "id": "spine",
+          "nameJa": "せぼね",
+          "feature": "2ほんあしでも 4ほんあしでも あるけた"
+        },
+        {
+          "id": "tail",
+          "nameJa": "しっぽのほね",
+          "feature": "かたい すじで ピンと まっすぐ のびた しっぽ"
+        }
+      ]
     }
   ],
   "knowledge": [

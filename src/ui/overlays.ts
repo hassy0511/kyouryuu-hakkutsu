@@ -99,7 +99,7 @@ export class Overlays {
   }
 
   private renderDinoPages(): string {
-    const pages = SPECIES.map((sp) => {
+    const pages = SPECIES.filter((sp) => this.state.isSpeciesVisible(sp.id)).map((sp) => {
       const collected = this.state.collectedCount(sp.id);
       const restored = this.state.isRestored(sp.id);
       if (restored) {
@@ -284,30 +284,32 @@ export class Overlays {
       this.runCeremony();
       return;
     }
-    const cards = SPECIES.map((sp) => {
-      if (this.state.isRestored(sp.id)) {
-        const s = this.state.data.restored[sp.id] ?? 1;
-        return `<div class="mu-card done${s === 3 ? ' gold-base' : ''}">
+    const cards = SPECIES.filter((sp) => this.state.isSpeciesVisible(sp.id))
+      .map((sp) => {
+        if (this.state.isRestored(sp.id)) {
+          const s = this.state.data.restored[sp.id] ?? 1;
+          return `<div class="mu-card done${s === 3 ? ' gold-base' : ''}">
           <div class="mu-emoji">${sp.emoji}</div>
           <b>${sp.nameJa}</b>
           <div class="gold">${stars(s)}</div>
           <button data-note="${sp.id}" type="button">📖 ノートでみる</button>
         </div>`;
-      }
-      if (this.state.speciesComplete(sp.id)) {
-        return `<div class="mu-card ready">
+        }
+        if (this.state.speciesComplete(sp.id)) {
+          return `<div class="mu-card ready">
           <div class="mu-emoji glow">${sp.emoji}</div>
           <b>ホネが そろった!</b>
           <button data-restore="${sp.id}" type="button">✨ ふくげんする</button>
         </div>`;
-      }
-      const found = this.state.collectedCount(sp.id);
-      return `<div class="mu-card">
+        }
+        const found = this.state.collectedCount(sp.id);
+        return `<div class="mu-card">
         <div class="mu-emoji sil">${sp.emoji}</div>
         <b>${found > 0 ? sp.nameJa : 'じゅんびちゅう'}</b>
         <div class="dim">ホネ ${found}/${sp.bones.length}</div>
       </div>`;
-    }).join('');
+      })
+      .join('');
     el('museum-cards').innerHTML =
       cards +
       `<div class="mu-card wing"><div class="mu-emoji">🚪</div><b>あたらしい ウィング</b><div class="dim">じゅんびちゅう…</div></div>`;

@@ -21,6 +21,7 @@ export interface SpeciesDef {
   funFact: string;
   learn: string;
   bones: BoneDef[];
+  hidden?: boolean;
   art?: { skeleton?: string; living?: string };
 }
 export interface EraDef {
@@ -51,7 +52,7 @@ export interface PitDef {
   id: string;
   nameJa: string;
   pos: [number, number];
-  clue: 'bone' | 'crack' | 'rubble' | 'shell';
+  clue: 'bone' | 'crack' | 'rubble' | 'shell' | 'none';
   discoverText: string;
   fossils: FossilDef[];
   rocks: [number, number, number][];
@@ -257,14 +258,22 @@ export class GameState {
     this.changed();
     return stars;
   }
+  // 隠し種は 1本も見つけていない間は「存在しない」扱い(章のコンプ判定・分母に入れない)
+  isSpeciesVisible(speciesId: string): boolean {
+    const sp = speciesById(speciesId);
+    return !sp.hidden || this.collectedCount(speciesId) > 0 || this.isRestored(speciesId);
+  }
   allRestored(): boolean {
-    return SPECIES.every((s) => this.isRestored(s.id));
+    return SPECIES.filter((s) => !s.hidden).every((s) => this.isRestored(s.id));
   }
   totalBonesCollected(): number {
     return Object.keys(this.data.fossilStars).length;
   }
   totalBones(): number {
-    return SPECIES.reduce((sum, s) => sum + s.bones.length, 0);
+    return SPECIES.filter((s) => this.isSpeciesVisible(s.id)).reduce(
+      (sum, s) => sum + s.bones.length,
+      0,
+    );
   }
 
   // ---- 道具・素材 ----
