@@ -10,6 +10,11 @@ const SPECIES = {
     feature: '🔍 うずまきの からと 10ぽんの しょくわんに ちゅうもく!',
     skeletonTip: 'ほうしゃじょうの すじと うずまきの ほうせんを みてみよう!',
   },
+  brachiosaurus: {
+    name: 'ブラキオサウルス',
+    feature: '🔍 たかい かた・ながい くび・ちいさな あたまに ちゅうもく!',
+    skeletonTip: 'ながい くびの ほねと はしらのような 4ほんあしを みてみよう!',
+  },
   iguanodon: {
     name: 'イグアノドン',
     feature: '🔍 おやゆびの スパイクと まっすぐな しっぽに ちゅうもく!',
@@ -175,7 +180,8 @@ function fitCameraToModel(): void {
   const verticalFov = THREE.MathUtils.degToRad(camera.fov);
   const distanceForHeight = size.y / (2 * Math.tan(verticalFov / 2));
   const distanceForWidth = size.x / (2 * Math.tan(verticalFov / 2) * camera.aspect);
-  const cameraPadding = speciesId === 'ammonite' ? 1.42 : 1.15;
+  const cameraPadding =
+    speciesId === 'ammonite' ? 1.42 : speciesId === 'brachiosaurus' ? 1.6 : 1.15;
   const distance = Math.max(distanceForHeight, distanceForWidth) * cameraPadding;
 
   controls.target.copy(center);
