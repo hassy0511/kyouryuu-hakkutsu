@@ -79,13 +79,38 @@ export class ExhibitMode {
     this.setOpacity(this.skeleton, 1);
     this.setOpacity(this.living, 0);
 
+    // 実寸レンジ(アンモナイト0.3m〜ブラキオ23m)に対応するため、
+    // モデルのバウンディングボックスからカメラ・台座・霧をフィットさせる
+    const bounds = new THREE.Box3().setFromObject(this.living);
+    bounds.union(new THREE.Box3().setFromObject(this.skeleton));
+    const size = bounds.getSize(new THREE.Vector3());
+    const center = bounds.getCenter(new THREE.Vector3());
+    const radius = Math.max(size.x, size.y, size.z) * 0.5;
+    const fitDist = Math.max(radius * 2.4, 1.2);
+    this.camera.position.set(center.x, center.y + radius * 0.55, fitDist + center.z);
+    this.camera.near = fitDist / 100;
+    this.camera.far = fitDist * 8;
+    this.camera.updateProjectionMatrix();
+    this.scene.fog = new THREE.Fog('#202826', fitDist * 1.4, fitDist * 3.2);
+    pedestal.scale.setScalar(Math.max(radius / 7.8, 0.04));
+    rim.scale.setScalar(Math.max(radius / 7.8, 0.04));
+    keyLight.position.set(radius * 0.9, radius * 1.55, radius * 1.05);
+    const shadowSpan = Math.max(radius * 1.25, 0.6);
+    keyLight.shadow.camera.left = -shadowSpan;
+    keyLight.shadow.camera.right = shadowSpan;
+    keyLight.shadow.camera.top = shadowSpan;
+    keyLight.shadow.camera.bottom = -shadowSpan * 0.5;
+    keyLight.shadow.camera.near = radius * 0.1 + 0.05;
+    keyLight.shadow.camera.far = radius * 4.5 + 4;
+    keyLight.shadow.camera.updateProjectionMatrix();
+
     this.controls = new OrbitControls(this.camera, renderer.domElement);
-    this.controls.target.set(0.4, 3.05, 0);
+    this.controls.target.set(center.x, center.y, 0);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.065;
     this.controls.enablePan = false;
-    this.controls.minDistance = 6.5;
-    this.controls.maxDistance = 25;
+    this.controls.minDistance = fitDist * 0.35;
+    this.controls.maxDistance = fitDist * 1.6;
     this.controls.minPolarAngle = 0.45;
     this.controls.maxPolarAngle = Math.PI / 2.03;
     this.controls.update();
