@@ -104,6 +104,36 @@
         line-height: 1.45;
       }
 
+      .species-switcher {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        margin-top: 9px;
+        pointer-events: auto;
+      }
+
+      .species-link {
+        display: grid;
+        min-height: 48px;
+        place-items: center;
+        padding: 7px 10px;
+        border: 1px solid rgba(242, 234, 216, 0.18);
+        border-radius: 10px;
+        background: rgba(11, 16, 15, 0.46);
+        color: #d8cfb7;
+        font-size: clamp(11px, 2vw, 13px);
+        font-weight: 700;
+        line-height: 1.2;
+        text-align: center;
+        text-decoration: none;
+      }
+
+      .species-link.active {
+        border-color: #e9b76b;
+        background: rgba(233, 183, 107, 0.17);
+        color: #fff0c9;
+      }
+
       .back {
         display: grid;
         min-width: 48px;
@@ -212,6 +242,7 @@
       }
 
       .mode-button:focus-visible,
+      .species-link:focus-visible,
       .back:focus-visible {
         outline: 3px solid #fff0ba;
         outline-offset: 3px;
@@ -283,8 +314,18 @@
       <header class="topbar">
         <div class="heading">
           <p class="eyebrow">ほねほり調査隊・3Dミュージアム</p>
-          <h1>スピノサウルス</h1>
-          <p class="feature">🔍 せなかの おおきな ほ! スピノサウルスの しるし</p>
+          <h1 id="species-name">スピノサウルス</h1>
+          <p id="species-feature" class="feature">
+            🔍 せなかの おおきな ほ! スピノサウルスの しるし
+          </p>
+          <nav class="species-switcher" aria-label="きょうりゅうを えらぶ">
+            <a id="species-spinosaurus" class="species-link" href="?species=spinosaurus">
+              スピノサウルス
+            </a>
+            <a id="species-tyrannosaurus" class="species-link" href="?species=tyrannosaurus">
+              ティラノサウルス
+            </a>
+          </nav>
         </div>
         <a class="back" href="../" aria-label="POCいちらんへ もどる">←</a>
       </header>
