@@ -5,6 +5,11 @@ import { buildDinoModel } from '../../src/art/dino3d';
 type ViewMode = 'skeleton' | 'living';
 
 const SPECIES = {
+  ammonite: {
+    name: 'アンモナイト',
+    feature: '🔍 うずまきの からと 10ぽんの しょくわんに ちゅうもく!',
+    skeletonTip: 'ほうしゃじょうの すじと うずまきの ほうせんを みてみよう!',
+  },
   spinosaurus: {
     name: 'スピノサウルス',
     feature: '🔍 せなかの おおきな ほ! スピノサウルスの しるし',
@@ -165,7 +170,8 @@ function fitCameraToModel(): void {
   const verticalFov = THREE.MathUtils.degToRad(camera.fov);
   const distanceForHeight = size.y / (2 * Math.tan(verticalFov / 2));
   const distanceForWidth = size.x / (2 * Math.tan(verticalFov / 2) * camera.aspect);
-  const distance = Math.max(distanceForHeight, distanceForWidth) * 1.15;
+  const cameraPadding = speciesId === 'ammonite' ? 1.42 : 1.15;
+  const distance = Math.max(distanceForHeight, distanceForWidth) * cameraPadding;
 
   controls.target.copy(center);
   camera.position.set(center.x + size.x * 0.015, center.y + size.y * 0.08, center.z + distance);
