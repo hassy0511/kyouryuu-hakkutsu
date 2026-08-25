@@ -22,6 +22,7 @@ export interface SpeciesDef {
   learn: string;
   bones: BoneDef[];
   hidden?: boolean;
+  island?: string;
   art?: { skeleton?: string; living?: string };
 }
 export interface EraDef {
@@ -67,6 +68,7 @@ export interface IslandDef {
   nameJa: string;
   emoji: string;
   order: number;
+  unlock?: string;
   pits: PitDef[];
 }
 
@@ -76,6 +78,7 @@ export const KNOWLEDGE = speciesJson.knowledge as KnowledgeDef[];
 export const RECIPES = gameJson.recipes as {
   repair: { wood: number; stone: number };
   upgrade: { wood: number; iron: number; crystal: number };
+  upgrade2: { wood: number; iron: number; crystal: number };
 };
 export const PICK_MAX_HP = gameJson.pickMaxHp as number;
 export const GATE_LOOKS = gameJson.gateLooks as Record<string, { nameJa: string; color: string }>;
@@ -258,13 +261,21 @@ export class GameState {
     this.changed();
     return stars;
   }
-  // 隠し種は 1本も見つけていない間は「存在しない」扱い(章のコンプ判定・分母に入れない)
+  islandUnlocked(islandId: string): boolean {
+    const unlock = islandById(islandId).unlock;
+    return !unlock || this.flag(unlock);
+  }
+  // 隠し種・未解禁の島の種は「存在しない」扱い(図鑑・分母・コンプ判定に入れない)
   isSpeciesVisible(speciesId: string): boolean {
     const sp = speciesById(speciesId);
-    return !sp.hidden || this.collectedCount(speciesId) > 0 || this.isRestored(speciesId);
+    if (this.collectedCount(speciesId) > 0 || this.isRestored(speciesId)) return true;
+    return !sp.hidden && this.islandUnlocked(sp.island ?? 'k1');
   }
-  allRestored(): boolean {
-    return SPECIES.filter((s) => !s.hidden).every((s) => this.isRestored(s.id));
+  // 章のクリア判定は島単位(第1章の開館式は k1 の種だけを見る)
+  allRestored(islandId = 'k1'): boolean {
+    return SPECIES.filter((s) => !s.hidden && (s.island ?? 'k1') === islandId).every((s) =>
+      this.isRestored(s.id),
+    );
   }
   totalBonesCollected(): number {
     return Object.keys(this.data.fossilStars).length;
@@ -313,14 +324,22 @@ export class GameState {
     this.data.tool.broken = false;
     this.changed();
   }
-  upgradePick(): void {
-    this.data.tool.level = 2;
+  setPickLevel(level: number): void {
+    this.data.tool.level = level;
     this.repairPick();
+  }
+  upgradePick(): void {
+    this.setPickLevel(2);
   }
 
   // ---- 島・ピット・進行 ----
   get island(): IslandDef {
     return islandById(this.data.currentIsland);
+  }
+  travel(islandId: string): void {
+    this.data.currentIsland = islandId;
+    this.setFlag(`visited:${islandId}`);
+    this.changed();
   }
   private islandSave(id = this.data.currentIsland): IslandSave {
     return (this.data.islands[id] ??= { discovered: [], pits: {} });

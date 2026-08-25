@@ -31,6 +31,7 @@ export interface OverlayHooks {
   queueMsgs(lines: string[]): void;
   onHudChange(): void;
   onOpenExhibit(speciesId: string): void;
+  onTravel(islandId: string): void;
 }
 
 export class Overlays {
@@ -51,6 +52,7 @@ export class Overlays {
     el('craft-close').addEventListener('click', () => this.hide('ov-craft'));
     el('craft-repair').addEventListener('click', () => this.craft('repair'));
     el('craft-upgrade').addEventListener('click', () => this.craft('upgrade'));
+    el('craft-upgrade2').addEventListener('click', () => this.craft('upgrade2'));
     el('celebrate-close').addEventListener('click', () => {
       this.hide('ov-celebrate');
       if (this.lastRestored && hasDinoModel(this.lastRestored)) {
@@ -201,12 +203,15 @@ export class Overlays {
   openBoat(): void {
     const rows = ISLANDS.map((island) => {
       const here = island.id === this.state.data.currentIsland;
+      const unlocked = this.state.islandUnlocked(island.id);
+      const note = here ? 'いま ここに いる' : unlocked ? '' : 'まだ いけない…';
+      const label = here ? 'いまここ' : unlocked ? 'いく' : '？？？';
       return `<div class="recipe">
         <div>
-          <b>${island.emoji} ${island.nameJa}</b>
-          <small>${here ? 'いま ここに いる' : ''}</small>
+          <b>${unlocked ? island.emoji : '❓'} ${unlocked ? island.nameJa : '？？？の しま'}</b>
+          <small>${note}</small>
         </div>
-        <button type="button" disabled>${here ? 'いまここ' : 'いく'}</button>
+        <button type="button" ${here || !unlocked ? 'disabled' : `data-travel="${island.id}"`}>${label}</button>
       </div>`;
     }).join('');
     el('boat-list').innerHTML =
@@ -218,6 +223,12 @@ export class Overlays {
         </div>
         <button type="button" disabled>じゅんびちゅう</button>
       </div>`;
+    for (const btn of el('boat-list').querySelectorAll('button[data-travel]')) {
+      btn.addEventListener('click', () => {
+        this.hide('ov-boat');
+        this.hooks.onTravel((btn as HTMLElement).dataset.travel!);
+      });
+    }
     this.show('ov-boat');
   }
 
@@ -252,23 +263,43 @@ export class Overlays {
       ['🔩', inv.iron, RECIPES.upgrade.iron],
       ['💎', inv.crystal, RECIPES.upgrade.crystal],
     ]);
+    el('craft-upgrade2-cost').innerHTML = costHtml([
+      ['🪵', inv.wood, RECIPES.upgrade2.wood],
+      ['🔩', inv.iron, RECIPES.upgrade2.iron],
+      ['💎', inv.crystal, RECIPES.upgrade2.crystal],
+    ]);
     (el('craft-repair') as HTMLButtonElement).disabled =
       !this.state.canAfford(RECIPES.repair) || (!tool.broken && tool.hp >= PICK_MAX_HP);
-    // レシピは「一段階うえ」まで見せる: Lv1=がんじょうのレシピ / Lv2=？？？の予告だけ
-    const upgraded = tool.level >= 2;
-    el('craft-upgrade-row').style.display = upgraded ? 'none' : '';
-    el('craft-teaser').classList.toggle('hidden', !upgraded);
+    // レシピは「一段階うえ」まで見せる:
+    // Lv1=がんじょうのレシピ / Lv2=？？？の予告 → ジュラのしま到達で くろがねのレシピ解禁
+    const level = tool.level;
+    const knowsIron = this.state.flag('visited:k2');
+    el('craft-upgrade-row').style.display = level === 1 ? '' : 'none';
+    el('craft-upgrade2-row').classList.toggle('hidden', !(level === 2 && knowsIron));
+    el('craft-teaser').classList.toggle('hidden', !(level === 2 && !knowsIron));
     (el('craft-upgrade') as HTMLButtonElement).disabled =
-      upgraded || !this.state.canAfford(RECIPES.upgrade);
+      level >= 2 || !this.state.canAfford(RECIPES.upgrade);
+    (el('craft-upgrade2') as HTMLButtonElement).disabled =
+      level !== 2 || !knowsIron || !this.state.canAfford(RECIPES.upgrade2);
   }
 
-  private craft(kind: 'repair' | 'upgrade'): void {
+  private craft(kind: 'repair' | 'upgrade' | 'upgrade2'): void {
     if (kind === 'repair') {
       if (!this.state.canAfford(RECIPES.repair)) return;
       this.state.spend(RECIPES.repair);
       this.state.repairPick();
       this.sfx.shine();
       this.hooks.showMsg('🛠️ ピッケルを なおした!');
+    } else if (kind === 'upgrade2') {
+      if (this.state.tool.level !== 2 || !this.state.canAfford(RECIPES.upgrade2)) return;
+      this.state.spend(RECIPES.upgrade2);
+      this.state.setPickLevel(3);
+      this.sfx.fanfare();
+      const lines = ['⚒️ くろがねの ピッケル かんせい! あかい がんばんも ほれるぞ!'];
+      if (this.state.openableMarks().length > 0) {
+        lines.push('📍 きになるリストの ふういんが あけられるぞ! まえの しまも みてみよう');
+      }
+      this.hooks.queueMsgs(lines);
     } else {
       if (this.state.tool.level >= 2 || !this.state.canAfford(RECIPES.upgrade)) return;
       this.state.spend(RECIPES.upgrade);

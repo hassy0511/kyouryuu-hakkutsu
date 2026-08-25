@@ -109,9 +109,12 @@ export class FieldMode {
         pos.setY(i, groundHeight(pos.getX(i), pos.getZ(i)));
       }
       geo.computeVertexNormals();
+      // 島ごとに地形の色を変える(形は当面共通。第2章フルで島別地形にする)
+      const terrainColor =
+        ({ k2: 0x86a45e } as Record<string, number>)[this.state.island.id] ?? 0xd8c28e;
       this.terrain = new THREE.Mesh(
         geo,
-        new THREE.MeshStandardMaterial({ color: 0xd8c28e, roughness: 1, flatShading: true }),
+        new THREE.MeshStandardMaterial({ color: terrainColor, roughness: 1, flatShading: true }),
       );
       this.terrain.receiveShadow = true;
       this.scene.add(this.terrain);
@@ -469,6 +472,12 @@ export class FieldMode {
     this.controls.enabled = true;
     el('field-ui').classList.remove('hidden');
     this.refreshSites();
+  }
+
+  dispose(): void {
+    this.controls.dispose();
+    this.alertEls.forEach((a) => a.remove());
+    this.alertEls.clear();
   }
 
   deactivate(): void {

@@ -1,0 +1,193 @@
+{
+  "id": "k2",
+  "nameJa": "ジュラのしま",
+  "emoji": "🌋",
+  "order": 2,
+  "unlock": "ceremonyDone",
+  "pits": [
+    {
+      "id": "jp1",
+      "nameJa": "おおあしあとの げんば",
+      "pos": [6, 15],
+      "clue": "bone",
+      "discoverText": "きょだいな あしあとの かせき! この したに おおものが ねむってる!",
+      "fossils": [
+        {
+          "speciesId": "brachiosaurus",
+          "boneId": "legs",
+          "kind": "long",
+          "layer": 2,
+          "cells": [
+            [2, 3],
+            [3, 3],
+            [4, 3],
+            [5, 3]
+          ]
+        },
+        {
+          "speciesId": "brachiosaurus",
+          "boneId": "tail",
+          "kind": "long",
+          "layer": 3,
+          "cells": [
+            [5, 5],
+            [6, 5],
+            [7, 5]
+          ]
+        }
+      ],
+      "rocks": [[1, 5, 1]],
+      "crystals": [[6, 1, 2]],
+      "branches": [
+        [2, 6, 0],
+        [6, 6, 0],
+        [0, 1, 0]
+      ],
+      "gates": [],
+      "ores": [
+        [1, 1, 4],
+        [6, 7, 5]
+      ]
+    },
+    {
+      "id": "jp2",
+      "nameJa": "たかい きの げんば",
+      "pos": [-13, -2],
+      "clue": "crack",
+      "discoverText": "おおむかしの きの ねもとに、ながーい ホネの かげ! なにか ねむってる!",
+      "fossils": [
+        {
+          "speciesId": "brachiosaurus",
+          "boneId": "neck",
+          "kind": "long",
+          "layer": 3,
+          "cells": [
+            [1, 4],
+            [2, 4],
+            [3, 4],
+            [4, 4]
+          ]
+        },
+        {
+          "speciesId": "brachiosaurus",
+          "boneId": "skull",
+          "kind": "blob",
+          "layer": 4,
+          "cells": [
+            [6, 4],
+            [7, 4]
+          ]
+        }
+      ],
+      "rocks": [
+        [2, 1, 2],
+        [6, 6, 1]
+      ],
+      "crystals": [[0, 7, 3]],
+      "branches": [
+        [7, 0, 0],
+        [1, 7, 0]
+      ],
+      "gates": [],
+      "ores": [[3, 7, 4]]
+    },
+    {
+      "id": "jp3",
+      "nameJa": "いたいしの おか",
+      "pos": [13, -11],
+      "clue": "rubble",
+      "discoverText": "いたのような いしが ちらばってる…かせきの 板だ! なにか ねむってる!",
+      "fossils": [
+        {
+          "speciesId": "stegosaurus",
+          "boneId": "plates",
+          "kind": "blob",
+          "layer": 2,
+          "cells": [
+            [2, 2],
+            [3, 2],
+            [2, 3],
+            [3, 3]
+          ]
+        },
+        {
+          "speciesId": "stegosaurus",
+          "boneId": "spikes",
+          "kind": "long",
+          "layer": 3,
+          "cells": [
+            [5, 5],
+            [6, 5]
+          ]
+        }
+      ],
+      "rocks": [
+        [6, 1, 1],
+        [1, 6, 2]
+      ],
+      "crystals": [[7, 7, 2]],
+      "branches": [
+        [0, 0, 0],
+        [4, 7, 0]
+      ],
+      "gates": [],
+      "ores": [[0, 4, 4]]
+    },
+    {
+      "id": "jp4",
+      "nameJa": "あかいわの だいち",
+      "pos": [-8, 9],
+      "clue": "crack",
+      "discoverText": "あかい いわが かおを だしてる。ジュラのしまにも 封印が…!",
+      "fossils": [
+        {
+          "speciesId": "stegosaurus",
+          "boneId": "legs",
+          "kind": "long",
+          "layer": 3,
+          "cells": [
+            [2, 5],
+            [3, 5],
+            [4, 5]
+          ]
+        },
+        {
+          "speciesId": "stegosaurus",
+          "boneId": "skull",
+          "kind": "blob",
+          "layer": 5,
+          "cells": [
+            [5, 2],
+            [6, 2]
+          ]
+        }
+      ],
+      "rocks": [[1, 1, 1]],
+      "crystals": [
+        [0, 6, 2],
+        [7, 7, 3]
+      ],
+      "branches": [
+        [3, 0, 0],
+        [7, 4, 0]
+      ],
+      "gates": [
+        {
+          "look": "redrock",
+          "needs": "pick3",
+          "cells": [
+            [5, 2, 4],
+            [6, 2, 4],
+            [4, 2, 5],
+            [7, 2, 5],
+            [5, 1, 5],
+            [6, 1, 5],
+            [5, 3, 5],
+            [6, 3, 5]
+          ]
+        }
+      ],
+      "ores": [[1, 7, 5]]
+    }
+  ]
+}

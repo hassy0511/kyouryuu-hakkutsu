@@ -1,9 +1,17 @@
 import * as THREE from 'three';
 import { Sfx } from './core/audio';
-import { GameState, PICK_MAX_HP, RECIPES, STORY, speciesById, type PitDef } from './core/state';
+import {
+  GameState,
+  PICK_MAX_HP,
+  RECIPES,
+  STORY,
+  islandById,
+  speciesById,
+  type PitDef,
+} from './core/state';
 import { ExhibitMode } from './game/exhibit';
 import { FpsMeter } from './ui/fps';
-import { FieldMode } from './game/field';
+import { FieldMode, type FieldCallbacks } from './game/field';
 import { PitMode } from './game/pit';
 import { Overlays } from './ui/overlays';
 
@@ -95,6 +103,7 @@ const overlays = new Overlays(state, sfx, {
   queueMsgs,
   onHudChange: updateHud,
   onOpenExhibit: (id) => enterExhibit(id),
+  onTravel: (id) => travelTo(id),
 });
 
 // ---- モード管理 --------------------------------------------------------------
@@ -102,7 +111,7 @@ const overlays = new Overlays(state, sfx, {
 let pit: PitMode | null = null;
 let exhibit: ExhibitMode | null = null;
 
-const field = new FieldMode(renderer, sfx, state, {
+const FIELD_CALLBACKS: FieldCallbacks = {
   onEnterPit(def) {
     enterPit(def);
   },
@@ -139,7 +148,12 @@ const field = new FieldMode(renderer, sfx, state, {
     showMsg(`🔍 ${def.discoverText}`);
   },
   showMsg,
-});
+};
+
+function rebuildField(): FieldMode {
+  return new FieldMode(renderer, sfx, state, FIELD_CALLBACKS);
+}
+let field = rebuildField();
 
 function enterPit(def: PitDef): void {
   field.deactivate();
@@ -211,6 +225,26 @@ function exitPit(): void {
   field.activate();
   updateHud();
   if (done) showMsg(`✅ ${pitName}は ほりつくした!`);
+}
+
+function travelTo(islandId: string): void {
+  if (pit || exhibit) return;
+  if (!state.islandUnlocked(islandId) || islandId === state.data.currentIsland) return;
+  const firstVisit = !state.flag(`visited:${islandId}`);
+  overlays.closeAll();
+  field.deactivate();
+  field.dispose();
+  state.travel(islandId);
+  field = rebuildField();
+  field.activate();
+  updateHud();
+  const island = islandById(islandId);
+  if (islandId === 'k2' && firstVisit) {
+    queueMsgs(STORY.hakase.k2Arrival);
+  } else {
+    showMsg(`⛵ ${island.nameJa}に ついた!`);
+  }
+  fitViewport();
 }
 
 function enterExhibit(speciesId: string): void {
@@ -418,15 +452,19 @@ const meter = location.search.includes('debug')
   exitExhibit: () => exitExhibit(),
   openNotebook: () => overlays.openNotebook(),
   debugFinish: () => {
-    // スモークテスト用: 全ホネ回収+全復元(開館式の直前状態を作る)
+    // スモークテスト用: 第1章のホネ回収+復元(開館式の直前状態を作る)
     import('./core/state').then(({ SPECIES }) => {
       for (const sp of SPECIES) {
+        if (sp.hidden || (sp.island ?? 'k1') !== 'k1') continue;
         for (const b of sp.bones) state.collectBone(sp.id, b.id, 3);
         if (!state.isRestored(sp.id)) state.restore(sp.id);
       }
       updateHud();
     });
   },
+  give: (kind: 'wood' | 'stone' | 'crystal' | 'iron', n: number) => state.addMaterial(kind, n),
+  pickLevel: (n: number) => state.setPickLevel(n),
+  travel: (id: string) => travelTo(id),
   startNew: () => {
     state.reset();
     updateHud();
