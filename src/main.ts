@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Sfx } from './core/audio';
 import { GameState, PICK_MAX_HP, RECIPES, STORY, speciesById, type PitDef } from './core/state';
+import { ExhibitMode } from './game/exhibit';
 import { FpsMeter } from './ui/fps';
 import { FieldMode } from './game/field';
 import { PitMode } from './game/pit';
@@ -27,7 +28,7 @@ function fitViewport(): void {
   const w = el('app').clientWidth || window.innerWidth;
   const h = el('app').clientHeight || window.innerHeight;
   renderer.setSize(w, h);
-  for (const camera of [field?.camera, pit?.camera]) {
+  for (const camera of [field?.camera, pit?.camera, exhibit?.camera]) {
     if (camera) {
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
@@ -89,11 +90,17 @@ function updateHud(): void {
 }
 state.onChange = updateHud;
 
-const overlays = new Overlays(state, sfx, { showMsg, queueMsgs, onHudChange: updateHud });
+const overlays = new Overlays(state, sfx, {
+  showMsg,
+  queueMsgs,
+  onHudChange: updateHud,
+  onOpenExhibit: (id) => enterExhibit(id),
+});
 
 // ---- モード管理 --------------------------------------------------------------
 
 let pit: PitMode | null = null;
+let exhibit: ExhibitMode | null = null;
 
 const field = new FieldMode(renderer, sfx, state, {
   onEnterPit(def) {
@@ -206,6 +213,40 @@ function exitPit(): void {
   if (done) showMsg(`✅ ${pitName}は ほりつくした!`);
 }
 
+function enterExhibit(speciesId: string): void {
+  if (exhibit || pit) return;
+  overlays.closeAll();
+  field.deactivate();
+  exhibit = new ExhibitMode(renderer, speciesId);
+  const sp = speciesById(speciesId);
+  el('exhibit-name').textContent = sp.nameJa;
+  el('exhibit-note').textContent =
+    `🔍 ${sp.bones.find((b) => b.id === sp.featureBone)?.feature ?? ''}`;
+  el('exhibit-skel').classList.add('active');
+  el('exhibit-living').classList.remove('active');
+  el('exhibit-ui').classList.remove('hidden');
+  el('hud').classList.add('hidden');
+  sfx.grandFanfare();
+  fitViewport();
+}
+
+function exitExhibit(): void {
+  if (!exhibit) return;
+  exhibit.dispose();
+  exhibit = null;
+  el('exhibit-ui').classList.add('hidden');
+  el('hud').classList.remove('hidden');
+  field.activate();
+  overlays.openMuseum();
+}
+
+function setExhibitView(view: 'skeleton' | 'living'): void {
+  if (!exhibit) return;
+  exhibit.setView(view);
+  el('exhibit-skel').classList.toggle('active', view === 'skeleton');
+  el('exhibit-living').classList.toggle('active', view === 'living');
+}
+
 function setTool(tool: 'pick' | 'brush' | 'ear'): void {
   if (pit) pit.tool = tool;
   el('btn-pick').classList.toggle('active', tool === 'pick');
@@ -229,7 +270,7 @@ function cancelPendingTap(): void {
 }
 
 function tapAction(x: number, y: number): void {
-  if (overlays.anyOpen()) return;
+  if (overlays.anyOpen() || exhibit) return;
   if (pit) pit.tapAction(x, y);
   else field.tap(x, y);
 }
@@ -261,7 +302,7 @@ renderer.domElement.addEventListener('pointermove', (e) => {
   const prevY = downPos.y;
   downPos.x = e.clientX;
   downPos.y = e.clientY;
-  if (!actionStarted || overlays.anyOpen()) return;
+  if (!actionStarted || overlays.anyOpen() || exhibit) return;
   if (pit) {
     if (pit.tool === 'pick') pit.tapAction(e.clientX, e.clientY);
     else if (pit.tool === 'brush')
@@ -290,6 +331,9 @@ el('btn-brush').addEventListener('click', () => setTool('brush'));
 el('btn-ear').addEventListener('click', () => setTool('ear'));
 el('btn-back').addEventListener('click', exitPit);
 el('btn-notebook').addEventListener('click', () => overlays.openNotebook());
+el('exhibit-skel').addEventListener('click', () => setExhibitView('skeleton'));
+el('exhibit-living').addEventListener('click', () => setExhibitView('living'));
+el('exhibit-back').addEventListener('click', exitExhibit);
 
 document.addEventListener('gesturestart', (e) => e.preventDefault());
 document.addEventListener('dblclick', (e) => e.preventDefault());
@@ -361,7 +405,7 @@ const meter = location.search.includes('debug')
   teleport: (x: number, z: number) => field.teleport(x, z),
   interact: (id: string) => field.forceInteract(id),
   playerPos: () => field.playerPos(),
-  mode: () => (pit ? `pit:${pit.def.id}` : 'field'),
+  mode: () => (exhibit ? `exhibit:${exhibit.speciesId}` : pit ? `pit:${pit.def.id}` : 'field'),
   pitPick: (gx: number, gz: number, l: number) => pit?.debugPick(gx, gz, l),
   pitPolish: (gx: number, gz: number, l: number, a: number) => pit?.debugPolish(gx, gz, l, a),
   pitCollectAll: () => pit?.collectAllPickups(),
@@ -370,6 +414,8 @@ const meter = location.search.includes('debug')
   exitPit: () => exitPit(),
   wear: (n: number) => state.wearPick(n),
   openMuseum: () => overlays.openMuseum(),
+  openExhibit: (id: string) => enterExhibit(id),
+  exitExhibit: () => exitExhibit(),
   openNotebook: () => overlays.openNotebook(),
   debugFinish: () => {
     // スモークテスト用: 全ホネ回収+全復元(開館式の直前状態を作る)
@@ -409,7 +455,10 @@ fitViewport();
 renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.05);
   const time = clock.elapsedTime;
-  if (pit) {
+  if (exhibit) {
+    exhibit.update();
+    renderer.render(exhibit.scene, exhibit.camera);
+  } else if (pit) {
     pit.update(dt, time);
     renderer.render(pit.scene, pit.camera);
   } else {

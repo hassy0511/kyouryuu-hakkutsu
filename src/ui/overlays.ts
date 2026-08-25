@@ -1,4 +1,5 @@
 import { Sfx } from '../core/audio';
+import { hasDinoModel } from '../art/dino3d';
 import {
   ERAS,
   GATE_LOOKS,
@@ -29,10 +30,12 @@ export interface OverlayHooks {
   showMsg(text: string): void;
   queueMsgs(lines: string[]): void;
   onHudChange(): void;
+  onOpenExhibit(speciesId: string): void;
 }
 
 export class Overlays {
   private notebookTab = 'dino';
+  private lastRestored: string | null = null;
 
   constructor(
     private readonly state: GameState,
@@ -50,6 +53,10 @@ export class Overlays {
     el('craft-upgrade').addEventListener('click', () => this.craft('upgrade'));
     el('celebrate-close').addEventListener('click', () => {
       this.hide('ov-celebrate');
+      if (this.lastRestored && hasDinoModel(this.lastRestored)) {
+        this.hooks.onOpenExhibit(this.lastRestored);
+        return;
+      }
       this.openMuseum();
     });
   }
@@ -292,6 +299,7 @@ export class Overlays {
           <div class="mu-emoji">${sp.emoji}</div>
           <b>${sp.nameJa}</b>
           <div class="gold">${stars(s)}</div>
+          ${hasDinoModel(sp.id) ? `<button data-exhibit="${sp.id}" type="button">🏛️ てんじを みる</button>` : ''}
           <button data-note="${sp.id}" type="button">📖 ノートでみる</button>
         </div>`;
         }
@@ -316,6 +324,11 @@ export class Overlays {
     for (const btn of el('museum-cards').querySelectorAll('button[data-restore]')) {
       btn.addEventListener('click', () =>
         this.startAssembly((btn as HTMLElement).dataset.restore!),
+      );
+    }
+    for (const btn of el('museum-cards').querySelectorAll('button[data-exhibit]')) {
+      btn.addEventListener('click', () =>
+        this.hooks.onOpenExhibit((btn as HTMLElement).dataset.exhibit!),
       );
     }
     for (const btn of el('museum-cards').querySelectorAll('button[data-note]')) {
@@ -370,6 +383,7 @@ export class Overlays {
 
   private finishRestore(speciesId: string): void {
     this.hide('ov-assembly');
+    this.lastRestored = speciesId;
     const sp = speciesById(speciesId);
     const s = this.state.restore(speciesId);
     if (sp.id === 'ammonite') this.sfx.fanfare();
