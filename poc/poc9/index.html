@@ -105,8 +105,8 @@
       }
 
       .species-switcher {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        display: flex;
+        flex-wrap: wrap;
         gap: 6px;
         margin-top: 9px;
         pointer-events: auto;
@@ -114,6 +114,7 @@
 
       .species-link {
         display: grid;
+        flex: 1 1 104px;
         min-height: 48px;
         place-items: center;
         padding: 7px 10px;
@@ -319,11 +320,14 @@
             🔍 せなかの おおきな ほ! スピノサウルスの しるし
           </p>
           <nav class="species-switcher" aria-label="きょうりゅうを えらぶ">
-            <a id="species-spinosaurus" class="species-link" href="?species=spinosaurus">
+            <a class="species-link" href="?species=spinosaurus" data-species="spinosaurus">
               スピノサウルス
             </a>
-            <a id="species-tyrannosaurus" class="species-link" href="?species=tyrannosaurus">
+            <a class="species-link" href="?species=tyrannosaurus" data-species="tyrannosaurus">
               ティラノサウルス
+            </a>
+            <a class="species-link" href="?species=triceratops" data-species="triceratops">
+              トリケラトプス
             </a>
           </nav>
         </div>

@@ -3,7 +3,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { buildDinoModel } from '../../src/art/dino3d';
 
 type ViewMode = 'skeleton' | 'living';
-type SpeciesId = 'spinosaurus' | 'tyrannosaurus';
 
 const SPECIES = {
   spinosaurus: {
@@ -16,7 +15,13 @@ const SPECIES = {
     feature: '🔍 おおきな あたま と 2ほんゆびに ちゅうもく!',
     skeletonTip: 'おおきな とうこつ・2ほんゆび・ふとい あしを みてみよう!',
   },
+  triceratops: {
+    name: 'トリケラトプス',
+    feature: '🔍 3ぼんの ツノと おおきな フリルに ちゅうもく!',
+    skeletonTip: 'フリルと ツノ・くちばし・4ほんの あしを みてみよう!',
+  },
 } as const;
+type SpeciesId = keyof typeof SPECIES;
 
 interface ModelStats {
   triangles: number;
@@ -38,20 +43,22 @@ const loading = requireElement<HTMLElement>('#loading');
 const tip = requireElement<HTMLElement>('#tip');
 const speciesName = requireElement<HTMLElement>('#species-name');
 const speciesFeature = requireElement<HTMLElement>('#species-feature');
-const spinosaurusLink = requireElement<HTMLAnchorElement>('#species-spinosaurus');
-const tyrannosaurusLink = requireElement<HTMLAnchorElement>('#species-tyrannosaurus');
+const speciesLinks = document.querySelectorAll<HTMLAnchorElement>('[data-species]');
 
 const requestedSpecies = new URLSearchParams(window.location.search).get('species');
-const speciesId: SpeciesId = requestedSpecies === 'tyrannosaurus' ? 'tyrannosaurus' : 'spinosaurus';
+const speciesId: SpeciesId =
+  requestedSpecies && requestedSpecies in SPECIES ? (requestedSpecies as SpeciesId) : 'spinosaurus';
 const speciesInfo = SPECIES[speciesId];
 speciesName.textContent = speciesInfo.name;
 speciesFeature.textContent = speciesInfo.feature;
 canvas.setAttribute('aria-label', `まわして見られる ${speciesInfo.name}の3Dてんじ`);
 document.title = `${speciesInfo.name} 3Dミュージアム | ほねほり調査隊`;
-spinosaurusLink.classList.toggle('active', speciesId === 'spinosaurus');
-tyrannosaurusLink.classList.toggle('active', speciesId === 'tyrannosaurus');
-spinosaurusLink.setAttribute('aria-current', speciesId === 'spinosaurus' ? 'page' : 'false');
-tyrannosaurusLink.setAttribute('aria-current', speciesId === 'tyrannosaurus' ? 'page' : 'false');
+speciesLinks.forEach((link) => {
+  const isCurrent = link.dataset.species === speciesId;
+  link.classList.toggle('active', isCurrent);
+  if (isCurrent) link.setAttribute('aria-current', 'page');
+  else link.removeAttribute('aria-current');
+});
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#202826');
