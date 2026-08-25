@@ -361,7 +361,9 @@ export class GameState {
     this.changed();
   }
   pitDone(pitId: string): boolean {
-    return pitById(pitId).fossils.every((f) => this.hasBone(f.speciesId, f.boneId));
+    // 化石のない現場(素材キャッシュ型)は「ほりつくした」にならない
+    const pit = pitById(pitId);
+    return pit.fossils.length > 0 && pit.fossils.every((f) => this.hasBone(f.speciesId, f.boneId));
   }
 
   // ---- 封印ゲートと「きになるリスト」 ----

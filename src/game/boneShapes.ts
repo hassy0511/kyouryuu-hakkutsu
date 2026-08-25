@@ -58,7 +58,28 @@ const ammonite: Builder = (_def, material) => {
   return group;
 };
 
-const SHAPES: Record<string, Builder> = { long, blob, ammonite };
+// 石板化石(あしあと等): うすい板 + くぼんだ足あと
+const slab: Builder = (_def, material, pitch) => {
+  const group = new THREE.Group();
+  const plate = new THREE.Mesh(new THREE.BoxGeometry(pitch * 1.7, 0.14, pitch * 1.7), material);
+  group.add(plate);
+  const dark = new THREE.MeshStandardMaterial({ color: 0x8a7a5e, roughness: 1 });
+  const heel = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 6), dark);
+  heel.scale.set(1.2, 0.35, 1.5);
+  heel.position.set(-0.08, 0.07, 0.05);
+  group.add(heel);
+  for (const angle of [-0.5, 0, 0.5]) {
+    const toe = new THREE.Mesh(new THREE.SphereGeometry(0.09, 7, 5), dark);
+    toe.scale.set(1, 0.35, 1.6);
+    toe.position.set(-0.08 + Math.sin(angle) * 0.26 * -1, 0.07, 0.05 + 0.3);
+    toe.position.x = -0.08 + Math.sin(angle) * 0.22;
+    toe.position.z = 0.05 + Math.cos(angle) * 0.34;
+    group.add(toe);
+  }
+  return group;
+};
+
+const SHAPES: Record<string, Builder> = { long, blob, ammonite, slab };
 
 export function buildBoneShape(
   def: FossilDef,

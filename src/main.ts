@@ -161,6 +161,15 @@ function enterPit(def: PitDef): void {
     showMsg,
     onExit: exitPit,
     onGateBlocked(look) {
+      if (look === 'wetrock') {
+        if (!state.flag('wetrockSeen')) {
+          state.setFlag('wetrockSeen');
+          queueMsgs(['💧 ジュワ… みずが しみだしてきた!', ...STORY.hakase.wetrockBlocked]);
+        } else {
+          showMsg('💧 みずが しみだして ほれない… ポンプのような どうぐが いる');
+        }
+        return;
+      }
       if (look === 'redrock') {
         if (!state.flag('redrockSeen')) {
           state.setFlag('redrockSeen');
