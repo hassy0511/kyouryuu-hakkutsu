@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>POC-8 てんじの二層ひょうげん（ホネのすがた × いきていたすがた）</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+      body {
+        font-family: 'Hiragino Maru Gothic ProN', 'BIZ UDGothic', system-ui, sans-serif;
+        background: #241f18;
+        color: #f5efe0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 18px 12px 40px;
+      }
+      h1 {
+        font-size: 18px;
+        margin-bottom: 4px;
+      }
+      .sub {
+        color: #b9ad94;
+        font-size: 12px;
+        margin-bottom: 14px;
+      }
+      .hall {
+        width: min(680px, 96vw);
+        background: linear-gradient(#33291d, #241f18 70%);
+        border: 2px solid #4a3d2b;
+        border-radius: 18px;
+        padding: 18px 14px 10px;
+        position: relative;
+      }
+      .stage {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 460 / 300;
+      }
+      .stage svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        transition: opacity 0.45s;
+      }
+      .pedestal {
+        height: 14px;
+        margin: -6px 8% 8px;
+        background: #4a3d2b;
+        border-radius: 50% / 100%;
+        opacity: 0.8;
+      }
+      .plate {
+        text-align: center;
+        background: #3a2f20;
+        border: 1px solid #5a4a32;
+        border-radius: 10px;
+        padding: 8px 10px;
+        margin: 0 auto 12px;
+        width: fit-content;
+        max-width: 100%;
+      }
+      .plate b {
+        font-size: 16px;
+        letter-spacing: 0.08em;
+      }
+      .plate small {
+        display: block;
+        color: #c9bda2;
+        font-size: 11px;
+        margin-top: 2px;
+      }
+      .toggles {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin: 12px 0 18px;
+      }
+      .toggles button {
+        font: inherit;
+        font-size: 15px;
+        padding: 12px 18px;
+        min-height: 48px;
+        border-radius: 14px;
+        border: 2px solid #6b5940;
+        background: #3a2f20;
+        color: #f5efe0;
+        cursor: pointer;
+      }
+      .toggles button.active {
+        background: #e0a33c;
+        border-color: #ffd27a;
+        color: #241f18;
+        font-weight: 700;
+      }
+      .compare {
+        width: min(680px, 96vw);
+        margin-top: 18px;
+        background: #2c2519;
+        border: 2px solid #4a3d2b;
+        border-radius: 18px;
+        padding: 12px 14px 4px;
+      }
+      .compare h2 {
+        font-size: 14px;
+        margin-bottom: 6px;
+      }
+      .compare-row {
+        display: flex;
+        align-items: flex-end;
+        gap: 6px;
+        border-bottom: 3px solid #5a4a32;
+        padding: 0 6px;
+      }
+      .compare-row .dino {
+        width: 84%;
+      }
+      .compare-row .human {
+        width: 26px;
+        flex: none;
+      }
+      .compare small {
+        display: block;
+        color: #c9bda2;
+        font-size: 11px;
+        padding: 6px 2px 8px;
+      }
+      a.back {
+        color: #ffd27a;
+        margin-top: 18px;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🦖 スピノサウルスの てんじ（POC-8）</h1>
+    <div class="sub">じぶんで えがく SVG イラストの ひんしつテスト — タッチきりかえ</div>
+
+    <div class="hall">
+      <div class="stage">
+        <!-- ホネのすがた -->
+        <svg id="view-skel" viewBox="0 0 460 300" aria-label="スピノサウルスの こっかく">
+          <g fill="none" stroke="#f2ead8" stroke-linecap="round">
+            <!-- 帆のとっき(みわけポイント) -->
+            <g stroke-width="5">
+              <line x1="150" y1="128" x2="150" y2="94" />
+              <line x1="165" y1="126" x2="165" y2="72" />
+              <line x1="180" y1="125" x2="180" y2="54" />
+              <line x1="195" y1="124" x2="195" y2="42" />
+              <line x1="210" y1="123" x2="210" y2="36" />
+              <line x1="225" y1="122" x2="225" y2="40" />
+              <line x1="240" y1="122" x2="240" y2="50" />
+              <line x1="255" y1="121" x2="255" y2="64" />
+              <line x1="270" y1="121" x2="270" y2="82" />
+              <line x1="285" y1="120" x2="285" y2="98" />
+            </g>
+            <!-- ろっこつ -->
+            <g stroke-width="5" opacity="0.9">
+              <path d="M232 128 q -10 30 2 52" />
+              <path d="M250 127 q -10 32 4 56" />
+              <path d="M268 126 q -10 34 6 58" />
+              <path d="M286 125 q -8 34 8 56" />
+              <path d="M304 124 q -6 32 10 52" />
+            </g>
+            <!-- とおくの あし -->
+            <g stroke-width="9" opacity="0.4">
+              <path d="M176 152 L 166 205 L 174 244" />
+              <path d="M306 156 L 298 198 L 306 236" />
+            </g>
+            <!-- てまえの あし -->
+            <g stroke-width="10">
+              <path d="M192 150 L 184 206 L 192 246" />
+              <path d="M320 158 L 314 200 L 320 238" />
+            </g>
+            <!-- あしゆび -->
+            <g stroke-width="6">
+              <path d="M192 246 l -12 8" />
+              <path d="M192 246 l 0 10" />
+              <path d="M192 246 l 12 8" />
+              <path d="M320 238 l -10 8" />
+              <path d="M320 238 l 2 10" />
+              <path d="M320 238 l 12 6" />
+            </g>
+          </g>
+          <!-- せぼねの チェーン(くび→せなか→しっぽ) -->
+          <g fill="#f2ead8">
+            <circle cx="352" cy="110" r="5" />
+            <circle cx="338" cy="116" r="5" />
+            <circle cx="324" cy="121" r="5" />
+            <circle cx="310" cy="124" r="5.5" />
+            <circle cx="295" cy="125" r="5.5" />
+            <circle cx="280" cy="126" r="5.5" />
+            <circle cx="265" cy="126" r="5.5" />
+            <circle cx="250" cy="127" r="5.5" />
+            <circle cx="235" cy="128" r="5.5" />
+            <circle cx="220" cy="128" r="5.5" />
+            <circle cx="205" cy="129" r="5.5" />
+            <circle cx="190" cy="130" r="5.5" />
+            <circle cx="175" cy="131" r="5.5" />
+            <circle cx="160" cy="132" r="5" />
+            <circle cx="146" cy="134" r="5" />
+            <circle cx="132" cy="138" r="4.5" />
+            <circle cx="118" cy="143" r="4.5" />
+            <circle cx="104" cy="149" r="4" />
+            <circle cx="91" cy="155" r="4" />
+            <circle cx="78" cy="161" r="3.5" />
+            <circle cx="66" cy="167" r="3" />
+            <circle cx="55" cy="172" r="2.7" />
+            <circle cx="45" cy="177" r="2.4" />
+            <circle cx="36" cy="181" r="2" />
+            <circle cx="28" cy="185" r="1.7" />
+          </g>
+          <!-- こつばん と けんこうこつ -->
+          <g fill="#e2d6ba">
+            <ellipse cx="186" cy="142" rx="16" ry="9" />
+            <ellipse cx="316" cy="146" rx="13" ry="8" />
+          </g>
+          <!-- ずがい(ワニのように ほそながい) -->
+          <g>
+            <path
+              d="M352 100 q 30 -8 52 -2 q 32 6 50 18 l 2 6 q -26 4 -52 2 q -30 -2 -52 -8 z"
+              fill="#f2ead8"
+            />
+            <path
+              d="M356 122 q 24 8 50 8 q 24 0 44 -2 l -4 8 q -22 6 -46 2 q -26 -4 -44 -12 z"
+              fill="#e2d6ba"
+            />
+            <circle cx="376" cy="106" r="6" fill="#2a2418" />
+            <circle cx="444" cy="112" r="2.4" fill="#2a2418" />
+            <g fill="#fffdf4">
+              <path d="M380 116 l 4 8 l 4 -7 z" />
+              <path d="M394 119 l 4 8 l 4 -7 z" />
+              <path d="M408 121 l 4 8 l 4 -7 z" />
+              <path d="M422 123 l 4 7 l 4 -6 z" />
+            </g>
+          </g>
+        </svg>
+
+        <!-- いきていたすがた -->
+        <svg id="view-live" viewBox="0 0 460 300" aria-label="いきていたころの スピノサウルス">
+          <g id="live-art">
+            <!-- とおくの あし -->
+            <g fill="#3c7263">
+              <path d="M170 176 q -14 34 -8 52 l 4 22 l 20 0 l -2 -20 q 6 -26 10 -50 z" />
+              <path d="M298 178 q -10 30 -6 48 l 2 20 l 20 0 l 0 -18 q 4 -24 8 -46 z" />
+            </g>
+            <!-- 帆 -->
+            <path
+              d="M118 138 q 30 -96 100 -102 q 66 -6 98 84 l -8 12 q -50 -18 -96 -14 q -48 4 -86 26 z"
+              fill="#e8865a"
+            />
+            <g stroke="#c9653f" stroke-width="6" fill="none" stroke-linecap="round">
+              <path d="M154 122 q 6 -44 30 -66" />
+              <path d="M196 108 q 8 -38 26 -56" />
+              <path d="M240 102 q 6 -28 16 -44" />
+              <path d="M278 108 q 2 -22 6 -36" />
+            </g>
+            <!-- しっぽの ひれ -->
+            <path d="M22 144 q 38 2 70 20 l -10 16 q -36 -8 -62 -24 z" fill="#e8865a" />
+            <!-- どうたい+くび+あたま -->
+            <path
+              d="M18 172
+               q 50 -26 108 -40
+               q 70 -18 150 -12
+               q 34 2 62 -18
+               q 12 -10 30 -14
+               q 48 -4 86 12
+               l 2 8
+               q -44 4 -82 -4
+               q -22 -2 -32 6
+               q -12 12 -12 52
+               q -6 28 -46 40
+               q -60 18 -142 6
+               q -70 -10 -124 -22 z"
+              fill="#4e8f7c"
+            />
+            <!-- おなか -->
+            <path
+              d="M60 178 q 70 26 150 26 q 66 0 108 -22 q -4 26 -44 38 q -60 18 -140 6 q -50 -8 -84 -24 z"
+              fill="#f1e6c3"
+            />
+            <!-- てまえの あし -->
+            <g fill="#4e8f7c">
+              <path d="M188 190 q -14 32 -8 50 l 2 24 l 24 0 l -2 -22 q 8 -26 12 -48 z" />
+              <path d="M314 186 q -10 30 -6 48 l 2 22 l 22 0 l 0 -20 q 4 -22 8 -44 z" />
+            </g>
+            <!-- つめ -->
+            <g fill="#fffdf4">
+              <path d="M182 264 l -8 6 l 10 0 z" />
+              <path d="M192 264 l -2 8 l 8 -2 z" />
+              <path d="M204 264 l 4 6 l 4 -6 z" />
+              <path d="M310 256 l -8 6 l 10 0 z" />
+              <path d="M320 256 l -2 8 l 8 -2 z" />
+              <path d="M330 256 l 4 6 l 4 -6 z" />
+            </g>
+            <!-- せなかの もよう -->
+            <g stroke="#3c7263" stroke-width="7" fill="none" stroke-linecap="round" opacity="0.7">
+              <path d="M96 156 q 10 10 6 24" />
+              <path d="M130 148 q 10 12 6 26" />
+              <path d="M310 148 q 8 10 4 22" />
+            </g>
+            <!-- くち と め -->
+            <path d="M376 105 q 36 5 72 1 l -2 6 q -38 4 -72 -3 z" fill="#2a5548" />
+            <g fill="#fffdf4">
+              <path d="M390 104 l 3 7 l 4 -6 z" />
+              <path d="M404 105 l 3 7 l 4 -6 z" />
+              <path d="M418 105 l 3 7 l 4 -6 z" />
+              <path d="M432 105 l 3 6 l 4 -5 z" />
+            </g>
+            <circle cx="371" cy="99" r="7" fill="#fffdf4" />
+            <circle cx="373" cy="100" r="3.6" fill="#241f18" />
+            <circle cx="370" cy="97.5" r="1.4" fill="#fffdf4" />
+            <circle cx="447" cy="103" r="2.2" fill="#2a5548" />
+          </g>
+        </svg>
+      </div>
+      <div class="pedestal"></div>
+      <div class="plate">
+        <b>スピノサウルス</b>
+        <small>🔍 せなかの おおきな ほ! スピノサウルスの しるし</small>
+      </div>
+      <div class="toggles">
+        <button id="btn-skel" type="button" class="active">🦴 ホネのすがた</button>
+        <button id="btn-live" type="button">🦖 いきていたすがた</button>
+      </div>
+    </div>
+
+    <div class="compare">
+      <h2>おおきさくらべ</h2>
+      <div class="compare-row">
+        <svg class="dino" viewBox="0 0 460 300" preserveAspectRatio="xMidYMax meet">
+          <use href="#live-art" />
+        </svg>
+        <svg class="human" viewBox="0 0 24 84" aria-label="ひと">
+          <g fill="#c9bda2">
+            <circle cx="12" cy="10" r="8" />
+            <rect x="6" y="20" width="12" height="34" rx="6" />
+            <rect x="6" y="52" width="5" height="30" rx="2.5" />
+            <rect x="13" y="52" width="5" height="30" rx="2.5" />
+          </g>
+        </svg>
+      </div>
+      <small>スピノサウルス やく14m ／ おとな やく1.6m — スクールバスより おおきい!</small>
+    </div>
+
+    <a class="back" href="../">← POC いちらんへ</a>
+
+    <script>
+      const skel = document.getElementById('view-skel');
+      const live = document.getElementById('view-live');
+      const bSkel = document.getElementById('btn-skel');
+      const bLive = document.getElementById('btn-live');
+      function show(mode) {
+        skel.style.opacity = mode === 'skel' ? '1' : '0';
+        live.style.opacity = mode === 'live' ? '1' : '0';
+        bSkel.classList.toggle('active', mode === 'skel');
+        bLive.classList.toggle('active', mode === 'live');
+      }
+      bSkel.addEventListener('click', () => show('skel'));
+      bLive.addEventListener('click', () => show('live'));
+      show('skel');
+    </script>
+  </body>
+</html>
