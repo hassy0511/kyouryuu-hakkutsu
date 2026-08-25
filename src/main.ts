@@ -105,6 +105,9 @@ const field = new FieldMode(renderer, sfx, state, {
   onOpenMuseum() {
     overlays.openMuseum();
   },
+  onOpenBoat() {
+    overlays.openBoat();
+  },
   onHakase() {
     sfx.hint();
     if (state.allRestored() && !state.flag('ceremonyDone')) {

@@ -1,0 +1,28 @@
+{
+  "recipes": {
+    "repair": {
+      "wood": 1,
+      "stone": 2
+    },
+    "upgrade": {
+      "wood": 2,
+      "iron": 3,
+      "crystal": 1
+    }
+  },
+  "pickMaxHp": 140,
+  "gateLooks": {
+    "bluerock": {
+      "nameJa": "あおい がんばん",
+      "color": "555a63"
+    },
+    "redrock": {
+      "nameJa": "あかい がんばん",
+      "color": "7a4646"
+    }
+  },
+  "needLabels": {
+    "pick2": "⛏️がんじょうピッケル",
+    "pick3": "⛏️くろがねの ピッケル"
+  }
+}

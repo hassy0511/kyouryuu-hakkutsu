@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Sfx } from '../core/audio';
-import { GameState, PITS, type PitDef } from '../core/state';
+import { GameState, type PitDef } from '../core/state';
 
 // カセキ島「すなの谷」。タップ移動・手がかり発見・キャンプ(クラフト)・博物館の入口。
 
@@ -29,7 +29,7 @@ export function groundHeight(x: number, z: number): number {
 
 interface Interactable {
   id: string;
-  kind: 'pit' | 'tent' | 'hakase' | 'museum';
+  kind: 'pit' | 'tent' | 'hakase' | 'museum' | 'boat';
   position: THREE.Vector3;
   hotspot: THREE.Mesh;
   pit?: PitDef;
@@ -40,6 +40,7 @@ export interface FieldCallbacks {
   onOpenCraft(): void;
   onOpenMuseum(): void;
   onHakase(): void;
+  onOpenBoat(): void;
   onDiscover(pit: PitDef): void;
   showMsg(text: string): void;
 }
@@ -171,7 +172,8 @@ export class FieldMode {
     this.buildCamp();
     this.buildMuseum();
     this.buildPlayer();
-    for (const pit of PITS) this.buildPitSite(pit);
+    for (const pit of this.state.island.pits) this.buildPitSite(pit);
+    this.buildBoat();
     this.refreshSites();
   }
 
@@ -249,6 +251,32 @@ export class FieldMode {
     hakase.rotation.y = 0.6;
     this.scene.add(hakase);
     this.addHotspot('hakase', 'hakase', hakasePos, 1.4);
+  }
+
+  private buildBoat(): void {
+    const pos = new THREE.Vector3(3.2, 0.05, 17.2);
+    const boat = new THREE.Group();
+    const hullMat = new THREE.MeshStandardMaterial({ color: 0x8a5a33, roughness: 0.8 });
+    const hull = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.35, 2.4, 8), hullMat);
+    hull.rotation.z = Math.PI / 2;
+    hull.scale.y = 0.55;
+    hull.position.y = 0.25;
+    hull.castShadow = true;
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.5, 6), hullMat);
+    mast.position.y = 1.0;
+    const sailMat = new THREE.MeshStandardMaterial({
+      color: 0xfff6e0,
+      roughness: 1,
+      side: THREE.DoubleSide,
+    });
+    const sail = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.0), sailMat);
+    sail.position.set(0.05, 1.05, 0);
+    sail.rotation.y = Math.PI / 2;
+    boat.add(hull, mast, sail);
+    boat.position.copy(pos);
+    boat.rotation.y = -0.5;
+    this.scene.add(boat);
+    this.addHotspot('boat', 'boat', pos, 1.7);
   }
 
   private buildMuseum(): void {
@@ -381,7 +409,7 @@ export class FieldMode {
 
   private plantFlag(pitId: string): void {
     if (this.flags.has(pitId)) return;
-    const pit = PITS.find((p) => p.id === pitId)!;
+    const pit = this.state.island.pits.find((p) => p.id === pitId)!;
     const [x, z] = pit.pos;
     const flag = new THREE.Group();
     const pole = new THREE.Mesh(
@@ -402,7 +430,7 @@ export class FieldMode {
 
   private plantDonePatch(pitId: string): void {
     if (this.donePatches.has(pitId)) return;
-    const pit = PITS.find((p) => p.id === pitId)!;
+    const pit = this.state.island.pits.find((p) => p.id === pitId)!;
     const [x, z] = pit.pos;
     const patch = new THREE.Mesh(
       new THREE.CircleGeometry(1.3, 18).rotateX(-Math.PI / 2),
@@ -414,7 +442,7 @@ export class FieldMode {
   }
 
   refreshSites(): void {
-    for (const pit of PITS) {
+    for (const pit of this.state.island.pits) {
       if (this.state.isDiscovered(pit.id)) this.plantFlag(pit.id);
       if (this.state.pitDone(pit.id)) this.plantDonePatch(pit.id);
     }
@@ -470,6 +498,10 @@ export class FieldMode {
 
   private interact(id: string): void {
     const target = this.interactables.find((i) => i.id === id)!;
+    if (target.kind === 'boat') {
+      this.cb.onOpenBoat();
+      return;
+    }
     if (target.kind === 'tent') {
       this.cb.onOpenCraft();
       return;
@@ -541,7 +573,7 @@ export class FieldMode {
   }
 
   private updateAlerts(): void {
-    for (const pit of PITS) {
+    for (const pit of this.state.island.pits) {
       const alert = this.alertEls.get(pit.id)!;
       const state = this.siteState(pit.id);
       const [x, z] = pit.pos;

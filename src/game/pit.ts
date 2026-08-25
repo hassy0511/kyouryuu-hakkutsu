@@ -1,8 +1,17 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Sfx } from '../core/audio';
+import { buildBoneShape } from './boneShapes';
 import { DebrisParticles } from './particles';
-import { GameState, boneKey, type FossilDef, type PitDef, type PitSave } from '../core/state';
+import {
+  GameState,
+  GATE_LOOKS,
+  boneKey,
+  type FossilDef,
+  type GateDef,
+  type PitDef,
+  type PitSave,
+} from '../core/state';
 
 // ピット方式の発掘シーン。POC-7 で検証したルール一式:
 // 層で掘り味が変わる / がんばんは Lv2 / 岩・水晶・枝 / 支えルール / 崩落 / タップで拾う
@@ -13,7 +22,7 @@ export const GRID_DEPTH = 6;
 const CELL = 0.562;
 const PITCH = 0.57;
 const STRATA_COLORS = [0xd9c896, 0xd0b988, 0xb59a76, 0xa8896a, 0xa1704f, 0x965f43];
-const BEDROCK_COLOR = 0x555a63;
+const gateColor = (look: string): number => parseInt(GATE_LOOKS[look]?.color ?? '555a63', 16);
 
 const ACTION_COOLDOWN_MS = 140;
 const DAMAGE_CAP_PER_ACTION = 2;
@@ -87,50 +96,7 @@ class FossilPiece {
     for (const [gx, gz] of def.cells) center.add(cellCenter(idx(gx, gz, def.layer)));
     center.divideScalar(def.cells.length);
 
-    if (def.kind === 'long') {
-      const alongX = def.cells[1]![0] !== def.cells[0]![0];
-      const shaft = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.11, 0.11, PITCH * def.cells.length * 0.86, 10),
-        this.material,
-      );
-      shaft.rotation.z = Math.PI / 2;
-      this.group.add(shaft);
-      const knobGeo = new THREE.SphereGeometry(0.15, 10, 8);
-      for (const sx of [-1, 1]) {
-        for (const sz of [-1, 1]) {
-          const knob = new THREE.Mesh(knobGeo, this.material);
-          knob.position.set((sx * PITCH * def.cells.length * 0.86) / 2, 0, sz * 0.09);
-          this.group.add(knob);
-        }
-      }
-      if (!alongX) this.group.rotation.y = Math.PI / 2;
-    } else if (def.kind === 'blob') {
-      const dome = new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 10), this.material);
-      dome.scale.set(1.2, 0.8, 1.2);
-      this.group.add(dome);
-      const snout = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.22, 0.3), this.material);
-      snout.position.set(0.42, -0.06, 0);
-      this.group.add(snout);
-      const dark = new THREE.MeshStandardMaterial({ color: 0x3a3226 });
-      for (const sz of [-1, 1]) {
-        const socket = new THREE.Mesh(new THREE.SphereGeometry(0.07, 8, 6), dark);
-        socket.position.set(0.18, 0.12, sz * 0.18);
-        this.group.add(socket);
-      }
-    } else {
-      const coil = new THREE.Mesh(
-        new THREE.TorusGeometry(0.32, 0.13, 8, 16, Math.PI * 1.7),
-        this.material,
-      );
-      coil.rotation.x = -Math.PI / 2;
-      this.group.add(coil);
-      const inner = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.08, 8, 12), this.material);
-      inner.rotation.x = -Math.PI / 2;
-      this.group.add(inner);
-      const tip = new THREE.Mesh(new THREE.SphereGeometry(0.13, 8, 6), this.material);
-      tip.position.set(0.32, 0, 0.24);
-      this.group.add(tip);
-    }
+    this.group.add(buildBoneShape(def, this.material, PITCH));
     this.group.position.copy(center);
     this.group.visible = false;
     this.group.traverse((o) => {
@@ -194,7 +160,7 @@ export class PitMode {
   private readonly alive: boolean[] = [];
   private readonly hardHp: number[] = [];
   private readonly baseColors: THREE.Color[] = [];
-  private readonly bedrockSet = new Set<number>();
+  private readonly gateAt = new Map<number, GateDef>();
   private readonly branchSet = new Set<number>();
   private readonly fossils: FossilPiece[] = [];
   private readonly cellOwner = new Map<number, FossilPiece>();
@@ -273,14 +239,16 @@ export class PitMode {
     this.soil.receiveShadow = true;
     this.root.add(this.soil);
 
-    for (const [gx, gz, l] of def.bedrock) this.bedrockSet.add(idx(gx, gz, l));
+    for (const gate of def.gates)
+      for (const [gx, gz, l] of gate.cells) this.gateAt.set(idx(gx, gz, l), gate);
     for (const [gx, gz, l] of def.branches) this.branchSet.add(idx(gx, gz, l));
 
     const color = new THREE.Color();
     for (let i = 0; i < GRID_X * GRID_Z * GRID_DEPTH; i++) {
       const { gx, gz, layer } = coords(i);
-      if (this.bedrockSet.has(i)) {
-        color.setHex(BEDROCK_COLOR);
+      const gate = this.gateAt.get(i);
+      if (gate) {
+        color.setHex(gateColor(gate.look));
         color.offsetHSL(0, 0, (((gx * 13 + gz * 7) % 8) / 8 - 0.5) * 0.04);
       } else {
         color.setHex(STRATA_COLORS[layer]!);
@@ -289,7 +257,7 @@ export class PitMode {
       this.baseColors.push(color.clone());
       this.soil.setColorAt(i, color);
       this.alive.push(true);
-      this.hardHp.push(this.bedrockSet.has(i) || layer >= HARD_LAYER_FROM ? 2 : 1);
+      this.hardHp.push(this.gateAt.has(i) || layer >= HARD_LAYER_FROM ? 2 : 1);
       this.setSoilMatrix(i, 1);
     }
 
@@ -524,7 +492,7 @@ export class PitMode {
         this.def.crystals.some(([gx, gz, l]) => idx(gx, gz, l) === i);
       if (!this.alive[i] && !isContent) removed.push(i);
       const { layer } = coords(i);
-      const baseHp = this.bedrockSet.has(i) || layer >= HARD_LAYER_FROM ? 2 : 1;
+      const baseHp = this.gateAt.has(i) || layer >= HARD_LAYER_FROM ? 2 : 1;
       if (this.alive[i] && this.hardHp[i]! < baseHp) hardHits.push([i, this.hardHp[i]!]);
     }
     const fossils: PitSave['fossils'] = {};
@@ -628,7 +596,7 @@ export class PitMode {
       const i = idx(gx, gz, l);
       const below = idx(gx, gz, l + 1);
       if (this.cellSolid(below)) continue;
-      if (this.alive[i] && !this.bedrockSet.has(i)) {
+      if (this.alive[i] && !this.gateAt.has(i)) {
         this.alive[i] = false;
         this.setSoilMatrix(i, 0);
         this.particles.burst(cellCenter(i), this.baseColors[i]!, 6);
@@ -749,7 +717,7 @@ export class PitMode {
     }
     if (this.alive[i]) {
       const bare = this.state.tool.broken;
-      if (bare && (this.bedrockSet.has(i) || coords(i).layer >= HARD_LAYER_FROM)) {
+      if (bare && (this.gateAt.has(i) || coords(i).layer >= HARD_LAYER_FROM)) {
         this.sfx.knockEmpty();
         const now = performance.now();
         if (now - this.lastBareMsgAt > 1200) {
@@ -767,14 +735,17 @@ export class PitMode {
         if (this.soil.instanceColor) this.soil.instanceColor.needsUpdate = true;
         return { damaged: false };
       }
-      if (this.bedrockSet.has(i) && this.state.tool.level < 2) {
+      const lockedGate = this.gateAt.get(i);
+      if (lockedGate && !this.state.meetsNeed(lockedGate.needs)) {
         this.sfx.clank();
         this.bedrockPulse.set(i, 1);
+        const newMark = this.state.recordMark(this.def, lockedGate);
         const now = performance.now();
         if (now - this.lastBedrockMsgAt > 900) {
           this.lastBedrockMsgAt = now;
           this.cb.onBedrockBlocked();
         }
+        if (newMark) this.cb.showMsg('📝 ノートの「きになるリスト」に かきとめた');
         return { damaged: false };
       }
       if (this.hardHp[i]! > 1) {

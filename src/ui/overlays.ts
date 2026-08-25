@@ -1,12 +1,17 @@
 import { Sfx } from '../core/audio';
 import {
   ERAS,
+  GATE_LOOKS,
   GameState,
+  ISLANDS,
   KNOWLEDGE,
+  NEED_LABELS,
   PICK_MAX_HP,
   RECIPES,
   SPECIES,
   STORY,
+  islandById,
+  pitById,
   speciesById,
 } from '../core/state';
 
@@ -39,6 +44,7 @@ export class Overlays {
       el(`nb-tab-${t}`).addEventListener('click', () => this.openNotebook(t));
     }
     el('museum-close').addEventListener('click', () => this.hide('ov-museum'));
+    el('boat-close').addEventListener('click', () => this.hide('ov-boat'));
     el('craft-close').addEventListener('click', () => this.hide('ov-craft'));
     el('craft-repair').addEventListener('click', () => this.craft('repair'));
     el('craft-upgrade').addEventListener('click', () => this.craft('upgrade'));
@@ -59,13 +65,21 @@ export class Overlays {
       'ov-notebook',
       'ov-museum',
       'ov-craft',
+      'ov-boat',
       'ov-assembly',
       'ov-celebrate',
       'ov-ceremony',
     ].some((id) => el(id).classList.contains('show'));
   }
   closeAll(): void {
-    for (const id of ['ov-notebook', 'ov-museum', 'ov-craft', 'ov-assembly', 'ov-celebrate']) {
+    for (const id of [
+      'ov-notebook',
+      'ov-museum',
+      'ov-craft',
+      'ov-boat',
+      'ov-assembly',
+      'ov-celebrate',
+    ]) {
       this.hide(id);
     }
   }
@@ -146,12 +160,58 @@ export class Overlays {
   }
 
   private renderKnowledgePages(): string {
-    return KNOWLEDGE.map(
-      (k) => `<div class="nb-page">
+    return (
+      this.renderMarksPage() +
+      KNOWLEDGE.map(
+        (k) => `<div class="nb-page">
         <div class="nb-head"><span class="nb-emoji">🔍</span><b>${k.title}</b></div>
         <div class="nb-fact">${k.body}</div>
       </div>`,
-    ).join('');
+      ).join('')
+    );
+  }
+
+  // 触った封印の記録。あけられるようになったものには ✅ が付く
+  private renderMarksPage(): string {
+    const marks = this.state.markList();
+    if (marks.length === 0) return '';
+    const rows = marks
+      .map((m) => {
+        const ok = this.state.meetsNeed(m.needs);
+        const gate = GATE_LOOKS[m.look]?.nameJa ?? m.look;
+        const need = NEED_LABELS[m.needs] ?? m.needs;
+        return `<li class="${ok ? '' : 'dim'}">${ok ? '✅ いける!' : '🔴'} ${pitById(m.pitId).nameJa}（${islandById(m.islandId).nameJa}）<div class="dim">${gate} — ${need}が いる</div></li>`;
+      })
+      .join('');
+    return `<div class="nb-page">
+      <div class="nb-head"><span class="nb-emoji">📍</span><b>きになるリスト</b></div>
+      <ul class="nb-bones">${rows}</ul>
+    </div>`;
+  }
+
+  // ---- ⛵しまセレクト -----------------------------------------------------------
+
+  openBoat(): void {
+    const rows = ISLANDS.map((island) => {
+      const here = island.id === this.state.data.currentIsland;
+      return `<div class="recipe">
+        <div>
+          <b>${island.emoji} ${island.nameJa}</b>
+          <small>${here ? 'いま ここに いる' : ''}</small>
+        </div>
+        <button type="button" disabled>${here ? 'いまここ' : 'いく'}</button>
+      </div>`;
+    }).join('');
+    el('boat-list').innerHTML =
+      rows +
+      `<div class="recipe teaser">
+        <div>
+          <b>？？？の しま</b>
+          <small>あたらしい しまの うわさが きこえてくる…</small>
+        </div>
+        <button type="button" disabled>じゅんびちゅう</button>
+      </div>`;
+    this.show('ov-boat');
   }
 
   // ---- クラフト ----------------------------------------------------------------
@@ -207,7 +267,11 @@ export class Overlays {
       this.state.spend(RECIPES.upgrade);
       this.state.upgradePick();
       this.sfx.fanfare();
-      this.hooks.showMsg('✨ がんじょうピッケル かんせい! がんばんも ほれるぞ!');
+      const lines = ['✨ がんじょうピッケル かんせい! がんばんも ほれるぞ!'];
+      if (this.state.openableMarks().length > 0) {
+        lines.push('📍 きになるリストの ふういんが あけられるぞ!');
+      }
+      this.hooks.queueMsgs(lines);
     }
     this.refreshCraft();
     this.hooks.onHudChange();

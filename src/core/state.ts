@@ -1,5 +1,5 @@
 import speciesJson from '../data/species.json';
-import pitsJson from '../data/pits.json';
+import gameJson from '../data/game.json';
 import storyJson from '../data/story.json';
 
 // ---- データ型(JSON 駆動) -----------------------------------------------------
@@ -21,6 +21,7 @@ export interface SpeciesDef {
   funFact: string;
   learn: string;
   bones: BoneDef[];
+  art?: { skeleton?: string; living?: string };
 }
 export interface EraDef {
   id: string;
@@ -37,9 +38,14 @@ export interface KnowledgeDef {
 export interface FossilDef {
   speciesId: string;
   boneId: string;
-  kind: 'long' | 'blob' | 'ammonite';
+  kind: string;
   layer: number;
   cells: [number, number][];
+}
+export interface GateDef {
+  cells: [number, number, number][];
+  look: string;
+  needs: string;
 }
 export interface PitDef {
   id: string;
@@ -52,19 +58,46 @@ export interface PitDef {
   crystals: [number, number, number][];
   branches: [number, number, number][];
   ores: [number, number, number][];
-  bedrock: [number, number, number][];
+  gates: GateDef[];
+  islandId: string;
+}
+export interface IslandDef {
+  id: string;
+  nameJa: string;
+  emoji: string;
+  order: number;
+  pits: PitDef[];
 }
 
 export const SPECIES = speciesJson.species as SpeciesDef[];
 export const ERAS = speciesJson.eras as EraDef[];
 export const KNOWLEDGE = speciesJson.knowledge as KnowledgeDef[];
-export const PITS = pitsJson.pits as PitDef[];
-export const RECIPES = pitsJson.recipes as {
+export const RECIPES = gameJson.recipes as {
   repair: { wood: number; stone: number };
   upgrade: { wood: number; iron: number; crystal: number };
 };
-export const PICK_MAX_HP = pitsJson.pickMaxHp as number;
+export const PICK_MAX_HP = gameJson.pickMaxHp as number;
+export const GATE_LOOKS = gameJson.gateLooks as Record<string, { nameJa: string; color: string }>;
+export const NEED_LABELS = gameJson.needLabels as Record<string, string>;
 export const STORY = storyJson;
+
+// 島パック: src/data/islands/*.json を置くだけで島が増える(柱6)
+const islandModules = import.meta.glob('../data/islands/*.json', { eager: true }) as Record<
+  string,
+  { default: unknown }
+>;
+export const ISLANDS: IslandDef[] = Object.values(islandModules)
+  .map((m) => m.default as IslandDef)
+  .sort((a, b) => a.order - b.order);
+for (const island of ISLANDS) {
+  for (const pit of island.pits) {
+    pit.islandId = island.id;
+    pit.gates ??= [];
+  }
+}
+export const ALL_PITS: PitDef[] = ISLANDS.flatMap((i) => i.pits);
+export const islandById = (id: string): IslandDef => ISLANDS.find((i) => i.id === id)!;
+export const pitById = (id: string): PitDef => ALL_PITS.find((p) => p.id === id)!;
 
 export const boneKey = (speciesId: string, boneId: string): string => `${speciesId}:${boneId}`;
 export const speciesById = (id: string): SpeciesDef => SPECIES.find((s) => s.id === id)!;
@@ -72,7 +105,7 @@ export const speciesById = (id: string): SpeciesDef => SPECIES.find((s) => s.id 
 // ---- セーブ(localStorage・バージョン付き) ------------------------------------
 
 const SAVE_KEY = 'honehori-save';
-const SAVE_VERSION = 1;
+const SAVE_VERSION = 2;
 
 export interface FossilCellSave {
   status: 'hidden' | 'crusted' | 'clean';
@@ -92,14 +125,25 @@ export interface PitSave {
   branchesTaken: number[];
 }
 
+export interface MarkSave {
+  pitId: string;
+  islandId: string;
+  look: string;
+  needs: string;
+}
+interface IslandSave {
+  discovered: string[];
+  pits: Record<string, PitSave>;
+}
 interface SaveData {
   version: number;
   inv: { wood: number; stone: number; crystal: number; iron: number };
   tool: { level: number; hp: number; broken: boolean };
   fossilStars: Record<string, number>;
   restored: Record<string, number>;
-  discovered: string[];
-  pits: Record<string, PitSave>;
+  currentIsland: string;
+  islands: Record<string, IslandSave>;
+  marks: Record<string, MarkSave>;
   flags: Record<string, boolean>;
   hintIndex: number;
 }
@@ -111,11 +155,23 @@ function defaults(): SaveData {
     tool: { level: 1, hp: PICK_MAX_HP, broken: false },
     fossilStars: {},
     restored: {},
-    discovered: [],
-    pits: {},
+    currentIsland: 'k1',
+    islands: {},
+    marks: {},
     flags: {},
     hintIndex: 0,
   };
+}
+
+// v1 セーブ(単一島時代)を v2 に包む
+function migrate(parsed: Record<string, unknown>): SaveData {
+  if (parsed.version === 1) {
+    const legacy = parsed as { discovered?: string[]; pits?: Record<string, PitSave> };
+    parsed.version = 2;
+    parsed.currentIsland = 'k1';
+    parsed.islands = { k1: { discovered: legacy.discovered ?? [], pits: legacy.pits ?? {} } };
+  }
+  return parsed as unknown as SaveData;
 }
 
 export class GameState {
@@ -134,14 +190,16 @@ export class GameState {
     try {
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return false;
-      const parsed = JSON.parse(raw) as SaveData;
-      if (parsed.version !== SAVE_VERSION) return false; // 将来ここでマイグレーション
+      const parsed = migrate(JSON.parse(raw) as Record<string, unknown>);
+      if (parsed.version !== SAVE_VERSION) return false;
       const base = defaults();
       this.data = {
         ...base,
         ...parsed,
         inv: { ...base.inv, ...parsed.inv },
         tool: { ...base.tool, ...parsed.tool },
+        islands: parsed.islands ?? {},
+        marks: parsed.marks ?? {},
       };
       return true;
     } catch {
@@ -251,26 +309,56 @@ export class GameState {
     this.repairPick();
   }
 
-  // ---- ピット・進行 ----
+  // ---- 島・ピット・進行 ----
+  get island(): IslandDef {
+    return islandById(this.data.currentIsland);
+  }
+  private islandSave(id = this.data.currentIsland): IslandSave {
+    return (this.data.islands[id] ??= { discovered: [], pits: {} });
+  }
   isDiscovered(pitId: string): boolean {
-    return this.data.discovered.includes(pitId);
+    return this.islandSave().discovered.includes(pitId);
   }
   discover(pitId: string): void {
     if (!this.isDiscovered(pitId)) {
-      this.data.discovered.push(pitId);
+      this.islandSave().discovered.push(pitId);
       this.changed();
     }
   }
   pitSave(pitId: string): PitSave | undefined {
-    return this.data.pits[pitId];
+    return this.islandSave().pits[pitId];
   }
   storePit(pitId: string, save: PitSave): void {
-    this.data.pits[pitId] = save;
+    this.islandSave().pits[pitId] = save;
     this.changed();
   }
   pitDone(pitId: string): boolean {
-    const pit = PITS.find((p) => p.id === pitId)!;
-    return pit.fossils.every((f) => this.hasBone(f.speciesId, f.boneId));
+    return pitById(pitId).fossils.every((f) => this.hasBone(f.speciesId, f.boneId));
+  }
+
+  // ---- 封印ゲートと「きになるリスト」 ----
+  meetsNeed(needs: string): boolean {
+    const pick = /^pick(\d)$/.exec(needs);
+    if (pick) return this.data.tool.level >= Number(pick[1]);
+    return this.flag(`item:${needs}`);
+  }
+  recordMark(pit: PitDef, gate: GateDef): boolean {
+    const key = `${pit.id}:${gate.look}`;
+    if (this.data.marks[key]) return false;
+    this.data.marks[key] = {
+      pitId: pit.id,
+      islandId: pit.islandId,
+      look: gate.look,
+      needs: gate.needs,
+    };
+    this.changed();
+    return true;
+  }
+  markList(): MarkSave[] {
+    return Object.values(this.data.marks);
+  }
+  openableMarks(): MarkSave[] {
+    return this.markList().filter((m) => this.meetsNeed(m.needs));
   }
 
   flag(name: string): boolean {
