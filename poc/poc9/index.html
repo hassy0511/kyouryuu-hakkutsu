@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#171d1c" />
+    <title>スピノサウルス 3Dミュージアム | ほねほり調査隊</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: 'Hiragino Maru Gothic ProN', 'BIZ UDGothic', system-ui, sans-serif;
+        background: #171d1c;
+        color: #f8f2df;
+        font-synthesis: none;
+      }
+
+      * {
+        box-sizing: border-box;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+
+      body {
+        background:
+          radial-gradient(circle at 50% 34%, rgba(109, 124, 104, 0.22), transparent 45%),
+          linear-gradient(180deg, #26302d 0%, #171d1c 72%, #101514 100%);
+      }
+
+      button,
+      a {
+        font: inherit;
+      }
+
+      #museum {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        isolation: isolate;
+      }
+
+      #scene {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+        cursor: grab;
+      }
+
+      #scene:active {
+        cursor: grabbing;
+      }
+
+      .topbar {
+        position: absolute;
+        z-index: 2;
+        top: max(14px, env(safe-area-inset-top));
+        left: max(14px, env(safe-area-inset-left));
+        right: max(14px, env(safe-area-inset-right));
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        pointer-events: none;
+      }
+
+      .heading {
+        max-width: min(560px, 74vw);
+        padding: 11px 15px 12px;
+        border: 1px solid rgba(242, 234, 216, 0.2);
+        border-radius: 14px;
+        background: rgba(18, 24, 22, 0.7);
+        box-shadow: 0 10px 32px rgba(0, 0, 0, 0.22);
+        backdrop-filter: blur(10px);
+      }
+
+      .eyebrow {
+        margin: 0 0 3px;
+        color: #e9b76b;
+        font-size: clamp(10px, 1.8vw, 12px);
+        font-weight: 700;
+        letter-spacing: 0.15em;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: clamp(20px, 4.4vw, 34px);
+        line-height: 1.15;
+        letter-spacing: 0.04em;
+      }
+
+      .feature {
+        margin: 5px 0 0;
+        color: #d8cfb7;
+        font-size: clamp(11px, 2.2vw, 14px);
+        line-height: 1.45;
+      }
+
+      .back {
+        display: grid;
+        min-width: 48px;
+        min-height: 48px;
+        place-items: center;
+        border: 1px solid rgba(242, 234, 216, 0.22);
+        border-radius: 50%;
+        background: rgba(18, 24, 22, 0.72);
+        color: #f8f2df;
+        font-size: 21px;
+        text-decoration: none;
+        pointer-events: auto;
+        backdrop-filter: blur(10px);
+      }
+
+      .tip {
+        position: absolute;
+        z-index: 2;
+        top: 150px;
+        left: max(12px, env(safe-area-inset-left));
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin: 0;
+        padding: 7px 10px;
+        border: 1px solid rgba(242, 234, 216, 0.14);
+        border-radius: 999px;
+        background: rgba(18, 24, 22, 0.58);
+        color: #cfc7b1;
+        font-size: 11px;
+        pointer-events: none;
+        transition: opacity 400ms ease;
+        backdrop-filter: blur(8px);
+      }
+
+      .tip.hidden {
+        opacity: 0;
+      }
+
+      .controls-panel {
+        position: absolute;
+        z-index: 3;
+        right: max(12px, env(safe-area-inset-right));
+        bottom: max(14px, env(safe-area-inset-bottom));
+        left: max(12px, env(safe-area-inset-left));
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 9px;
+        pointer-events: none;
+      }
+
+      .mode-label {
+        margin: 0;
+        padding: 6px 11px;
+        border: 1px solid rgba(242, 234, 216, 0.14);
+        border-radius: 999px;
+        background: rgba(18, 24, 22, 0.68);
+        color: #d8cfb7;
+        font-size: 11px;
+        line-height: 1.35;
+        text-align: center;
+        backdrop-filter: blur(8px);
+      }
+
+      .switcher {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        width: min(560px, 100%);
+        padding: 7px;
+        border: 1px solid rgba(242, 234, 216, 0.2);
+        border-radius: 18px;
+        background: rgba(18, 24, 22, 0.8);
+        box-shadow: 0 12px 38px rgba(0, 0, 0, 0.28);
+        pointer-events: auto;
+        backdrop-filter: blur(12px);
+      }
+
+      .mode-button {
+        min-height: 52px;
+        padding: 9px 12px;
+        border: 1px solid transparent;
+        border-radius: 12px;
+        background: transparent;
+        color: #d8cfb7;
+        font-size: clamp(13px, 2.7vw, 16px);
+        font-weight: 700;
+        cursor: pointer;
+        transition:
+          background 180ms ease,
+          color 180ms ease,
+          box-shadow 180ms ease,
+          transform 120ms ease;
+      }
+
+      .mode-button:active {
+        transform: scale(0.98);
+      }
+
+      .mode-button.active {
+        border-color: #ffd78f;
+        background: linear-gradient(180deg, #efb85e, #d99a3c);
+        color: #241d12;
+        box-shadow: 0 4px 16px rgba(224, 163, 60, 0.3);
+      }
+
+      .mode-button:focus-visible,
+      .back:focus-visible {
+        outline: 3px solid #fff0ba;
+        outline-offset: 3px;
+      }
+
+      .stats {
+        position: absolute;
+        z-index: 2;
+        right: max(12px, env(safe-area-inset-right));
+        top: calc(max(14px, env(safe-area-inset-top)) + 58px);
+        margin: 0;
+        padding: 5px 8px;
+        border-radius: 7px;
+        background: rgba(8, 12, 11, 0.55);
+        color: #9fa99d;
+        font:
+          10px/1.35 ui-monospace,
+          monospace;
+        pointer-events: none;
+      }
+
+      .loading {
+        position: absolute;
+        z-index: 5;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: #171d1c;
+        color: #e8dfc9;
+        font-weight: 700;
+        transition: opacity 350ms ease;
+        pointer-events: none;
+      }
+
+      .loading.done {
+        opacity: 0;
+      }
+
+      @media (max-height: 620px) {
+        .heading {
+          padding: 8px 11px;
+        }
+
+        .feature,
+        .mode-label,
+        .tip {
+          display: none;
+        }
+
+        .mode-button {
+          min-height: 48px;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="museum">
+      <canvas id="scene" aria-label="まわして見られる スピノサウルスの3Dてんじ"></canvas>
+
+      <header class="topbar">
+        <div class="heading">
+          <p class="eyebrow">ほねほり調査隊・3Dミュージアム</p>
+          <h1>スピノサウルス</h1>
+          <p class="feature">🔍 せなかの おおきな ほ! スピノサウルスの しるし</p>
+        </div>
+        <a class="back" href="../" aria-label="POCいちらんへ もどる">←</a>
+      </header>
+
+      <p id="tip" class="tip">
+        <span aria-hidden="true">☝️</span> ゆびで まわす・2ほんで おおきさを かえる
+      </p>
+
+      <section class="controls-panel" aria-label="すがたの きりかえ">
+        <p id="mode-label" class="mode-label" aria-live="polite">ホネと からだを くらべてみよう</p>
+        <div class="switcher">
+          <button id="skeleton-button" class="mode-button active" type="button" aria-pressed="true">
+            🦴 ホネのすがた
+          </button>
+          <button id="living-button" class="mode-button" type="button" aria-pressed="false">
+            🦖 いきていたすがた
+          </button>
+        </div>
+      </section>
+
+      <p id="stats" class="stats" aria-hidden="true">けいそく中…</p>
+      <div id="loading" class="loading">🦴 てんじを くみたてています…</div>
+    </main>
+
+    <script>
+      if (window.location.protocol === 'file:') {
+        const loadingMessage = document.querySelector('#loading');
+        if (loadingMessage) {
+          loadingMessage.textContent = '⚠️ このてんじは サーバーから ひらいてね（READMEを みてね）';
+        }
+      }
+    </script>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
