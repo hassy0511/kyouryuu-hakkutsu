@@ -92,8 +92,11 @@ export class ExhibitMode {
     this.camera.far = fitDist * 8;
     this.camera.updateProjectionMatrix();
     this.scene.fog = new THREE.Fog('#202826', fitDist * 1.4, fitDist * 3.2);
-    pedestal.scale.setScalar(Math.max(radius / 7.8, 0.04));
-    rim.scale.setScalar(Math.max(radius / 7.8, 0.04));
+    const stageScale = Math.max(radius / 7.8, 0.04);
+    pedestal.scale.setScalar(stageScale);
+    pedestal.position.y = -0.18 * stageScale;
+    rim.scale.setScalar(stageScale);
+    rim.position.y = -0.005 * stageScale;
     keyLight.position.set(radius * 0.9, radius * 1.55, radius * 1.05);
     const shadowSpan = Math.max(radius * 1.25, 0.6);
     keyLight.shadow.camera.left = -shadowSpan;
