@@ -130,6 +130,10 @@ const FIELD_CALLBACKS: FieldCallbacks = {
       queueMsgs(STORY.hakase.preCeremony);
       return;
     }
+    if (state.flag('ceremonyDone') && state.allRestored('k2') && !state.flag('wing:k2')) {
+      queueMsgs(STORY.hakase.preWingK2);
+      return;
+    }
     // 詰み防止: ピッケルが こわれて 修理素材も 足りないときは 分けてくれる
     if (state.tool.broken && !state.canAfford(RECIPES.repair)) {
       const giveWood = Math.max(0, RECIPES.repair.wood - state.inv.wood);
@@ -460,11 +464,11 @@ const meter = location.search.includes('debug')
   openExhibit: (id: string) => enterExhibit(id),
   exitExhibit: () => exitExhibit(),
   openNotebook: () => overlays.openNotebook(),
-  debugFinish: () => {
-    // スモークテスト用: 第1章のホネ回収+復元(開館式の直前状態を作る)
+  debugFinish: (islandId = 'k1') => {
+    // スモークテスト用: 指定した章のホネ回収+復元(開館式/ウィング開館の直前状態を作る)
     import('./core/state').then(({ SPECIES }) => {
       for (const sp of SPECIES) {
-        if (sp.hidden || (sp.island ?? 'k1') !== 'k1') continue;
+        if (sp.hidden || (sp.island ?? 'k1') !== islandId) continue;
         for (const b of sp.bones) state.collectBone(sp.id, b.id, 3);
         if (!state.isRestored(sp.id)) state.restore(sp.id);
       }

@@ -322,6 +322,14 @@ export class Overlays {
       this.runCeremony();
       return;
     }
+    if (
+      this.state.flag('ceremonyDone') &&
+      this.state.allRestored('k2') &&
+      !this.state.flag('wing:k2')
+    ) {
+      this.runWingCeremony('k2');
+      return;
+    }
     const cards = SPECIES.filter((sp) => this.state.isSpeciesVisible(sp.id))
       .map((sp) => {
         if (this.state.isRestored(sp.id)) {
@@ -349,9 +357,14 @@ export class Overlays {
       </div>`;
       })
       .join('');
+    const wingLabel = this.state.flag('wing:k2')
+      ? '？？？の ウィング'
+      : this.state.flag('ceremonyDone')
+        ? 'ジュラの ウィング'
+        : 'あたらしい ウィング';
     el('museum-cards').innerHTML =
       cards +
-      `<div class="mu-card wing"><div class="mu-emoji">🚪</div><b>あたらしい ウィング</b><div class="dim">じゅんびちゅう…</div></div>`;
+      `<div class="mu-card wing"><div class="mu-emoji">🚪</div><b>${wingLabel}</b><div class="dim">じゅんびちゅう…</div></div>`;
     for (const btn of el('museum-cards').querySelectorAll('button[data-restore]')) {
       btn.addEventListener('click', () =>
         this.startAssembly((btn as HTMLElement).dataset.restore!),
@@ -440,13 +453,7 @@ export class Overlays {
 
   // ---- 開館式(第1章クライマックス) ----------------------------------------------
 
-  private runCeremony(): void {
-    const c = STORY.ceremony;
-    const steps: string[] = [
-      `<h1>${c.title}</h1>` + c.lines.map((l) => `<p>${l}</p>`).join(''),
-      `<div class="letter">${c.letter.map((l) => `<p>${l}</p>`).join('')}</div>`,
-      `<div class="trophy">🏆</div><p><b>${c.outro}</b></p><p class="dim">— だい1しょう おわり。まだまだ つづく! —</p>`,
-    ];
+  private runCeremonySteps(steps: string[], onDone: () => void): void {
     let step = 0;
     const body = el('ceremony-body');
     const render = (): void => {
@@ -458,8 +465,7 @@ export class Overlays {
       if (step >= steps.length) {
         this.hide('ov-ceremony');
         el('ceremony-next').removeEventListener('click', next);
-        this.state.setFlag('ceremonyDone');
-        this.hooks.queueMsgs(STORY.hakase.postCeremony);
+        onDone();
         this.hooks.onHudChange();
         return;
       }
@@ -469,5 +475,36 @@ export class Overlays {
     this.sfx.grandFanfare();
     render();
     this.show('ov-ceremony');
+  }
+
+  private runCeremony(): void {
+    const c = STORY.ceremony;
+    this.runCeremonySteps(
+      [
+        `<h1>${c.title}</h1>` + c.lines.map((l) => `<p>${l}</p>`).join(''),
+        `<div class="letter">${c.letter.map((l) => `<p>${l}</p>`).join('')}</div>`,
+        `<div class="trophy">🏆</div><p><b>${c.outro}</b></p><p class="dim">— だい1しょう おわり。まだまだ つづく! —</p>`,
+      ],
+      () => {
+        this.state.setFlag('ceremonyDone');
+        this.hooks.queueMsgs(STORY.hakase.postCeremony);
+      },
+    );
+  }
+
+  // 章クリア(その島の表の種をぜんぶ復元)ごとの ウィング開館
+  private runWingCeremony(islandId: string): void {
+    const c = (STORY.wings as Record<string, typeof STORY.ceremony>)[islandId];
+    if (!c) return;
+    this.runCeremonySteps(
+      [
+        `<h1>${c.title}</h1>` + c.lines.map((l) => `<p>${l}</p>`).join(''),
+        `<div class="letter">${c.letter.map((l) => `<p>${l}</p>`).join('')}</div>`,
+        `<div class="trophy">🏆</div><p><b>${c.outro}</b></p><p class="dim">— だい2しょう おわり。まだまだ つづく! —</p>`,
+      ],
+      () => {
+        this.state.setFlag(`wing:${islandId}`);
+      },
+    );
   }
 }
