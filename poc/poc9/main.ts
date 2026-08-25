@@ -1,8 +1,22 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { buildSpinosaurus } from '../../src/art/dino3d/spinosaurus';
+import { buildDinoModel } from '../../src/art/dino3d';
 
 type ViewMode = 'skeleton' | 'living';
+type SpeciesId = 'spinosaurus' | 'tyrannosaurus';
+
+const SPECIES = {
+  spinosaurus: {
+    name: 'スピノサウルス',
+    feature: '🔍 せなかの おおきな ほ! スピノサウルスの しるし',
+    skeletonTip: 'ながい口・せなかのトゲ・ひらたいしっぽに ちゅうもく!',
+  },
+  tyrannosaurus: {
+    name: 'ティラノサウルス',
+    feature: '🔍 おおきな あたま と 2ほんゆびに ちゅうもく!',
+    skeletonTip: 'おおきな とうこつ・2ほんゆび・ふとい あしを みてみよう!',
+  },
+} as const;
 
 interface ModelStats {
   triangles: number;
@@ -22,6 +36,22 @@ const modeLabel = requireElement<HTMLElement>('#mode-label');
 const statsLabel = requireElement<HTMLElement>('#stats');
 const loading = requireElement<HTMLElement>('#loading');
 const tip = requireElement<HTMLElement>('#tip');
+const speciesName = requireElement<HTMLElement>('#species-name');
+const speciesFeature = requireElement<HTMLElement>('#species-feature');
+const spinosaurusLink = requireElement<HTMLAnchorElement>('#species-spinosaurus');
+const tyrannosaurusLink = requireElement<HTMLAnchorElement>('#species-tyrannosaurus');
+
+const requestedSpecies = new URLSearchParams(window.location.search).get('species');
+const speciesId: SpeciesId = requestedSpecies === 'tyrannosaurus' ? 'tyrannosaurus' : 'spinosaurus';
+const speciesInfo = SPECIES[speciesId];
+speciesName.textContent = speciesInfo.name;
+speciesFeature.textContent = speciesInfo.feature;
+canvas.setAttribute('aria-label', `まわして見られる ${speciesInfo.name}の3Dてんじ`);
+document.title = `${speciesInfo.name} 3Dミュージアム | ほねほり調査隊`;
+spinosaurusLink.classList.toggle('active', speciesId === 'spinosaurus');
+tyrannosaurusLink.classList.toggle('active', speciesId === 'tyrannosaurus');
+spinosaurusLink.setAttribute('aria-current', speciesId === 'spinosaurus' ? 'page' : 'false');
+tyrannosaurusLink.setAttribute('aria-current', speciesId === 'tyrannosaurus' ? 'page' : 'false');
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#202826');
@@ -51,7 +81,8 @@ keyLight.shadow.camera.top = 9;
 keyLight.shadow.camera.bottom = -4;
 keyLight.shadow.camera.near = 1;
 keyLight.shadow.camera.far = 32;
-keyLight.shadow.bias = -0.0008;
+keyLight.shadow.bias = -0.0002;
+keyLight.shadow.normalBias = 0.035;
 scene.add(keyLight);
 
 const pedestalMaterial = new THREE.MeshStandardMaterial({
@@ -72,7 +103,9 @@ rim.rotation.x = Math.PI / 2;
 rim.position.y = -0.005;
 scene.add(rim);
 
-const { skeleton, living } = buildSpinosaurus();
+const views = buildDinoModel(speciesId);
+if (!views) throw new Error(`3D model is not registered: ${speciesId}`);
+const { skeleton, living } = views;
 scene.add(skeleton, living);
 
 function forEachMaterial(root: THREE.Object3D, callback: (material: THREE.Material) => void): void {
@@ -109,16 +142,30 @@ const livingStats = getStats(living);
 console.info('[POC-9] Model budget', { skeleton: skeletonStats, living: livingStats });
 
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0.4, 3.05, 0);
 controls.enableDamping = true;
 controls.dampingFactor = 0.065;
 controls.enablePan = false;
-controls.minDistance = 6.5;
-controls.maxDistance = 25;
 controls.minPolarAngle = 0.45;
 controls.maxPolarAngle = Math.PI / 2.03;
 controls.autoRotate = false;
-controls.update();
+
+function fitCameraToModel(): void {
+  const bounds = new THREE.Box3()
+    .setFromObject(skeleton)
+    .union(new THREE.Box3().setFromObject(living));
+  const center = bounds.getCenter(new THREE.Vector3());
+  const size = bounds.getSize(new THREE.Vector3());
+  const verticalFov = THREE.MathUtils.degToRad(camera.fov);
+  const distanceForHeight = size.y / (2 * Math.tan(verticalFov / 2));
+  const distanceForWidth = size.x / (2 * Math.tan(verticalFov / 2) * camera.aspect);
+  const distance = Math.max(distanceForHeight, distanceForWidth) * 1.15;
+
+  controls.target.copy(center);
+  camera.position.set(center.x + size.x * 0.015, center.y + size.y * 0.08, center.z + distance);
+  controls.minDistance = Math.max(size.y * 1.25, distance * 0.45);
+  controls.maxDistance = distance * 2.25;
+  controls.update();
+}
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const transitionDuration = reducedMotion ? 0 : 650;
@@ -143,10 +190,10 @@ function updateButtons(): void {
   skeletonButton.setAttribute('aria-pressed', String(showingSkeleton));
   livingButton.setAttribute('aria-pressed', String(!showingSkeleton));
   modeLabel.textContent = showingSkeleton
-    ? 'ながい口・せなかのトゲ・ひらたいしっぽに ちゅうもく!'
+    ? speciesInfo.skeletonTip
     : 'ホネと おなじポーズに からだが ついたよ!';
   const currentStats = showingSkeleton ? skeletonStats : livingStats;
-  statsLabel.textContent = `MODEL I · △ ${currentStats.triangles.toLocaleString()} / draw ${currentStats.drawCalls}`;
+  statsLabel.textContent = `${speciesInfo.name} · △ ${currentStats.triangles.toLocaleString()} / draw ${currentStats.drawCalls}`;
 }
 
 function showMode(nextMode: ViewMode): void {
@@ -186,6 +233,7 @@ function resize(): void {
 
 window.addEventListener('resize', resize, { passive: true });
 resize();
+fitCameraToModel();
 updateButtons();
 
 let lastFrame = performance.now();
