@@ -15,17 +15,31 @@ const el = (id: string): HTMLElement => {
   return found;
 };
 
-// 島の固定地形(柱2: 世界は固定)
-export function groundHeight(x: number, z: number): number {
+// 島の固定地形(柱2: 世界は固定)。amp で島ごとの起伏の強さを変える
+export function groundHeight(x: number, z: number, amp = 1): number {
   const dunes =
-    0.5 * Math.sin(x * 0.16) * Math.cos(z * 0.14) +
-    0.25 * Math.sin(x * 0.4 + 1) * Math.sin(z * 0.3 + 2);
+    (0.5 * Math.sin(x * 0.16) * Math.cos(z * 0.14) +
+      0.25 * Math.sin(x * 0.4 + 1) * Math.sin(z * 0.3 + 2)) *
+    amp;
   const r = Math.hypot(x, z);
   const openSouth = 1 - THREE.MathUtils.smoothstep(z, 8, 20);
   const rim = THREE.MathUtils.smoothstep(r, 19, 27) * 7 * openSouth;
   const beachFlat = THREE.MathUtils.smoothstep(z, 11, 17);
   return dunes * (1 - beachFlat) * (1 - THREE.MathUtils.smoothstep(r, 19, 23)) + rim;
 }
+
+// 島ごとの見た目(地形の色・空・海・植生)。形の共通部は当面共有し、雰囲気で差別化する
+interface IslandLook {
+  sky: number;
+  sea: number;
+  terrain: number;
+  terrainAmp: number;
+  jungle: boolean;
+}
+const ISLAND_LOOKS: Record<string, IslandLook> = {
+  k1: { sky: 0x9ed4ef, sea: 0x5fb4e0, terrain: 0xd8c28e, terrainAmp: 1, jungle: false },
+  k2: { sky: 0x8fc9d8, sea: 0x3f92a8, terrain: 0x86a45e, terrainAmp: 1.35, jungle: true },
+};
 
 interface Interactable {
   id: string;
@@ -48,6 +62,8 @@ export interface FieldCallbacks {
 export class FieldMode {
   readonly scene = new THREE.Scene();
   readonly camera: THREE.PerspectiveCamera;
+  private readonly look: IslandLook;
+  private readonly ground: (x: number, z: number) => number;
 
   private readonly controls: OrbitControls;
   private readonly player = new THREE.Group();
@@ -67,8 +83,11 @@ export class FieldMode {
     private readonly state: GameState,
     private readonly cb: FieldCallbacks,
   ) {
-    this.scene.background = new THREE.Color(0x9ed4ef);
-    this.scene.fog = new THREE.Fog(0x9ed4ef, 45, 95);
+    this.look = ISLAND_LOOKS[this.state.island.id] ?? ISLAND_LOOKS['k1']!;
+    const look = this.look;
+    this.ground = (x, z) => groundHeight(x, z, look.terrainAmp);
+    this.scene.background = new THREE.Color(look.sky);
+    this.scene.fog = new THREE.Fog(look.sky, 45, 95);
     this.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 200);
     this.camera.position.set(0, 9, 15);
 
@@ -106,22 +125,23 @@ export class FieldMode {
       geo.rotateX(-Math.PI / 2);
       const pos = geo.attributes.position as THREE.BufferAttribute;
       for (let i = 0; i < pos.count; i++) {
-        pos.setY(i, groundHeight(pos.getX(i), pos.getZ(i)));
+        pos.setY(i, this.ground(pos.getX(i), pos.getZ(i)));
       }
       geo.computeVertexNormals();
-      // 島ごとに地形の色を変える(形は当面共通。第2章フルで島別地形にする)
-      const terrainColor =
-        ({ k2: 0x86a45e } as Record<string, number>)[this.state.island.id] ?? 0xd8c28e;
       this.terrain = new THREE.Mesh(
         geo,
-        new THREE.MeshStandardMaterial({ color: terrainColor, roughness: 1, flatShading: true }),
+        new THREE.MeshStandardMaterial({
+          color: this.look.terrain,
+          roughness: 1,
+          flatShading: true,
+        }),
       );
       this.terrain.receiveShadow = true;
       this.scene.add(this.terrain);
 
       const sea = new THREE.Mesh(
         new THREE.PlaneGeometry(120, 40).rotateX(-Math.PI / 2),
-        new THREE.MeshStandardMaterial({ color: 0x5fb4e0, roughness: 0.4 }),
+        new THREE.MeshStandardMaterial({ color: this.look.sea, roughness: 0.4 }),
       );
       sea.position.set(0, -0.12, 38);
       this.scene.add(sea);
@@ -144,7 +164,7 @@ export class FieldMode {
         if (Math.hypot(x - 6, z - 3) < 4) continue; // 博物館の敷地は空ける
         const s = 0.25 + ((i * 29) % 10) / 14;
         const rock = new THREE.Mesh(rockGeo, rockMat);
-        rock.position.set(x, groundHeight(x, z) + s * 0.3, z);
+        rock.position.set(x, this.ground(x, z) + s * 0.3, z);
         rock.scale.set(s, s * 0.7, s);
         rock.rotation.y = i * 1.7;
         rock.castShadow = true;
@@ -152,23 +172,111 @@ export class FieldMode {
         this.scene.add(rock);
       }
       const woodMat = new THREE.MeshStandardMaterial({ color: 0x8b7355, roughness: 1 });
-      for (const [x, z, rot] of [
-        [-8, 4, 0.4],
-        [12, -3, 1.9],
-        [-16, -9, 3.1],
-      ] as const) {
-        const tree = new THREE.Group();
-        const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.2, 2.4, 7), woodMat);
-        trunk.position.y = 1.2;
-        trunk.castShadow = true;
-        const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.1, 1.3, 6), woodMat);
-        branch.position.set(0.35, 1.9, 0);
-        branch.rotation.z = -0.9;
-        branch.castShadow = true;
-        tree.add(trunk, branch);
-        tree.position.set(x, groundHeight(x, z), z);
-        tree.rotation.y = rot;
-        this.scene.add(tree);
+      if (!this.look.jungle) {
+        for (const [x, z, rot] of [
+          [-8, 4, 0.4],
+          [12, -3, 1.9],
+          [-16, -9, 3.1],
+        ] as const) {
+          const tree = new THREE.Group();
+          const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.2, 2.4, 7), woodMat);
+          trunk.position.y = 1.2;
+          trunk.castShadow = true;
+          const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.1, 1.3, 6), woodMat);
+          branch.position.set(0.35, 1.9, 0);
+          branch.rotation.z = -0.9;
+          branch.castShadow = true;
+          tree.add(trunk, branch);
+          tree.position.set(x, this.ground(x, z), z);
+          tree.rotation.y = rot;
+          this.scene.add(tree);
+        }
+      } else {
+        // ジャングルの島: 針葉樹風の高木 + シダ + 地平線の火山(装飾・到達不可)
+        const leafDark = new THREE.MeshStandardMaterial({
+          color: 0x2e6b45,
+          roughness: 1,
+          flatShading: true,
+        });
+        const leafLight = new THREE.MeshStandardMaterial({
+          color: 0x3b8055,
+          roughness: 1,
+          flatShading: true,
+        });
+        for (const [x, z, h] of [
+          [-11, 6, 4.2],
+          [11, -6, 3.6],
+          [-6, -6, 4.6],
+          [15, 2, 3.4],
+          [-17, -6, 4.0],
+          [4, -15, 3.8],
+          [16, 12, 3.2],
+          [-11, 12, 3.6],
+        ] as const) {
+          const tree = new THREE.Group();
+          const trunk = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.14, 0.24, h * 0.55, 7),
+            woodMat,
+          );
+          trunk.position.y = h * 0.275;
+          trunk.castShadow = true;
+          tree.add(trunk);
+          for (let tier = 0; tier < 3; tier++) {
+            const cone = new THREE.Mesh(
+              new THREE.ConeGeometry(1.35 - tier * 0.34, h * 0.34, 7),
+              tier % 2 === 0 ? leafDark : leafLight,
+            );
+            cone.position.y = h * (0.42 + tier * 0.22);
+            cone.castShadow = true;
+            tree.add(cone);
+          }
+          tree.position.set(x, this.ground(x, z), z);
+          tree.rotation.y = x * 0.7 + z;
+          this.scene.add(tree);
+        }
+        for (const [x, z] of [
+          [2, 6],
+          [-5, 2],
+          [8, -2],
+          [-2, -8],
+          [12, 8],
+          [-9, -9],
+        ] as const) {
+          const fern = new THREE.Mesh(new THREE.ConeGeometry(0.55, 0.7, 6), leafLight);
+          fern.position.set(x, this.ground(x, z) + 0.3, z);
+          fern.scale.y = 0.7;
+          fern.castShadow = true;
+          this.scene.add(fern);
+        }
+        const rockDark = new THREE.MeshStandardMaterial({
+          color: 0x5a4a44,
+          roughness: 1,
+          flatShading: true,
+        });
+        const volcano = new THREE.Mesh(new THREE.ConeGeometry(8, 9, 9), rockDark);
+        volcano.position.set(0, this.ground(0, -24) + 3.2, -26);
+        this.scene.add(volcano);
+        const crater = new THREE.Mesh(
+          new THREE.CylinderGeometry(2.2, 3.1, 1.2, 9),
+          new THREE.MeshStandardMaterial({ color: 0x3a2f2b, roughness: 1 }),
+        );
+        crater.position.set(0, volcano.position.y + 4.1, -26);
+        this.scene.add(crater);
+        const smokeMat = new THREE.MeshStandardMaterial({
+          color: 0xcfd4d6,
+          transparent: true,
+          opacity: 0.55,
+          roughness: 1,
+        });
+        for (const [dy, r] of [
+          [5.6, 0.9],
+          [6.8, 1.3],
+          [8.2, 1.7],
+        ] as const) {
+          const puff = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 6), smokeMat);
+          puff.position.set(0.4 * dy - 2.2, volcano.position.y + dy, -26);
+          this.scene.add(puff);
+        }
       }
     }
 
@@ -197,7 +305,7 @@ export class FieldMode {
   }
 
   private buildCamp(): void {
-    const tentPos = new THREE.Vector3(-2.5, groundHeight(-2.5, -3.5), -3.5);
+    const tentPos = new THREE.Vector3(-2.5, this.ground(-2.5, -3.5), -3.5);
     const tent = new THREE.Group();
     const cloth = new THREE.Mesh(
       new THREE.ConeGeometry(1.6, 2, 6),
@@ -221,7 +329,7 @@ export class FieldMode {
     this.scene.add(tent);
     this.addHotspot('tent', 'tent', tentPos, 1.6);
 
-    const hakasePos = new THREE.Vector3(-0.3, groundHeight(-0.3, -1.8), -1.8);
+    const hakasePos = new THREE.Vector3(-0.3, this.ground(-0.3, -1.8), -1.8);
     const hakase = new THREE.Group();
     const coat = new THREE.Mesh(
       new THREE.CapsuleGeometry(0.32, 0.6, 4, 10),
@@ -283,7 +391,7 @@ export class FieldMode {
   }
 
   private buildMuseum(): void {
-    const pos = new THREE.Vector3(6, groundHeight(6, 3), 3);
+    const pos = new THREE.Vector3(6, this.ground(6, 3), 3);
     const museum = new THREE.Group();
     const wallMat = new THREE.MeshStandardMaterial({ color: 0xf5efe0, roughness: 0.9 });
     const body = new THREE.Mesh(new THREE.BoxGeometry(4.4, 2.2, 3.2), wallMat);
@@ -346,13 +454,13 @@ export class FieldMode {
     );
     bill.position.set(0, 1.33, 0.3);
     this.player.add(body, head, cap, bill);
-    this.player.position.set(0, groundHeight(0, 3), 3);
+    this.player.position.set(0, this.ground(0, 3), 3);
     this.scene.add(this.player);
   }
 
   private buildPitSite(pit: PitDef): void {
     const [x, z] = pit.pos;
-    const base = new THREE.Vector3(x, groundHeight(x, z), z);
+    const base = new THREE.Vector3(x, this.ground(x, z), z);
     const group = new THREE.Group();
     const boneMat = new THREE.MeshStandardMaterial({ color: 0xf7f3e8, roughness: 0.6 });
 
@@ -438,7 +546,7 @@ export class FieldMode {
     );
     cloth.position.set(0.3, 1.3, 0);
     flag.add(pole, cloth);
-    flag.position.set(x + 0.9, groundHeight(x + 0.9, z + 0.6), z + 0.6);
+    flag.position.set(x + 0.9, this.ground(x + 0.9, z + 0.6), z + 0.6);
     this.scene.add(flag);
     this.flags.set(pitId, flag);
   }
@@ -451,7 +559,7 @@ export class FieldMode {
       new THREE.CircleGeometry(1.3, 18).rotateX(-Math.PI / 2),
       new THREE.MeshStandardMaterial({ color: 0x9c7f57, roughness: 1 }),
     );
-    patch.position.set(x, groundHeight(x, z) + 0.03, z);
+    patch.position.set(x, this.ground(x, z) + 0.03, z);
     this.scene.add(patch);
     this.donePatches.set(pitId, patch);
   }
@@ -566,10 +674,10 @@ export class FieldMode {
         this.player.rotation.y += delta * Math.min(1, dt * 10);
         this.walkPhase += dt * 11;
         this.player.position.y =
-          groundHeight(pos.x, pos.z) + Math.abs(Math.sin(this.walkPhase)) * 0.08;
+          this.ground(pos.x, pos.z) + Math.abs(Math.sin(this.walkPhase)) * 0.08;
       } else {
         this.moveTarget = null;
-        this.player.position.y = groundHeight(pos.x, pos.z);
+        this.player.position.y = this.ground(pos.x, pos.z);
       }
     }
 
@@ -605,7 +713,7 @@ export class FieldMode {
         alert.style.display = 'none';
         continue;
       }
-      const p = new THREE.Vector3(x, groundHeight(x, z) + 2.4, z).project(this.camera);
+      const p = new THREE.Vector3(x, this.ground(x, z) + 2.4, z).project(this.camera);
       if (p.z > 1) {
         alert.style.display = 'none';
         continue;
@@ -622,7 +730,7 @@ export class FieldMode {
     return this.player.position.toArray() as [number, number, number];
   }
   teleport(x: number, z: number): void {
-    this.player.position.set(x, groundHeight(x, z), z);
+    this.player.position.set(x, this.ground(x, z), z);
     this.moveTarget = null;
   }
   forceInteract(id: string): void {
