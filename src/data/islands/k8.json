@@ -1,0 +1,342 @@
+{
+  "id": "k8",
+  "nameJa": "さんじょうきのたに",
+  "emoji": "🌅",
+  "order": 8,
+  "unlock": "wing:k7",
+  "pits": [
+    {
+      "id": "t1",
+      "nameJa": "あけぼのの いわば",
+      "pos": [6, 15],
+      "clue": "bone",
+      "discoverText": "てのひらサイズの ちいさな あたまの ほね…さいしょの きょうりゅうだ!",
+      "fossils": [
+        {
+          "speciesId": "eoraptor",
+          "boneId": "skull",
+          "kind": "blob",
+          "layer": 2,
+          "cells": [
+            [3, 3],
+            [4, 3]
+          ]
+        },
+        {
+          "speciesId": "eoraptor",
+          "boneId": "spine",
+          "kind": "long",
+          "layer": 3,
+          "cells": [
+            [2, 5],
+            [3, 5],
+            [4, 5]
+          ]
+        }
+      ],
+      "rocks": [[6, 1, 1]],
+      "crystals": [[1, 6, 2]],
+      "branches": [
+        [0, 0, 0],
+        [7, 2, 0]
+      ],
+      "gates": [],
+      "ores": [[6, 6, 4]]
+    },
+    {
+      "id": "t2",
+      "nameJa": "ほそくびの がけした",
+      "pos": [-13, -2],
+      "clue": "crack",
+      "discoverText": "S字に まがった ほそい くびの ほね。かるい からだの もちぬしだ!",
+      "fossils": [
+        {
+          "speciesId": "coelophysis",
+          "boneId": "neck",
+          "kind": "long",
+          "layer": 2,
+          "cells": [
+            [2, 3],
+            [3, 3],
+            [4, 3]
+          ]
+        },
+        {
+          "speciesId": "coelophysis",
+          "boneId": "skull",
+          "kind": "blob",
+          "layer": 3,
+          "cells": [
+            [5, 5],
+            [6, 5]
+          ]
+        }
+      ],
+      "rocks": [[6, 6, 1]],
+      "crystals": [[7, 0, 2]],
+      "branches": [
+        [0, 6, 0],
+        [7, 7, 0]
+      ],
+      "gates": [],
+      "ores": [[1, 1, 4]]
+    },
+    {
+      "id": "t3",
+      "nameJa": "はやての おか",
+      "pos": [12, -10],
+      "clue": "rubble",
+      "discoverText": "まがった ての ツメが きらり。さんじょうきの かりうどの けはい!",
+      "fossils": [
+        {
+          "speciesId": "herrerasaurus",
+          "boneId": "jaw",
+          "kind": "blob",
+          "layer": 2,
+          "cells": [
+            [2, 2],
+            [3, 2]
+          ]
+        },
+        {
+          "speciesId": "herrerasaurus",
+          "boneId": "claw",
+          "kind": "claw",
+          "layer": 3,
+          "cells": [
+            [5, 5],
+            [6, 5]
+          ]
+        }
+      ],
+      "rocks": [[1, 5, 1]],
+      "crystals": [[0, 0, 2]],
+      "branches": [
+        [7, 0, 0],
+        [3, 7, 0]
+      ],
+      "gates": [],
+      "ores": [[0, 7, 4]]
+    },
+    {
+      "id": "t4",
+      "nameJa": "ほのぼねの だいち",
+      "pos": [-8, 9],
+      "clue": "bone",
+      "discoverText": "せなかの ほの ほね…スピノ? いや、もっと ずっと むかしの だれかだ!",
+      "fossils": [
+        {
+          "speciesId": "dimetrodon",
+          "boneId": "sail",
+          "kind": "long",
+          "layer": 3,
+          "cells": [
+            [1, 3],
+            [2, 3],
+            [3, 3],
+            [4, 3]
+          ]
+        },
+        {
+          "speciesId": "dimetrodon",
+          "boneId": "skull",
+          "kind": "blob",
+          "layer": 4,
+          "cells": [
+            [6, 5],
+            [7, 5]
+          ]
+        }
+      ],
+      "rocks": [[6, 1, 1]],
+      "crystals": [
+        [7, 7, 2],
+        [0, 6, 3]
+      ],
+      "branches": [
+        [0, 0, 0],
+        [6, 7, 0]
+      ],
+      "gates": [],
+      "ores": [[7, 0, 4]]
+    },
+    {
+      "id": "t5",
+      "nameJa": "ふるい ちそうの きりぎし",
+      "pos": [9, 4],
+      "clue": "crack",
+      "discoverText": "ふかく ほるほど ふるい じだい…3にんの あしの ほねが じだいじゅんに ねむってる!",
+      "fossils": [
+        {
+          "speciesId": "eoraptor",
+          "boneId": "legs",
+          "kind": "long",
+          "layer": 3,
+          "cells": [
+            [2, 3],
+            [3, 3]
+          ]
+        },
+        {
+          "speciesId": "herrerasaurus",
+          "boneId": "legs",
+          "kind": "long",
+          "layer": 4,
+          "cells": [
+            [4, 4],
+            [5, 4],
+            [6, 4]
+          ]
+        },
+        {
+          "speciesId": "coelophysis",
+          "boneId": "legs",
+          "kind": "long",
+          "layer": 5,
+          "cells": [
+            [2, 6],
+            [3, 6],
+            [4, 6]
+          ]
+        }
+      ],
+      "rocks": [[6, 6, 1]],
+      "crystals": [[0, 1, 2]],
+      "branches": [
+        [7, 7, 0],
+        [0, 6, 0]
+      ],
+      "gates": [],
+      "ores": [[3, 7, 4]]
+    },
+    {
+      "id": "t6",
+      "nameJa": "しだの くぼち",
+      "pos": [-4, -13],
+      "clue": "none",
+      "discoverText": "ふるい しだの したから コツコツ…かたい おとが する!",
+      "fossils": [],
+      "rocks": [
+        [3, 3, 1],
+        [5, 5, 2]
+      ],
+      "crystals": [
+        [2, 6, 3],
+        [6, 2, 4]
+      ],
+      "branches": [
+        [0, 4, 0],
+        [7, 3, 0],
+        [4, 0, 0]
+      ],
+      "gates": [],
+      "ores": [
+        [1, 7, 4],
+        [6, 6, 5],
+        [3, 1, 5]
+      ]
+    },
+    {
+      "id": "t7",
+      "nameJa": "ちそうの ふしぎな おか",
+      "pos": [-15, 4],
+      "clue": "none",
+      "discoverText": "あさい ところに、あきらかに ふるい ホネが…!? ちそうの なぞだ!",
+      "fossils": [
+        {
+          "speciesId": "dimetrodon",
+          "boneId": "spine",
+          "kind": "long",
+          "layer": 1,
+          "anomaly": true,
+          "cells": [
+            [3, 3],
+            [4, 3],
+            [5, 3]
+          ]
+        },
+        {
+          "speciesId": "plateosaurus",
+          "boneId": "neck",
+          "kind": "long",
+          "layer": 4,
+          "cells": [
+            [1, 2],
+            [2, 2],
+            [3, 2]
+          ]
+        },
+        {
+          "speciesId": "plateosaurus",
+          "boneId": "skull",
+          "kind": "blob",
+          "layer": 4,
+          "cells": [
+            [5, 2],
+            [6, 2]
+          ]
+        },
+        {
+          "speciesId": "plateosaurus",
+          "boneId": "spine",
+          "kind": "long",
+          "layer": 5,
+          "cells": [
+            [2, 5],
+            [3, 5],
+            [4, 5]
+          ]
+        },
+        {
+          "speciesId": "plateosaurus",
+          "boneId": "legs",
+          "kind": "long",
+          "layer": 5,
+          "cells": [
+            [5, 3],
+            [6, 3],
+            [7, 3]
+          ]
+        }
+      ],
+      "rocks": [[7, 0, 1]],
+      "crystals": [
+        [1, 4, 5],
+        [6, 5, 5]
+      ],
+      "branches": [
+        [0, 0, 0],
+        [7, 7, 0]
+      ],
+      "gates": [],
+      "ores": [[1, 6, 5]]
+    },
+    {
+      "id": "t8",
+      "nameJa": "しずかな ふきだまり",
+      "pos": [2, -9],
+      "clue": "none",
+      "discoverText": "むらさきの つちの したから コツコツ おとが する!",
+      "fossils": [],
+      "rocks": [
+        [3, 3, 1],
+        [5, 5, 2]
+      ],
+      "crystals": [
+        [2, 6, 3],
+        [6, 2, 4]
+      ],
+      "branches": [
+        [0, 4, 0],
+        [7, 3, 0],
+        [4, 0, 0]
+      ],
+      "gates": [],
+      "ores": [
+        [1, 7, 4],
+        [6, 6, 5],
+        [3, 1, 5]
+      ]
+    }
+  ]
+}

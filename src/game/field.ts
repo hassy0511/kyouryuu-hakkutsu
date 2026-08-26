@@ -42,6 +42,7 @@ interface IslandLook {
   forest: boolean;
   canyon: boolean;
   nippon: boolean;
+  primal: boolean;
 }
 const ISLAND_LOOKS: Record<string, IslandLook> = {
   k1: {
@@ -55,6 +56,7 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     forest: false,
     canyon: false,
     nippon: false,
+    primal: false,
   },
   k2: {
     sky: 0x8fc9d8,
@@ -67,6 +69,7 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     forest: false,
     canyon: false,
     nippon: false,
+    primal: false,
   },
   k3: {
     sky: 0xaadff0,
@@ -79,6 +82,7 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     forest: false,
     canyon: false,
     nippon: false,
+    primal: false,
   },
   k4: {
     sky: 0xa9c6dc,
@@ -91,6 +95,7 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     forest: false,
     canyon: false,
     nippon: false,
+    primal: false,
   },
   k5: {
     sky: 0x9fc9c2,
@@ -103,6 +108,7 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     forest: true,
     canyon: false,
     nippon: false,
+    primal: false,
   },
   k6: {
     sky: 0xecd0a6,
@@ -115,6 +121,7 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     forest: false,
     canyon: true,
     nippon: false,
+    primal: false,
   },
   k7: {
     sky: 0xbcd9ee,
@@ -127,6 +134,20 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     forest: false,
     canyon: false,
     nippon: true,
+    primal: false,
+  },
+  k8: {
+    sky: 0xd8bcc8,
+    sea: 0x6a7fa8,
+    terrain: 0x9a7a62,
+    terrainAmp: 1.4,
+    jungle: false,
+    shore: false,
+    crag: false,
+    forest: false,
+    canyon: false,
+    nippon: false,
+    primal: true,
   },
 };
 
@@ -341,6 +362,124 @@ export class FieldMode {
           coral.rotation.y = x + z;
           coral.castShadow = true;
           this.scene.add(coral);
+        }
+      } else if (this.look.primal) {
+        // さんじょうきのたに: 地層しまもようの丘 + トクサの塔 + イチョウ + 古いシダ
+        const strataColors = [0xd9c896, 0xb59a76, 0xa1704f, 0x965f43];
+        for (const [x, z, s] of [
+          [-12, 7, 1.1],
+          [13, -5, 0.9],
+          [-6, -9, 1.2],
+        ] as const) {
+          const hill = new THREE.Group();
+          let y = 0;
+          for (let band = 0; band < 4; band++) {
+            const r = (2.3 - band * 0.35) * s;
+            const h = 0.55 * s;
+            const disc = new THREE.Mesh(
+              new THREE.CylinderGeometry(r * 0.96, r, h, 10),
+              new THREE.MeshStandardMaterial({
+                color: strataColors[band]!,
+                roughness: 1,
+                flatShading: true,
+              }),
+            );
+            disc.position.y = y + h / 2;
+            disc.rotation.y = band * 0.4 + x;
+            disc.castShadow = true;
+            hill.add(disc);
+            y += h * 0.98;
+          }
+          hill.position.set(x, this.ground(x, z), z);
+          this.scene.add(hill);
+        }
+        // トクサ(ふしのある くき)の 塔
+        const horsetailMat = new THREE.MeshStandardMaterial({
+          color: 0x6a9a5a,
+          roughness: 1,
+          flatShading: true,
+        });
+        const nodeMat = new THREE.MeshStandardMaterial({
+          color: 0x4f7a44,
+          roughness: 1,
+          flatShading: true,
+        });
+        for (const [x, z] of [
+          [3, 7],
+          [-8, 0],
+          [9, -3],
+          [-3, -7],
+          [14, 3],
+        ] as const) {
+          const stalk = new THREE.Group();
+          let y = 0;
+          for (let seg = 0; seg < 4; seg++) {
+            const h = 0.55 - seg * 0.06;
+            const part = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.09 - seg * 0.012, 0.1 - seg * 0.012, h, 6),
+              horsetailMat,
+            );
+            part.position.y = y + h / 2;
+            part.castShadow = true;
+            stalk.add(part);
+            y += h;
+            const node = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.12 - seg * 0.012, 0.12 - seg * 0.012, 0.05, 6),
+              nodeMat,
+            );
+            node.position.y = y;
+            stalk.add(node);
+          }
+          const tip = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.24, 6), nodeMat);
+          tip.position.y = y + 0.14;
+          stalk.add(tip);
+          stalk.position.set(x, this.ground(x, z), z);
+          stalk.rotation.z = 0.06 * ((x % 3) - 1);
+          this.scene.add(stalk);
+        }
+        // イチョウのような きいろい木
+        const ginkgoMat = new THREE.MeshStandardMaterial({
+          color: 0xc9c25a,
+          roughness: 1,
+          flatShading: true,
+        });
+        for (const [x, z, h] of [
+          [-11, 12, 3.0],
+          [16, 10, 2.7],
+          [4, -15, 3.2],
+          [-16, -6, 2.8],
+        ] as const) {
+          const tree = new THREE.Group();
+          const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.2, h * 0.5, 7), woodMat);
+          trunk.position.y = h * 0.25;
+          trunk.castShadow = true;
+          tree.add(trunk);
+          const crown = new THREE.Mesh(new THREE.IcosahedronGeometry(h * 0.38, 0), ginkgoMat);
+          crown.position.y = h * 0.66;
+          crown.scale.y = 0.75;
+          crown.castShadow = true;
+          tree.add(crown);
+          tree.position.set(x, this.ground(x, z), z);
+          tree.rotation.y = x + z;
+          this.scene.add(tree);
+        }
+        // ふるい シダ
+        const fernMat = new THREE.MeshStandardMaterial({
+          color: 0x7fae6a,
+          roughness: 1,
+          flatShading: true,
+        });
+        for (const [x, z] of [
+          [2, 6],
+          [-5, 2],
+          [8, -6],
+          [-10, -4],
+        ] as const) {
+          const fern = new THREE.Mesh(new THREE.ConeGeometry(0.5, 0.65, 6), fernMat);
+          fern.position.set(x, this.ground(x, z) + 0.28, z);
+          fern.scale.y = 0.7;
+          fern.castShadow = true;
+          this.scene.add(fern);
         }
       } else if (this.look.nippon) {
         // にっぽんのしま: さくら + たけやぶ + ゆきの やま

@@ -45,6 +45,8 @@ export interface FossilDef {
   cells: [number, number][];
   /** もろい化石(たまご・かぎづめ等): 1回でもピッケルが当たると★1になる */
   fragile?: boolean;
+  /** 「この層にこの骨はおかしい」イベント: 露出時にはかせが違和感を指摘し、深部を示唆する */
+  anomaly?: boolean;
 }
 export interface GateDef {
   cells: [number, number, number][];

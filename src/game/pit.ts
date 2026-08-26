@@ -639,6 +639,10 @@ export class PitMode {
         this.state.setFlag('fragileSeen');
         this.cb.showMsg('🥚 もろい かせきだ! ⛏️は あてず、まわりから そーっと ほろう');
       }
+      if (fossil.def.anomaly && !this.state.flag('anomalySeen')) {
+        this.state.setFlag('anomalySeen');
+        this.cb.showMsg('🔍 この あさい層に この ホネは おかしい…! したに ひみつが あるぞ!');
+      }
     }
   }
 

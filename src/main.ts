@@ -162,6 +162,10 @@ const FIELD_CALLBACKS: FieldCallbacks = {
       queueMsgs(STORY.hakase.preWingK7);
       return;
     }
+    if (state.flag('wing:k7') && state.allRestored('k8') && !state.flag('wing:k8')) {
+      queueMsgs(STORY.hakase.preWingK8);
+      return;
+    }
     // 詰み防止: ピッケルが こわれて 修理素材も 足りないときは 分けてくれる
     if (state.tool.broken && !state.canAfford(RECIPES.repair)) {
       const giveWood = Math.max(0, RECIPES.repair.wood - state.inv.wood);
@@ -532,7 +536,9 @@ function applyAdminUnlock(): void {
     'wing:k5',
     'wing:k6',
     'wing:k7',
+    'wing:k8',
     'fragileSeen',
+    'anomalySeen',
     'frostrockSeen',
     'item:firestone',
     'firstFossil',
