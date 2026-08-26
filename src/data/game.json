@@ -60,6 +60,10 @@
     "sandrock": {
       "nameJa": "かたい すなの そう",
       "color": "d4b96a"
+    },
+    "frostrock": {
+      "nameJa": "こおった つち",
+      "color": "a8d4e4"
     }
   },
   "needLabels": {
@@ -68,6 +72,7 @@
     "pump": "💧みずぬきポンプ",
     "lamp": "🏮ランタン",
     "chisel": "🔨のみ（チゼル）",
-    "sieve": "🧺ふるい"
+    "sieve": "🧺ふるい",
+    "firestone": "🔥ひばなの石（まだ みぬ どうぐ）"
   }
 }

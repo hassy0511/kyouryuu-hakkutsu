@@ -158,6 +158,10 @@ const FIELD_CALLBACKS: FieldCallbacks = {
       queueMsgs(STORY.hakase.preWingK6);
       return;
     }
+    if (state.flag('wing:k6') && state.allRestored('k7') && !state.flag('wing:k7')) {
+      queueMsgs(STORY.hakase.preWingK7);
+      return;
+    }
     // 詰み防止: ピッケルが こわれて 修理素材も 足りないときは 分けてくれる
     if (state.tool.broken && !state.canAfford(RECIPES.repair)) {
       const giveWood = Math.max(0, RECIPES.repair.wood - state.inv.wood);
@@ -204,6 +208,15 @@ function enterPit(def: PitDef): void {
           queueMsgs(['🫙 サラサラ… すなが かたく つまってる!', ...STORY.hakase.sandrockBlocked]);
         } else {
           showMsg('🫙 かたい すなの そうは ふるいの ような どうぐが いる…');
+        }
+        return;
+      }
+      if (look === 'frostrock') {
+        if (!state.flag('frostrockSeen')) {
+          state.setFlag('frostrockSeen');
+          queueMsgs(['❄️ カチン! つちが こおって カチカチだ!', ...STORY.hakase.frostrockBlocked]);
+        } else {
+          showMsg('❄️ こおった つちは、ひを おこす どうぐが ないと ほれない…');
         }
         return;
       }
@@ -518,7 +531,10 @@ function applyAdminUnlock(): void {
     'wing:k4',
     'wing:k5',
     'wing:k6',
+    'wing:k7',
     'fragileSeen',
+    'frostrockSeen',
+    'item:firestone',
     'firstFossil',
     'firstReveal',
     'firstRestore',

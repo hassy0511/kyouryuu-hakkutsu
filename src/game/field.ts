@@ -41,6 +41,7 @@ interface IslandLook {
   crag: boolean;
   forest: boolean;
   canyon: boolean;
+  nippon: boolean;
 }
 const ISLAND_LOOKS: Record<string, IslandLook> = {
   k1: {
@@ -53,6 +54,7 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     crag: false,
     forest: false,
     canyon: false,
+    nippon: false,
   },
   k2: {
     sky: 0x8fc9d8,
@@ -64,6 +66,7 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     crag: false,
     forest: false,
     canyon: false,
+    nippon: false,
   },
   k3: {
     sky: 0xaadff0,
@@ -75,6 +78,7 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     crag: false,
     forest: false,
     canyon: false,
+    nippon: false,
   },
   k4: {
     sky: 0xa9c6dc,
@@ -86,6 +90,7 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     crag: true,
     forest: false,
     canyon: false,
+    nippon: false,
   },
   k5: {
     sky: 0x9fc9c2,
@@ -97,6 +102,7 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     crag: false,
     forest: true,
     canyon: false,
+    nippon: false,
   },
   k6: {
     sky: 0xecd0a6,
@@ -108,6 +114,19 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     crag: false,
     forest: false,
     canyon: true,
+    nippon: false,
+  },
+  k7: {
+    sky: 0xbcd9ee,
+    sea: 0x4596c8,
+    terrain: 0x8fae6a,
+    terrainAmp: 1.2,
+    jungle: false,
+    shore: false,
+    crag: false,
+    forest: false,
+    canyon: false,
+    nippon: true,
   },
 };
 
@@ -323,6 +342,84 @@ export class FieldMode {
           coral.castShadow = true;
           this.scene.add(coral);
         }
+      } else if (this.look.nippon) {
+        // にっぽんのしま: さくら + たけやぶ + ゆきの やま
+        const sakuraA = new THREE.MeshStandardMaterial({
+          color: 0xf2b8cc,
+          roughness: 1,
+          flatShading: true,
+        });
+        const sakuraB = new THREE.MeshStandardMaterial({
+          color: 0xe89ab8,
+          roughness: 1,
+          flatShading: true,
+        });
+        for (const [x, z, h] of [
+          [-11, 6, 3.2],
+          [11, -6, 2.9],
+          [-6, -8, 3.4],
+          [15, 3, 2.7],
+          [-16, -6, 3.0],
+        ] as const) {
+          const tree = new THREE.Group();
+          const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.22, h * 0.5, 7), woodMat);
+          trunk.position.y = h * 0.25;
+          trunk.castShadow = true;
+          tree.add(trunk);
+          const crownA = new THREE.Mesh(new THREE.IcosahedronGeometry(h * 0.4, 0), sakuraA);
+          crownA.position.y = h * 0.62;
+          crownA.castShadow = true;
+          tree.add(crownA);
+          const crownB = new THREE.Mesh(new THREE.IcosahedronGeometry(h * 0.28, 0), sakuraB);
+          crownB.position.set(h * 0.16, h * 0.88, h * 0.1);
+          crownB.castShadow = true;
+          tree.add(crownB);
+          tree.position.set(x, this.ground(x, z), z);
+          tree.rotation.y = x + z;
+          this.scene.add(tree);
+        }
+        // たけやぶ
+        const bambooMat = new THREE.MeshStandardMaterial({
+          color: 0x7fae5a,
+          roughness: 0.9,
+          flatShading: true,
+        });
+        for (const [bx, bz] of [
+          [4, -14],
+          [16, 10],
+          [-11, 12],
+          [9, -2],
+        ] as const) {
+          const grove = new THREE.Group();
+          for (let k = 0; k < 4; k++) {
+            const h = 2.4 + ((k * 7) % 3) * 0.5;
+            const cane = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, h, 6), bambooMat);
+            cane.position.set(Math.cos(k * 2.4) * 0.35, h / 2, Math.sin(k * 2.4) * 0.35);
+            cane.rotation.z = ((k % 3) - 1) * 0.06;
+            cane.castShadow = true;
+            grove.add(cane);
+            const tip = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.5, 5), bambooMat);
+            tip.position.set(cane.position.x, h + 0.2, cane.position.z);
+            grove.add(tip);
+          }
+          grove.position.set(bx, this.ground(bx, bz), bz);
+          this.scene.add(grove);
+        }
+        // ゆきを かぶった やま(地平線の ランドマーク・到達不可)
+        const mtMat = new THREE.MeshStandardMaterial({
+          color: 0x8a92a8,
+          roughness: 1,
+          flatShading: true,
+        });
+        const mt = new THREE.Mesh(new THREE.ConeGeometry(9, 10, 10), mtMat);
+        mt.position.set(2, this.ground(2, -24) + 3.6, -27);
+        this.scene.add(mt);
+        const snow = new THREE.Mesh(
+          new THREE.ConeGeometry(3.4, 3.9, 10),
+          new THREE.MeshStandardMaterial({ color: 0xf4f7fa, roughness: 1, flatShading: true }),
+        );
+        snow.position.set(2, mt.position.y + 3.1, -27);
+        this.scene.add(snow);
       } else if (this.look.canyon) {
         // ちいさなかりうどのたに: あかい メサ(卓状の岩) + ほねのアーチ + かれ木と かれ草
         const mesaDark = new THREE.MeshStandardMaterial({

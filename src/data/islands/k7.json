@@ -1,0 +1,404 @@
+{
+  "id": "k7",
+  "nameJa": "にっぽんのしま",
+  "emoji": "🌸",
+  "order": 7,
+  "unlock": "wing:k6",
+  "pits": [
+    {
+      "id": "n1",
+      "nameJa": "ふたばの かわぎし",
+      "pos": [6, 15],
+      "clue": "shell",
+      "discoverText": "かわぎしに ながい くびの ほねの れつ…こうこうせいに なった きぶんだ!",
+      "fossils": [
+        {
+          "speciesId": "futabasuzukiryu",
+          "boneId": "neck",
+          "kind": "long",
+          "layer": 2,
+          "cells": [
+            [1, 4],
+            [2, 4],
+            [3, 4],
+            [4, 4]
+          ]
+        },
+        {
+          "speciesId": "futabasuzukiryu",
+          "boneId": "fin",
+          "kind": "fin",
+          "layer": 3,
+          "cells": [
+            [4, 6],
+            [5, 6],
+            [6, 6]
+          ]
+        }
+      ],
+      "rocks": [[6, 1, 1]],
+      "crystals": [[1, 6, 2]],
+      "branches": [
+        [0, 0, 0],
+        [7, 2, 0]
+      ],
+      "gates": [],
+      "ores": [[6, 6, 4]]
+    },
+    {
+      "id": "n2",
+      "nameJa": "かりうどの おか",
+      "pos": [-13, -2],
+      "clue": "bone",
+      "discoverText": "おおきな ての ツメが かおを だしてる。にっぽんの かりうどだ!",
+      "fossils": [
+        {
+          "speciesId": "fukuiraptor",
+          "boneId": "claw",
+          "kind": "claw",
+          "layer": 2,
+          "cells": [
+            [3, 3],
+            [4, 3]
+          ]
+        },
+        {
+          "speciesId": "fukuiraptor",
+          "boneId": "skull",
+          "kind": "blob",
+          "layer": 3,
+          "cells": [
+            [5, 5],
+            [6, 5]
+          ]
+        }
+      ],
+      "rocks": [[6, 6, 1]],
+      "crystals": [[7, 0, 2]],
+      "branches": [
+        [0, 6, 0],
+        [7, 7, 0]
+      ],
+      "gates": [],
+      "ores": [[1, 1, 4]]
+    },
+    {
+      "id": "n3",
+      "nameJa": "ハのならぶ いわば",
+      "pos": [12, -10],
+      "clue": "crack",
+      "discoverText": "はっぱを すりつぶす ハが ずらり。はっぱずきの ごきんじょさんだ!",
+      "fossils": [
+        {
+          "speciesId": "fukuisaurus",
+          "boneId": "jaw",
+          "kind": "blob",
+          "layer": 2,
+          "cells": [
+            [2, 2],
+            [3, 2]
+          ]
+        },
+        {
+          "speciesId": "fukuisaurus",
+          "boneId": "spine",
+          "kind": "long",
+          "layer": 3,
+          "cells": [
+            [2, 5],
+            [3, 5],
+            [4, 5]
+          ]
+        }
+      ],
+      "rocks": [[1, 5, 1]],
+      "crystals": [[0, 0, 2]],
+      "branches": [
+        [7, 0, 0],
+        [3, 7, 0]
+      ],
+      "gates": [],
+      "ores": [[0, 7, 4]]
+    },
+    {
+      "id": "n4",
+      "nameJa": "むかわの すなはま",
+      "pos": [-8, 9],
+      "clue": "bone",
+      "discoverText": "すなの なかに…まるごと 1ぴきぶんの ホネ!! きせきの げんばだ!",
+      "fossils": [
+        {
+          "speciesId": "kamuysaurus",
+          "boneId": "skull",
+          "kind": "blob",
+          "layer": 2,
+          "cells": [
+            [1, 3],
+            [2, 3]
+          ]
+        },
+        {
+          "speciesId": "kamuysaurus",
+          "boneId": "spine",
+          "kind": "long",
+          "layer": 3,
+          "cells": [
+            [2, 3],
+            [3, 3],
+            [4, 3],
+            [5, 3]
+          ]
+        },
+        {
+          "speciesId": "kamuysaurus",
+          "boneId": "pelvis",
+          "kind": "blob",
+          "layer": 3,
+          "cells": [
+            [6, 3],
+            [6, 4]
+          ]
+        },
+        {
+          "speciesId": "kamuysaurus",
+          "boneId": "tail",
+          "kind": "long",
+          "layer": 4,
+          "cells": [
+            [5, 5],
+            [6, 5],
+            [7, 5]
+          ]
+        },
+        {
+          "speciesId": "kamuysaurus",
+          "boneId": "frontlegs",
+          "kind": "long",
+          "layer": 4,
+          "cells": [
+            [2, 5],
+            [3, 5]
+          ]
+        },
+        {
+          "speciesId": "kamuysaurus",
+          "boneId": "hindlegs",
+          "kind": "long",
+          "layer": 4,
+          "cells": [
+            [5, 1],
+            [6, 1]
+          ]
+        }
+      ],
+      "rocks": [[0, 6, 1]],
+      "crystals": [[7, 0, 2]],
+      "branches": [
+        [0, 0, 0],
+        [7, 7, 0]
+      ],
+      "gates": [],
+      "ores": [[0, 1, 4]]
+    },
+    {
+      "id": "n5",
+      "nameJa": "まざりあう ボーンベッド",
+      "pos": [9, 4],
+      "clue": "crack",
+      "discoverText": "2しゅるいの ホネが まざって うまってる…🔍とくちょうで みわけよう!",
+      "fossils": [
+        {
+          "speciesId": "fukuiraptor",
+          "boneId": "legs",
+          "kind": "long",
+          "layer": 3,
+          "cells": [
+            [2, 4],
+            [3, 4],
+            [4, 4]
+          ]
+        },
+        {
+          "speciesId": "fukuisaurus",
+          "boneId": "legs",
+          "kind": "long",
+          "layer": 4,
+          "cells": [
+            [3, 3],
+            [3, 4],
+            [3, 5]
+          ]
+        }
+      ],
+      "rocks": [[6, 6, 1]],
+      "crystals": [[0, 1, 2]],
+      "branches": [
+        [7, 7, 0],
+        [0, 6, 0]
+      ],
+      "gates": [],
+      "ores": [[3, 7, 4]]
+    },
+    {
+      "id": "n6",
+      "nameJa": "たけやぶの くぼち",
+      "pos": [-4, -13],
+      "clue": "crack",
+      "discoverText": "たけやぶの したに たるがたの どうの ほねが みえてる!",
+      "fossils": [
+        {
+          "speciesId": "futabasuzukiryu",
+          "boneId": "body",
+          "kind": "blob",
+          "layer": 4,
+          "cells": [
+            [3, 3],
+            [4, 3],
+            [3, 4],
+            [4, 4]
+          ]
+        }
+      ],
+      "rocks": [
+        [1, 5, 1],
+        [6, 1, 2]
+      ],
+      "crystals": [[7, 7, 2]],
+      "branches": [
+        [0, 0, 0],
+        [7, 0, 0]
+      ],
+      "gates": [],
+      "ores": [[1, 7, 4]]
+    },
+    {
+      "id": "n7",
+      "nameJa": "やまかげの こおりだな",
+      "pos": [-15, 4],
+      "clue": "rubble",
+      "discoverText": "つめたい…! こおった つちの おくに、おおきな きばの かげが…!?",
+      "fossils": [
+        {
+          "speciesId": "mammoth",
+          "boneId": "tusk",
+          "kind": "claw",
+          "layer": 5,
+          "cells": [
+            [2, 4],
+            [3, 4],
+            [4, 4]
+          ]
+        }
+      ],
+      "rocks": [[7, 0, 1]],
+      "crystals": [
+        [1, 4, 5],
+        [6, 5, 5]
+      ],
+      "branches": [
+        [0, 0, 0],
+        [7, 7, 0]
+      ],
+      "gates": [
+        {
+          "look": "frostrock",
+          "needs": "firestone",
+          "cells": [
+            [1, 2, 3],
+            [1, 3, 3],
+            [1, 4, 3],
+            [1, 5, 3],
+            [2, 2, 3],
+            [2, 3, 3],
+            [2, 4, 3],
+            [2, 5, 3],
+            [3, 2, 3],
+            [3, 3, 3],
+            [3, 4, 3],
+            [3, 5, 3],
+            [4, 2, 3],
+            [4, 3, 3],
+            [4, 4, 3],
+            [4, 5, 3],
+            [5, 2, 3],
+            [5, 3, 3],
+            [5, 4, 3],
+            [5, 5, 3],
+            [6, 2, 3],
+            [6, 3, 3],
+            [6, 4, 3],
+            [6, 5, 3],
+            [0, 2, 4],
+            [0, 3, 4],
+            [0, 4, 4],
+            [0, 5, 4],
+            [0, 2, 5],
+            [0, 3, 5],
+            [0, 4, 5],
+            [0, 5, 5],
+            [7, 2, 4],
+            [7, 3, 4],
+            [7, 4, 4],
+            [7, 5, 4],
+            [7, 2, 5],
+            [7, 3, 5],
+            [7, 4, 5],
+            [7, 5, 5],
+            [1, 1, 4],
+            [2, 1, 4],
+            [3, 1, 4],
+            [4, 1, 4],
+            [5, 1, 4],
+            [6, 1, 4],
+            [1, 1, 5],
+            [2, 1, 5],
+            [3, 1, 5],
+            [4, 1, 5],
+            [5, 1, 5],
+            [6, 1, 5],
+            [1, 6, 4],
+            [2, 6, 4],
+            [3, 6, 4],
+            [4, 6, 4],
+            [5, 6, 4],
+            [6, 6, 4],
+            [1, 6, 5],
+            [2, 6, 5],
+            [3, 6, 5],
+            [4, 6, 5],
+            [5, 6, 5],
+            [6, 6, 5]
+          ]
+        }
+      ],
+      "ores": [[1, 2, 5]]
+    },
+    {
+      "id": "n8",
+      "nameJa": "たんぼあとの ふきだまり",
+      "pos": [2, -9],
+      "clue": "none",
+      "discoverText": "やわらかい つちの したから コツコツ おとが する!",
+      "fossils": [],
+      "rocks": [
+        [3, 3, 1],
+        [5, 5, 2]
+      ],
+      "crystals": [
+        [2, 6, 3],
+        [6, 2, 4]
+      ],
+      "branches": [
+        [0, 4, 0],
+        [7, 3, 0],
+        [4, 0, 0]
+      ],
+      "gates": [],
+      "ores": [
+        [1, 7, 4],
+        [6, 6, 5],
+        [3, 1, 5]
+      ]
+    }
+  ]
+}
