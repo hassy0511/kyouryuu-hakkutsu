@@ -16,7 +16,7 @@ Three.js + TypeScript + Vite、GitHub Pages 配信、iPad Safari 最優先。
 - POC-1 → POC-2 → POC-3 → M1〜M6 の順。各 POC・各マイルストーンの完了時に**必ず報告し、承認を得てから次へ進む**
 - 仕様に迷ったら勝手に決めず、選択肢＋推奨案を添えてオーナーに確認する
 - スコープ外機能（GAME_DESIGN §10)を先回りで実装しない
-- オーナーへの報告には、確認対象ページのURLを毎回記載する（本体: https://hassy0511.github.io/kyouryuu-hakkutsu/ ）
+- オーナーへの報告には、確認対象ページのURLを毎回記載する（本体: https://hassy0511.github.io/kyouryuu-hakkutsu/ ／かんりしゃモード: https://hassy0511.github.io/kyouryuu-hakkutsu/?admin=1 ）
 
 ## 技術ルール
 - TypeScript strict / ESLint / Prettier

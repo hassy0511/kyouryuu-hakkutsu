@@ -108,7 +108,7 @@ export const speciesById = (id: string): SpeciesDef => SPECIES.find((s) => s.id 
 
 // ---- セーブ(localStorage・バージョン付き) ------------------------------------
 
-const SAVE_KEY = 'honehori-save';
+export const SAVE_KEY = 'honehori-save';
 const SAVE_VERSION = 2;
 
 export interface FossilCellSave {
@@ -182,9 +182,11 @@ export class GameState {
   data: SaveData = defaults();
   onChange: (() => void) | null = null;
 
-  static hasSave(): boolean {
+  constructor(private readonly key: string = SAVE_KEY) {}
+
+  static hasSave(key: string = SAVE_KEY): boolean {
     try {
-      return localStorage.getItem(SAVE_KEY) !== null;
+      return localStorage.getItem(key) !== null;
     } catch {
       return false;
     }
@@ -192,7 +194,7 @@ export class GameState {
 
   load(): boolean {
     try {
-      const raw = localStorage.getItem(SAVE_KEY);
+      const raw = localStorage.getItem(this.key);
       if (!raw) return false;
       const parsed = migrate(JSON.parse(raw) as Record<string, unknown>);
       if (parsed.version !== SAVE_VERSION) return false;
@@ -213,7 +215,7 @@ export class GameState {
 
   save(): void {
     try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify(this.data));
+      localStorage.setItem(this.key, JSON.stringify(this.data));
     } catch {
       // プライベートブラウズ等で失敗しても遊びは続行できる
     }
@@ -222,7 +224,7 @@ export class GameState {
   reset(): void {
     this.data = defaults();
     try {
-      localStorage.removeItem(SAVE_KEY);
+      localStorage.removeItem(this.key);
     } catch {
       /* noop */
     }

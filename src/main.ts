@@ -2,8 +2,10 @@ import * as THREE from 'three';
 import { Sfx } from './core/audio';
 import {
   GameState,
+  ISLANDS,
   PICK_MAX_HP,
   RECIPES,
+  SPECIES,
   STORY,
   islandById,
   speciesById,
@@ -45,7 +47,10 @@ function fitViewport(): void {
 }
 
 const sfx = new Sfx();
-const state = new GameState();
+// かんりしゃモード(?admin=1): 全ステージ解放・全図鑑登録ずみの確認用。
+// セーブは べつのキーに書くので、ふつうのセーブデータには影響しない
+const ADMIN = new URLSearchParams(location.search).has('admin');
+const state = new GameState(ADMIN ? 'honehori-save-admin' : undefined);
 
 // ---- メッセージ --------------------------------------------------------------
 
@@ -434,11 +439,57 @@ el('letter-next').addEventListener('click', () => {
   queueMsgs(STORY.hakase.start);
 });
 
+function applyAdminUnlock(): void {
+  for (const sp of SPECIES) {
+    for (const b of sp.bones) state.collectBone(sp.id, b.id, 3);
+    if (!state.isRestored(sp.id)) state.restore(sp.id);
+  }
+  const flags = [
+    'letterSeen',
+    'ceremonyDone',
+    'wing:k2',
+    'firstFossil',
+    'firstReveal',
+    'firstRestore',
+    'bedrockSeen',
+    'redrockSeen',
+    'wetrockSeen',
+  ];
+  for (const flag of flags) state.setFlag(flag);
+  const homeIsland = state.data.currentIsland;
+  for (const island of ISLANDS) {
+    state.setFlag(`visited:${island.id}`);
+    state.data.currentIsland = island.id;
+    for (const p of island.pits) state.discover(p.id);
+  }
+  state.data.currentIsland = homeIsland;
+  state.setPickLevel(3);
+  for (const kind of ['wood', 'stone', 'crystal', 'iron'] as const) {
+    if (state.inv[kind] < 20) state.addMaterial(kind, 20 - state.inv[kind]);
+  }
+}
+
 {
   el('title-logo').textContent = STORY.title;
   el('title-sub').textContent = STORY.subtitle || 'カセキ島で ホネを ほりだせ!';
-  (el('title-continue') as HTMLButtonElement).style.display = GameState.hasSave() ? '' : 'none';
+  (el('title-continue') as HTMLButtonElement).style.display = GameState.hasSave(
+    ADMIN ? 'honehori-save-admin' : undefined,
+  )
+    ? ''
+    : 'none';
   if (!location.search.includes('debug')) el('fps-panel').classList.add('hidden');
+  if (ADMIN) {
+    state.load();
+    applyAdminUnlock();
+    updateHud();
+    el('ov-title').classList.remove('show');
+    el('ov-letter').classList.remove('show');
+    field.activate();
+    queueMsgs([
+      '🔧 かんりしゃモード: ぜんステージかいほう・ぜん図鑑とうろくずみ',
+      '💾 セーブは べつわく。ふつうの データには えいきょうしない',
+    ]);
+  }
 }
 
 const meter = location.search.includes('debug')
