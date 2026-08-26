@@ -1,5 +1,6 @@
 import { buildAmmonite } from './ammonite';
 import { buildAllosaurus } from './allosaurus';
+import { buildAnkylosaurus } from './ankylosaurus';
 import { buildArchelon } from './archelon';
 import { buildBelemnite } from './belemnite';
 import { buildBrachiosaurus } from './brachiosaurus';
@@ -19,6 +20,7 @@ import { buildTyrannosaurus } from './tyrannosaurus';
 // 展示モデルのレジストリ。種を追加したら builder を1行足す(未登録の種は2D表示のまま)
 const BUILDERS: Record<string, () => DinoViews> = {
   allosaurus: buildAllosaurus,
+  ankylosaurus: buildAnkylosaurus,
   archelon: buildArchelon,
   belemnite: buildBelemnite,
   ammonite: buildAmmonite,
