@@ -5,6 +5,11 @@ import { buildDinoModel } from '../../src/art/dino3d';
 type ViewMode = 'skeleton' | 'living';
 
 const SPECIES = {
+  allosaurus: {
+    name: 'アロサウルス',
+    feature: '🔍 3ぼんの ゆびと めのうえの つのに ちゅうもく!',
+    skeletonTip: 'めのうえの つの・3ぼんゆび・ほそながい あたまを みてみよう!',
+  },
   ammonite: {
     name: 'アンモナイト',
     feature: '🔍 うずまきの からと 10ぽんの しょくわんに ちゅうもく!',
@@ -24,6 +29,11 @@ const SPECIES = {
     name: 'スピノサウルス',
     feature: '🔍 せなかの おおきな ほ! スピノサウルスの しるし',
     skeletonTip: 'ながい口・せなかのトゲ・ひらたいしっぽに ちゅうもく!',
+  },
+  stegosaurus: {
+    name: 'ステゴサウルス',
+    feature: '🔍 2れつの いたと しっぽの 4ほんトゲに ちゅうもく!',
+    skeletonTip: 'ほねの いた・4ほんの トゲ・たかい こしを みてみよう!',
   },
   tyrannosaurus: {
     name: 'ティラノサウルス',
