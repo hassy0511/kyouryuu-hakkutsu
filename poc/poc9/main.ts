@@ -60,6 +60,11 @@ const SPECIES = {
     feature: '🔍 キリンのような ながいくびと たたんだ つばさに ちゅうもく!',
     skeletonTip: 'ながい くびのほねと おりたたまれた第4指を みてみよう!',
   },
+  rhamphorhynchus: {
+    name: 'ラングフォリンクス',
+    feature: '🔍 ながい しっぽと ひしがたの かじに ちゅうもく!',
+    skeletonTip: 'ながい しっぽのほね・第4指・ちいさな まえばを みてみよう!',
+  },
   spinosaurus: {
     name: 'スピノサウルス',
     feature: '🔍 せなかの おおきな ほ! スピノサウルスの しるし',
@@ -224,7 +229,8 @@ function fitCameraToModel(): void {
   const size = bounds.getSize(new THREE.Vector3());
   const verticalFov = THREE.MathUtils.degToRad(camera.fov);
   const distanceForHeight = size.y / (2 * Math.tan(verticalFov / 2));
-  const projectedWidth = speciesId === 'pteranodon' ? Math.max(size.x, size.z) : size.x;
+  const isFlyingPterosaur = speciesId === 'pteranodon' || speciesId === 'rhamphorhynchus';
+  const projectedWidth = isFlyingPterosaur ? Math.max(size.x, size.z) : size.x;
   const distanceForWidth = projectedWidth / (2 * Math.tan(verticalFov / 2) * camera.aspect);
   const cameraPadding =
     speciesId === 'ammonite' || speciesId === 'belemnite'
@@ -239,16 +245,18 @@ function fitCameraToModel(): void {
               ? 1.4
               : speciesId === 'pteranodon'
                 ? 1.08
-                : speciesId === 'quetzalcoatlus'
-                  ? 2
-                  : 1.15;
+                : speciesId === 'rhamphorhynchus'
+                  ? 1.12
+                  : speciesId === 'quetzalcoatlus'
+                    ? 2
+                    : 1.15;
   const distance = Math.max(distanceForHeight, distanceForWidth) * cameraPadding;
 
   const targetOffsetY = speciesId === 'quetzalcoatlus' ? size.y * 0.1 : 0;
   controls.target.set(center.x, center.y + targetOffsetY, center.z);
-  const cameraOffsetX = speciesId === 'pteranodon' ? distance * 0.72 : size.x * 0.015;
-  const cameraOffsetZ = speciesId === 'pteranodon' ? distance * 0.72 : distance;
-  const cameraOffsetY = speciesId === 'pteranodon' ? distance * 0.28 : size.y * 0.08;
+  const cameraOffsetX = isFlyingPterosaur ? distance * 0.72 : size.x * 0.015;
+  const cameraOffsetZ = isFlyingPterosaur ? distance * 0.72 : distance;
+  const cameraOffsetY = isFlyingPterosaur ? distance * 0.28 : size.y * 0.08;
   camera.position.set(
     center.x + cameraOffsetX,
     center.y + targetOffsetY + cameraOffsetY,
