@@ -30,6 +30,11 @@ const SPECIES = {
     feature: '🔍 4まいの ひれと したに まがる しっぽに ちゅうもく!',
     skeletonTip: 'ながい あご・ひれの ゆび・したに まがる しっぽを みてみよう!',
   },
+  plesiosaurus: {
+    name: 'プレシオサウルス',
+    feature: '🔍 ながい くびと おなじかたちの 4まいの ひれに ちゅうもく!',
+    skeletonTip: 'くびの ほねの れつ・4まいの ひれの ゆびを みてみよう!',
+  },
   spinosaurus: {
     name: 'スピノサウルス',
     feature: '🔍 せなかの おおきな ほ! スピノサウルスの しるし',
@@ -196,7 +201,13 @@ function fitCameraToModel(): void {
   const distanceForHeight = size.y / (2 * Math.tan(verticalFov / 2));
   const distanceForWidth = size.x / (2 * Math.tan(verticalFov / 2) * camera.aspect);
   const cameraPadding =
-    speciesId === 'ammonite' ? 1.42 : speciesId === 'brachiosaurus' ? 1.6 : 1.15;
+    speciesId === 'ammonite'
+      ? 1.42
+      : speciesId === 'brachiosaurus'
+        ? 1.6
+        : speciesId === 'plesiosaurus'
+          ? 1.5
+          : 1.15;
   const distance = Math.max(distanceForHeight, distanceForWidth) * cameraPadding;
 
   controls.target.copy(center);
