@@ -50,6 +50,11 @@ const SPECIES = {
     feature: '🔍 ながい くびと おなじかたちの 4まいの ひれに ちゅうもく!',
     skeletonTip: 'くびの ほねの れつ・4まいの ひれの ゆびを みてみよう!',
   },
+  pteranodon: {
+    name: 'プテラノドン',
+    feature: '🔍 ながい とさかと つばさの くすりゆびに ちゅうもく!',
+    skeletonTip: 'うでから のびる ながい第4指と むねの りゅうこつを みてみよう!',
+  },
   spinosaurus: {
     name: 'スピノサウルス',
     feature: '🔍 せなかの おおきな ほ! スピノサウルスの しるし',
@@ -214,7 +219,8 @@ function fitCameraToModel(): void {
   const size = bounds.getSize(new THREE.Vector3());
   const verticalFov = THREE.MathUtils.degToRad(camera.fov);
   const distanceForHeight = size.y / (2 * Math.tan(verticalFov / 2));
-  const distanceForWidth = size.x / (2 * Math.tan(verticalFov / 2) * camera.aspect);
+  const projectedWidth = speciesId === 'pteranodon' ? Math.max(size.x, size.z) : size.x;
+  const distanceForWidth = projectedWidth / (2 * Math.tan(verticalFov / 2) * camera.aspect);
   const cameraPadding =
     speciesId === 'ammonite' || speciesId === 'belemnite'
       ? 1.42
@@ -226,11 +232,16 @@ function fitCameraToModel(): void {
             ? 1.5
             : speciesId === 'ichthyosaurus'
               ? 1.4
-              : 1.15;
+              : speciesId === 'pteranodon'
+                ? 1.08
+                : 1.15;
   const distance = Math.max(distanceForHeight, distanceForWidth) * cameraPadding;
 
   controls.target.copy(center);
-  camera.position.set(center.x + size.x * 0.015, center.y + size.y * 0.08, center.z + distance);
+  const cameraOffsetX = speciesId === 'pteranodon' ? distance * 0.72 : size.x * 0.015;
+  const cameraOffsetZ = speciesId === 'pteranodon' ? distance * 0.72 : distance;
+  const cameraOffsetY = speciesId === 'pteranodon' ? distance * 0.28 : size.y * 0.08;
+  camera.position.set(center.x + cameraOffsetX, center.y + cameraOffsetY, center.z + cameraOffsetZ);
   controls.minDistance = Math.max(size.y * 1.25, distance * 0.45);
   controls.maxDistance = distance * 2.25;
   controls.update();
