@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {
   coneBetween,
   ellipsoid,
+  embeddedSideZ,
   GeometryBatch,
   loftGeometry,
   makeFlatMaterial,
@@ -168,11 +169,36 @@ function buildLiving(): THREE.Group {
 
   LEGS.forEach((leg) => addLivingLeg(leg.near ? body : farBody, cream, leg));
   for (const side of [-1, 1]) {
-    ellipsoid(dark, V(8.45, 11.55, side * 0.34), V(0.14, 0.13, 0.04), 8, 5);
-    ellipsoid(iris, V(8.47, 11.55, side * 0.375), V(0.08, 0.08, 0.018), 7, 5);
-    ellipsoid(dark, V(8.49, 11.55, side * 0.39), V(0.03, 0.05, 0.008), 5, 4);
-    ellipsoid(glint, V(8.45, 11.59, side * 0.4), V(0.018, 0.02, 0.005), 5, 4);
-    ellipsoid(dark, V(9.05, 11.42, side * 0.22), V(0.05, 0.035, 0.012), 6, 4);
+    const eyeSurface = 0.34;
+    ellipsoid(
+      dark,
+      V(8.45, 11.55, embeddedSideZ(side, eyeSurface, 0.04)),
+      V(0.14, 0.13, 0.04),
+      8,
+      5,
+    );
+    ellipsoid(
+      iris,
+      V(8.47, 11.55, embeddedSideZ(side, eyeSurface + 0.01, 0.018)),
+      V(0.08, 0.08, 0.018),
+      7,
+      5,
+    );
+    ellipsoid(
+      dark,
+      V(8.49, 11.55, embeddedSideZ(side, eyeSurface + 0.016, 0.008)),
+      V(0.03, 0.05, 0.008),
+      5,
+      4,
+    );
+    ellipsoid(
+      glint,
+      V(8.45, 11.59, embeddedSideZ(side, eyeSurface + 0.02, 0.005)),
+      V(0.018, 0.02, 0.005),
+      5,
+      4,
+    );
+    ellipsoid(dark, V(9.05, 11.42, embeddedSideZ(side, 0.22, 0.012)), V(0.05, 0.035, 0.012), 6, 4);
   }
 
   group.add(

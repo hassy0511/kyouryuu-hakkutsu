@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {
   ellipsoid,
+  embeddedSideZ,
   GeometryBatch,
   loftGeometry,
   makeFlatMaterial,
@@ -117,7 +118,9 @@ function addLivingPaddle(
   const outer = liftPaddlePoint(rawOuter);
   const inner = liftPaddlePoint(rawInner);
   const wrist = liftPaddlePoint(paddle.wrist);
-  const z = paddle.side * (Math.abs(wrist.z) + 0.07);
+  // Keep the flat paddle volume intersecting the torso at its root. Using the
+  // wrist depth here left an air gap that was obvious from above.
+  const z = paddle.side * (Math.abs(paddle.root.z) + 0.06);
   const outline = [
     new THREE.Vector2(paddle.root.x - 0.13, paddle.root.y + 0.1),
     new THREE.Vector2(paddle.root.x + 0.16, paddle.root.y + 0.05),
@@ -238,11 +241,36 @@ function buildLiving(): THREE.Group {
   PADDLES.forEach((paddle) => addLivingPaddle(back, farPaddles, paddleTips, paddle));
 
   for (const side of [-1, 1]) {
-    ellipsoid(dark, V(1.99, 1.39, side * 0.17), V(0.07, 0.067, 0.025), 7, 5);
-    ellipsoid(iris, V(2, 1.39, side * 0.192), V(0.043, 0.043, 0.012), 7, 5);
-    ellipsoid(dark, V(2.012, 1.39, side * 0.202), V(0.015, 0.025, 0.006), 5, 4);
-    ellipsoid(glint, V(1.987, 1.414, side * 0.209), V(0.009, 0.01, 0.004), 5, 4);
-    ellipsoid(dark, V(2.12, 1.34, side * 0.09), V(0.018, 0.012, 0.006), 5, 4);
+    const eyeSurface = 0.17;
+    ellipsoid(
+      dark,
+      V(1.99, 1.39, embeddedSideZ(side, eyeSurface, 0.025)),
+      V(0.07, 0.067, 0.025),
+      7,
+      5,
+    );
+    ellipsoid(
+      iris,
+      V(2, 1.39, embeddedSideZ(side, eyeSurface + 0.006, 0.012)),
+      V(0.043, 0.043, 0.012),
+      7,
+      5,
+    );
+    ellipsoid(
+      dark,
+      V(2.012, 1.39, embeddedSideZ(side, eyeSurface + 0.01, 0.006)),
+      V(0.015, 0.025, 0.006),
+      5,
+      4,
+    );
+    ellipsoid(
+      glint,
+      V(1.987, 1.414, embeddedSideZ(side, eyeSurface + 0.013, 0.004)),
+      V(0.009, 0.01, 0.004),
+      5,
+      4,
+    );
+    ellipsoid(dark, V(2.12, 1.34, embeddedSideZ(side, 0.09, 0.006)), V(0.018, 0.012, 0.006), 5, 4);
   }
 
   group.add(
