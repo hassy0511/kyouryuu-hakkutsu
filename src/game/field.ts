@@ -40,6 +40,7 @@ interface IslandLook {
   shore: boolean;
   crag: boolean;
   forest: boolean;
+  canyon: boolean;
 }
 const ISLAND_LOOKS: Record<string, IslandLook> = {
   k1: {
@@ -51,6 +52,7 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     shore: false,
     crag: false,
     forest: false,
+    canyon: false,
   },
   k2: {
     sky: 0x8fc9d8,
@@ -61,6 +63,7 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     shore: false,
     crag: false,
     forest: false,
+    canyon: false,
   },
   k3: {
     sky: 0xaadff0,
@@ -71,6 +74,7 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     shore: true,
     crag: false,
     forest: false,
+    canyon: false,
   },
   k4: {
     sky: 0xa9c6dc,
@@ -81,6 +85,7 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     shore: false,
     crag: true,
     forest: false,
+    canyon: false,
   },
   k5: {
     sky: 0x9fc9c2,
@@ -91,6 +96,18 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     shore: false,
     crag: false,
     forest: true,
+    canyon: false,
+  },
+  k6: {
+    sky: 0xecd0a6,
+    sea: 0x4f8a9e,
+    terrain: 0xc4885c,
+    terrainAmp: 1.3,
+    jungle: false,
+    shore: false,
+    crag: false,
+    forest: false,
+    canyon: true,
   },
 };
 
@@ -305,6 +322,100 @@ export class FieldMode {
           coral.rotation.y = x + z;
           coral.castShadow = true;
           this.scene.add(coral);
+        }
+      } else if (this.look.canyon) {
+        // ちいさなかりうどのたに: あかい メサ(卓状の岩) + ほねのアーチ + かれ木と かれ草
+        const mesaDark = new THREE.MeshStandardMaterial({
+          color: 0xa8683f,
+          roughness: 1,
+          flatShading: true,
+        });
+        const mesaLight = new THREE.MeshStandardMaterial({
+          color: 0xc07f52,
+          roughness: 1,
+          flatShading: true,
+        });
+        for (const [x, z, s] of [
+          [-12, 7, 1.1],
+          [13, -5, 0.9],
+          [-6, -9, 1.25],
+        ] as const) {
+          const mesa = new THREE.Group();
+          let y = 0;
+          for (let seg = 0; seg < 3; seg++) {
+            const r = (2.2 - seg * 0.25) * s;
+            const h = 1.15 * s;
+            const block = new THREE.Mesh(
+              new THREE.CylinderGeometry(r * 0.94, r, h, 9),
+              seg % 2 === 0 ? mesaDark : mesaLight,
+            );
+            block.position.y = y + h / 2;
+            block.rotation.y = seg * 0.5 + x;
+            block.castShadow = true;
+            mesa.add(block);
+            y += h * 0.96;
+          }
+          const cap = new THREE.Mesh(
+            new THREE.CylinderGeometry(1.55 * s, 1.7 * s, 0.28, 9),
+            mesaDark,
+          );
+          cap.position.y = y + 0.14;
+          cap.castShadow = true;
+          mesa.add(cap);
+          mesa.position.set(x, this.ground(x, z), z);
+          this.scene.add(mesa);
+        }
+        // しろく ひやけた ほねの アーチ(たにの ランドマーク)
+        const boneMat = new THREE.MeshStandardMaterial({ color: 0xf2ead8, roughness: 0.6 });
+        const archPos = new THREE.Vector3(5, this.ground(5, -4), -4);
+        for (const [dz, r] of [
+          [-0.6, 1.35],
+          [0, 1.5],
+          [0.6, 1.3],
+        ] as const) {
+          const rib = new THREE.Mesh(new THREE.TorusGeometry(r, 0.09, 6, 16, Math.PI), boneMat);
+          rib.position.set(archPos.x, archPos.y, archPos.z + dz);
+          rib.castShadow = true;
+          this.scene.add(rib);
+        }
+        // かれ木と かれ草
+        for (const [x, z, rot] of [
+          [-10, 1, 0.4],
+          [11, 9, 1.9],
+          [3, -14, 3.1],
+        ] as const) {
+          const tree = new THREE.Group();
+          const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.18, 2.0, 6), woodMat);
+          trunk.position.y = 1.0;
+          trunk.rotation.z = 0.15;
+          trunk.castShadow = true;
+          const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.09, 1.1, 5), woodMat);
+          branch.position.set(0.35, 1.6, 0);
+          branch.rotation.z = -1.0;
+          branch.castShadow = true;
+          tree.add(trunk, branch);
+          tree.position.set(x, this.ground(x, z), z);
+          tree.rotation.y = rot;
+          this.scene.add(tree);
+        }
+        const dryGrass = new THREE.MeshStandardMaterial({
+          color: 0xd8c088,
+          roughness: 1,
+          flatShading: true,
+        });
+        for (const [x, z] of [
+          [3, 7],
+          [-8, 0],
+          [9, -3],
+          [-3, -7],
+          [14, 3],
+        ] as const) {
+          const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.7, 5), dryGrass);
+          tuft.position.set(x, this.ground(x, z) + 0.28, z);
+          tuft.rotation.z = 0.3;
+          tuft.rotation.y = x * 1.7;
+          tuft.castShadow = true;
+          this.scene.add(tuft);
         }
       } else if (this.look.forest) {
         // とげとよろいのもり: まるい こかげの木 + とげやぶ + きのこ + こけ岩

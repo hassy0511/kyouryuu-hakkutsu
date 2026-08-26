@@ -43,6 +43,8 @@ export interface FossilDef {
   kind: string;
   layer: number;
   cells: [number, number][];
+  /** もろい化石(たまご・かぎづめ等): 1回でもピッケルが当たると★1になる */
+  fragile?: boolean;
 }
 export interface GateDef {
   cells: [number, number, number][];

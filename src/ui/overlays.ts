@@ -411,6 +411,10 @@ export class Overlays {
       this.runWingCeremony('k5');
       return;
     }
+    if (this.state.flag('wing:k5') && this.state.allRestored('k6') && !this.state.flag('wing:k6')) {
+      this.runWingCeremony('k6');
+      return;
+    }
     const cards = SPECIES.filter((sp) => this.state.isSpeciesVisible(sp.id))
       .map((sp) => {
         if (this.state.isRestored(sp.id)) {
@@ -438,17 +442,19 @@ export class Overlays {
       </div>`;
       })
       .join('');
-    const wingLabel = this.state.flag('wing:k5')
+    const wingLabel = this.state.flag('wing:k6')
       ? '？？？の ウィング'
-      : this.state.flag('wing:k4')
-        ? 'よろいの ウィング'
-        : this.state.flag('wing:k3')
-          ? 'そらの ウィング'
-          : this.state.flag('wing:k2')
-            ? 'うみの ウィング'
-            : this.state.flag('ceremonyDone')
-              ? 'ジュラの ウィング'
-              : 'あたらしい ウィング';
+      : this.state.flag('wing:k5')
+        ? 'かりうどの ウィング'
+        : this.state.flag('wing:k4')
+          ? 'よろいの ウィング'
+          : this.state.flag('wing:k3')
+            ? 'そらの ウィング'
+            : this.state.flag('wing:k2')
+              ? 'うみの ウィング'
+              : this.state.flag('ceremonyDone')
+                ? 'ジュラの ウィング'
+                : 'あたらしい ウィング';
     el('museum-cards').innerHTML =
       cards +
       `<div class="mu-card wing"><div class="mu-emoji">🚪</div><b>${wingLabel}</b><div class="dim">じゅんびちゅう…</div></div>`;

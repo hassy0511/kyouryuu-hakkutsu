@@ -277,6 +277,52 @@ const spikefrill: Builder = (def, material, pitch) => {
   return group;
 };
 
+// かぎづめ(ラプトル・テリジノ): 三日月形の カーブした ツメ
+const claw: Builder = (def, material, pitch) => {
+  const group = new THREE.Group();
+  const s = Math.max(def.cells.length, 1) * pitch * 0.55;
+  const arc = new THREE.Mesh(
+    new THREE.TorusGeometry(s * 0.7, s * 0.15, 8, 14, Math.PI * 0.85),
+    material,
+  );
+  arc.rotation.x = -Math.PI / 2;
+  group.add(arc);
+  const base = new THREE.Mesh(new THREE.SphereGeometry(s * 0.26, 8, 6), material);
+  base.position.set(s * 0.7, 0, 0);
+  group.add(base);
+  const a = Math.PI * 0.85;
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(s * 0.14, s * 0.5, 8), material);
+  tip.position.set(Math.cos(a) * s * 0.7, 0, -Math.sin(a) * s * 0.7);
+  const tangent = new THREE.Vector3(-Math.sin(a), 0, -Math.cos(a)).normalize();
+  tip.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
+  group.add(tip);
+  return group;
+};
+
+// たまごのす: 小枝の わっか + ならんだ たまご(もろい かせきの 見せ場)
+const egg: Builder = (def, material, pitch) => {
+  const group = new THREE.Group();
+  const r = pitch * Math.sqrt(def.cells.length) * 0.45;
+  const nestMat = new THREE.MeshStandardMaterial({ color: 0x8a6b47, roughness: 1 });
+  for (let k = 0; k < 10; k++) {
+    const a = (k / 10) * Math.PI * 2;
+    const twig = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, r * 1.1, 5), nestMat);
+    twig.position.set(Math.cos(a) * r, 0.05, Math.sin(a) * r);
+    twig.rotation.set(Math.PI / 2.2, 0, a + Math.PI / 2);
+    group.add(twig);
+  }
+  for (let k = 0; k < 6; k++) {
+    const a = k * 1.9;
+    const rr = k === 0 ? 0 : r * 0.52;
+    const eggMesh = new THREE.Mesh(new THREE.SphereGeometry(r * 0.27, 8, 6), material);
+    eggMesh.scale.set(1, 0.75, 1.55);
+    eggMesh.position.set(Math.cos(a) * rr, r * 0.16, Math.sin(a) * rr);
+    eggMesh.rotation.y = a;
+    group.add(eggMesh);
+  }
+  return group;
+};
+
 // めの ほねリング(イクチオサウルスの こうまくりん)
 const ring: Builder = (_def, material) => {
   const group = new THREE.Group();
@@ -304,6 +350,8 @@ const SHAPES: Record<string, Builder> = {
   club,
   scatter,
   spikefrill,
+  claw,
+  egg,
 };
 
 export function buildBoneShape(

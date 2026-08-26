@@ -106,6 +106,8 @@ class FossilPiece {
   }
 
   stars(): number {
+    // もろい化石は 1発でも あてたら ★1(そっと掘るの本丸)
+    if (this.def.fragile) return this.damage === 0 ? 3 : 1;
     return this.damage === 0 ? 3 : this.damage <= 2 ? 2 : 1;
   }
   tint(): void {
@@ -633,6 +635,10 @@ export class PitMode {
     if (!silent) {
       this.particles.burst(this.worldOf(i), new THREE.Color(0xbfa88a), 5);
       this.cb.onFirstReveal();
+      if (fossil.def.fragile && !this.state.flag('fragileSeen')) {
+        this.state.setFlag('fragileSeen');
+        this.cb.showMsg('🥚 もろい かせきだ! ⛏️は あてず、まわりから そーっと ほろう');
+      }
     }
   }
 
@@ -789,14 +795,14 @@ export class PitMode {
     this.afterRemoval(i);
   }
 
-  private hitCell(i: number): { damaged: boolean } {
+  private hitCell(i: number): { damaged: boolean; fragile?: boolean } {
     const fossil = this.cellOwner.get(i);
     if (fossil && !fossil.collected) {
       const cell = fossil.cells.get(i)!;
       if (cell.status === 'hidden') this.reveal(i);
       fossil.damage++;
       fossil.tint();
-      return { damaged: true };
+      return { damaged: true, fragile: fossil.def.fragile === true };
     }
     const rock = this.rocks.get(i);
     if (rock && rock.hp > 0) {
@@ -888,12 +894,16 @@ export class PitMode {
     }
 
     let damaged = 0;
+    let fragileHit = false;
     for (const [ax, az] of area) {
       if (!inBounds(ax, az, layer)) continue;
       const i = idx(ax, az, layer);
       if (!this.cellSolid(i)) continue;
       const r = this.hitCell(i);
-      if (r.damaged) damaged++;
+      if (r.damaged) {
+        damaged++;
+        if (r.fragile) fragileHit = true;
+      }
       if (damaged >= DAMAGE_CAP_PER_ACTION) break;
     }
     this.sfx.pick();
@@ -906,7 +916,11 @@ export class PitMode {
     if (damaged > 0) {
       this.sfx.crack();
       this.shake = 1;
-      this.cb.showMsg('💥 かせきに ピッケルが あたった…!');
+      this.cb.showMsg(
+        fragileHit
+          ? '💥 もろい かせきに あたった! ヒビだらけに なってしまう…'
+          : '💥 かせきに ピッケルが あたった…!',
+      );
     }
   }
 

@@ -1,0 +1,317 @@
+{
+  "id": "k6",
+  "nameJa": "ちいさなかりうどのたに",
+  "emoji": "🪶",
+  "order": 6,
+  "unlock": "wing:k5",
+  "pits": [
+    {
+      "id": "v1",
+      "nameJa": "かぎづめの いわかげ",
+      "pos": [6, 15],
+      "clue": "bone",
+      "discoverText": "みかづきがたの ちいさな ほねが きらり…かりうどの かぎづめだ!",
+      "fossils": [
+        {
+          "speciesId": "velociraptor",
+          "boneId": "claw",
+          "kind": "claw",
+          "layer": 2,
+          "fragile": true,
+          "cells": [[3, 3]]
+        },
+        {
+          "speciesId": "velociraptor",
+          "boneId": "tail",
+          "kind": "long",
+          "layer": 3,
+          "cells": [
+            [2, 5],
+            [3, 5],
+            [4, 5]
+          ]
+        }
+      ],
+      "rocks": [[6, 1, 1]],
+      "crystals": [[1, 6, 2]],
+      "branches": [
+        [0, 0, 0],
+        [7, 2, 0]
+      ],
+      "gates": [],
+      "ores": [[6, 6, 4]]
+    },
+    {
+      "id": "v2",
+      "nameJa": "ほそがおの だんがい",
+      "pos": [-13, -2],
+      "clue": "crack",
+      "discoverText": "ほそながい あたまの かげが すけてる。すばしっこい やつが ねむってる!",
+      "fossils": [
+        {
+          "speciesId": "velociraptor",
+          "boneId": "skull",
+          "kind": "blob",
+          "layer": 3,
+          "cells": [
+            [2, 2],
+            [3, 2]
+          ]
+        },
+        {
+          "speciesId": "velociraptor",
+          "boneId": "arms",
+          "kind": "long",
+          "layer": 4,
+          "cells": [
+            [5, 4],
+            [5, 5],
+            [5, 6]
+          ]
+        }
+      ],
+      "rocks": [[6, 6, 1]],
+      "crystals": [[7, 0, 2]],
+      "branches": [
+        [0, 6, 0],
+        [7, 7, 0]
+      ],
+      "gates": [],
+      "ores": [[1, 1, 4]]
+    },
+    {
+      "id": "v3",
+      "nameJa": "おおづめの さか",
+      "pos": [12, -10],
+      "clue": "rubble",
+      "discoverText": "70センチも ある きょだいな ツメ! せかいいちの もちぬしが ねむってる!",
+      "fossils": [
+        {
+          "speciesId": "therizinosaurus",
+          "boneId": "claws",
+          "kind": "claw",
+          "layer": 3,
+          "cells": [
+            [2, 3],
+            [3, 3],
+            [4, 3]
+          ]
+        },
+        {
+          "speciesId": "therizinosaurus",
+          "boneId": "neck",
+          "kind": "long",
+          "layer": 4,
+          "cells": [
+            [6, 1],
+            [6, 2],
+            [6, 3]
+          ]
+        }
+      ],
+      "rocks": [[1, 5, 1]],
+      "crystals": [[0, 0, 2]],
+      "branches": [
+        [7, 0, 0],
+        [3, 7, 0]
+      ],
+      "gates": [],
+      "ores": [[0, 7, 4]]
+    },
+    {
+      "id": "v4",
+      "nameJa": "とさかの くぼみ",
+      "pos": [-8, 9],
+      "clue": "crack",
+      "discoverText": "まるい とさかの ほねが みえる。ぬれぎぬの もちぬしの けはい!",
+      "fossils": [
+        {
+          "speciesId": "oviraptor",
+          "boneId": "crest",
+          "kind": "blob",
+          "layer": 2,
+          "cells": [
+            [3, 2],
+            [4, 2]
+          ]
+        },
+        {
+          "speciesId": "oviraptor",
+          "boneId": "arms",
+          "kind": "long",
+          "layer": 3,
+          "cells": [
+            [1, 4],
+            [2, 4],
+            [3, 4]
+          ]
+        }
+      ],
+      "rocks": [[6, 1, 1]],
+      "crystals": [
+        [7, 7, 2],
+        [0, 6, 3]
+      ],
+      "branches": [
+        [0, 0, 0],
+        [6, 7, 0]
+      ],
+      "gates": [],
+      "ores": [[7, 0, 4]]
+    },
+    {
+      "id": "v5",
+      "nameJa": "たまごのすの おか",
+      "pos": [9, 4],
+      "clue": "bone",
+      "discoverText": "まるい たまごが ならんで うまってる…! ⛏️は だめ、そーっとだ!",
+      "fossils": [
+        {
+          "speciesId": "eggnest",
+          "boneId": "nest",
+          "kind": "egg",
+          "layer": 2,
+          "fragile": true,
+          "cells": [
+            [3, 3],
+            [4, 3],
+            [3, 4],
+            [4, 4]
+          ]
+        },
+        {
+          "speciesId": "oviraptor",
+          "boneId": "legs",
+          "kind": "long",
+          "layer": 4,
+          "cells": [
+            [1, 6],
+            [2, 6],
+            [3, 6]
+          ]
+        }
+      ],
+      "rocks": [[6, 6, 1]],
+      "crystals": [[0, 1, 2]],
+      "branches": [
+        [7, 7, 0],
+        [0, 6, 0]
+      ],
+      "gates": [],
+      "ores": [[3, 7, 4]]
+    },
+    {
+      "id": "v6",
+      "nameJa": "かわいた くぼち",
+      "pos": [-4, -13],
+      "clue": "crack",
+      "discoverText": "どっしり ふとい あしの ほねが つきでてる!",
+      "fossils": [
+        {
+          "speciesId": "therizinosaurus",
+          "boneId": "legs",
+          "kind": "long",
+          "layer": 3,
+          "cells": [
+            [3, 3],
+            [4, 3],
+            [5, 3]
+          ]
+        }
+      ],
+      "rocks": [
+        [1, 5, 1],
+        [6, 1, 2]
+      ],
+      "crystals": [[7, 7, 2]],
+      "branches": [
+        [0, 0, 0],
+        [7, 0, 0]
+      ],
+      "gates": [],
+      "ores": [[1, 7, 4]]
+    },
+    {
+      "id": "v7",
+      "nameJa": "しずかな すあな",
+      "pos": [-15, 4],
+      "clue": "none",
+      "discoverText": "いわかげの ちいさな すあな…4まいつばさの ひみつが ねむってる!?",
+      "fossils": [
+        {
+          "speciesId": "microraptor",
+          "boneId": "wings",
+          "kind": "long",
+          "layer": 4,
+          "cells": [
+            [2, 3],
+            [3, 3]
+          ]
+        },
+        {
+          "speciesId": "microraptor",
+          "boneId": "legwings",
+          "kind": "long",
+          "layer": 4,
+          "cells": [
+            [5, 3],
+            [6, 3]
+          ]
+        },
+        {
+          "speciesId": "microraptor",
+          "boneId": "claw",
+          "kind": "claw",
+          "layer": 5,
+          "fragile": true,
+          "cells": [[3, 5]]
+        },
+        {
+          "speciesId": "microraptor",
+          "boneId": "skull",
+          "kind": "blob",
+          "layer": 5,
+          "cells": [[5, 5]]
+        }
+      ],
+      "rocks": [[7, 0, 1]],
+      "crystals": [
+        [1, 4, 5],
+        [6, 5, 5]
+      ],
+      "branches": [
+        [0, 0, 0],
+        [7, 7, 0]
+      ],
+      "gates": [],
+      "ores": [[1, 2, 5]]
+    },
+    {
+      "id": "v8",
+      "nameJa": "あかつちの ふきだまり",
+      "pos": [2, -9],
+      "clue": "none",
+      "discoverText": "あかい すなの したから コツコツ…かたい おとが する!",
+      "fossils": [],
+      "rocks": [
+        [3, 3, 1],
+        [5, 5, 2]
+      ],
+      "crystals": [
+        [2, 6, 3],
+        [6, 2, 4]
+      ],
+      "branches": [
+        [0, 4, 0],
+        [7, 3, 0],
+        [4, 0, 0]
+      ],
+      "gates": [],
+      "ores": [
+        [1, 7, 4],
+        [6, 6, 5],
+        [3, 1, 5]
+      ]
+    }
+  ]
+}
