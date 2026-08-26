@@ -72,6 +72,19 @@ const ARMS = [
   },
 ] as const;
 
+const SKELETON_ARMS = [
+  {
+    shoulder: V(1.28, 3.18, 0.46),
+    elbow: V(1.48, 2.9, 0.56),
+    wrist: V(1.82, 2.8, 0.59),
+  },
+  {
+    shoulder: V(1.25, 3.16, -0.42),
+    elbow: V(1.16, 2.88, -0.5),
+    wrist: V(1.5, 2.76, -0.54),
+  },
+] as const;
+
 function addLivingHindLeg(
   body: GeometryBatch,
   claws: GeometryBatch,
@@ -248,7 +261,7 @@ function addSkeletonHindLeg(bone: GeometryBatch, limb: (typeof HIND_LIMBS)[numbe
   bone.addBetween(limb.ankle, V(limb.ankle.x - 0.3, 0.22, limb.ankle.z), 0.045, 0.018, 6);
 }
 
-function addSkeletonArm(bone: GeometryBatch, arm: (typeof ARMS)[number]): void {
+function addSkeletonArm(bone: GeometryBatch, arm: (typeof SKELETON_ARMS)[number]): void {
   bone.addBetween(arm.shoulder, arm.elbow, 0.065, 0.05, 6);
   bone.addBetween(arm.elbow, arm.wrist, 0.05, 0.03, 6);
   addBoneJoint(bone, arm.shoulder, 0.09);
@@ -265,64 +278,73 @@ function addSkeletonArm(bone: GeometryBatch, arm: (typeof ARMS)[number]): void {
 function addSkeletonPelvis(bone: GeometryBatch, shade: GeometryBatch, dark: GeometryBatch): void {
   const ilium = silhouetteGeometry(
     [
-      new THREE.Vector2(-0.9, 0.03),
-      new THREE.Vector2(-0.68, 0.33),
-      new THREE.Vector2(-0.14, 0.45),
-      new THREE.Vector2(0.5, 0.34),
-      new THREE.Vector2(0.82, 0.12),
-      new THREE.Vector2(0.62, -0.12),
-      new THREE.Vector2(0.08, -0.25),
-      new THREE.Vector2(-0.55, -0.21),
+      new THREE.Vector2(-0.72, -0.03),
+      new THREE.Vector2(-0.58, 0.2),
+      new THREE.Vector2(-0.25, 0.3),
+      new THREE.Vector2(0.22, 0.27),
+      new THREE.Vector2(0.62, 0.12),
+      new THREE.Vector2(0.58, 0.02),
+      new THREE.Vector2(0.25, -0.02),
+      new THREE.Vector2(0.08, -0.16),
+      new THREE.Vector2(-0.08, -0.08),
+      new THREE.Vector2(-0.38, -0.11),
     ],
-    0.065,
+    0.045,
   );
 
   for (const side of [-1, 1]) {
-    const z = side * 0.52;
-    shade.add(ilium.clone(), V(-0.76, 3.2, z));
+    const z = side * 0.47;
+    shade.add(ilium.clone(), V(-0.75, 3.18, z));
 
-    const socket = V(-0.7, 2.96, side * 0.6);
-    const pubisKnee = V(-0.36, 2.32, side * 0.49);
-    const pubisTip = V(0.02, 1.65, side * 0.4);
-    const ischiumTip = V(-1.58, 1.98, side * 0.42);
-    bone.addBetween(socket, pubisKnee, 0.085, 0.065, 7);
-    bone.addBetween(pubisKnee, pubisTip, 0.065, 0.035, 7);
-    bone.addBetween(socket, ischiumTip, 0.075, 0.035, 7);
-    ellipsoid(dark, socket, V(0.22, 0.18, 0.035), 9, 6);
+    const socket = V(-0.7, 2.98, side * 0.53);
+    const pubisKnee = V(-0.34, 2.34, side * 0.46);
+    const pubisTip = V(0, 1.72, side * 0.38);
+    const ischiumTip = V(-1.5, 2.04, side * 0.4);
+    bone.addBetween(V(-0.7, 3.08, z), socket, 0.065, 0.055, 7);
+    bone.addBetween(socket, pubisKnee, 0.07, 0.055, 7);
+    bone.addBetween(pubisKnee, pubisTip, 0.055, 0.03, 7);
+    bone.addBetween(socket, ischiumTip, 0.065, 0.03, 7);
+    bone.addBetween(V(-1.1, 3.3, 0), V(-1.1, 3.3, z), 0.055, 0.045, 6);
+    bone.addBetween(V(-0.45, 3.42, 0), V(-0.45, 3.3, z), 0.055, 0.045, 6);
+    ellipsoid(dark, socket, V(0.17, 0.14, 0.025), 9, 6);
   }
 
-  bone.addBetween(V(0.02, 1.65, -0.4), V(0.02, 1.65, 0.4), 0.035, 0.035, 6);
+  bone.addBetween(V(0, 1.72, -0.38), V(0, 1.72, 0.38), 0.03, 0.03, 6);
 }
 
 function addSkeletonShoulderGirdle(bone: GeometryBatch, shade: GeometryBatch): void {
   const scapula = silhouetteGeometry(
     [
-      new THREE.Vector2(-0.82, 0.13),
-      new THREE.Vector2(-0.58, 0.28),
-      new THREE.Vector2(0.52, 0.18),
-      new THREE.Vector2(0.82, 0.02),
-      new THREE.Vector2(0.55, -0.14),
-      new THREE.Vector2(-0.62, -0.12),
+      new THREE.Vector2(-0.72, 0.18),
+      new THREE.Vector2(-0.55, 0.24),
+      new THREE.Vector2(0.67, -0.12),
+      new THREE.Vector2(0.78, -0.22),
+      new THREE.Vector2(0.62, -0.28),
+      new THREE.Vector2(0.45, -0.23),
+      new THREE.Vector2(-0.65, 0.1),
     ],
-    0.05,
+    0.035,
   );
   const coracoid = silhouetteGeometry(
     [
-      new THREE.Vector2(-0.28, 0.1),
-      new THREE.Vector2(-0.05, 0.24),
-      new THREE.Vector2(0.27, 0.13),
-      new THREE.Vector2(0.32, -0.12),
-      new THREE.Vector2(0.02, -0.28),
-      new THREE.Vector2(-0.25, -0.13),
+      new THREE.Vector2(-0.18, 0.08),
+      new THREE.Vector2(-0.04, 0.14),
+      new THREE.Vector2(0.17, 0.08),
+      new THREE.Vector2(0.19, -0.09),
+      new THREE.Vector2(0, -0.16),
+      new THREE.Vector2(-0.16, -0.08),
     ],
-    0.055,
+    0.04,
   );
 
   for (const side of [-1, 1]) {
-    const z = side * 0.5;
-    shade.add(scapula.clone(), V(0.68, 3.58, z));
-    bone.add(coracoid.clone(), V(1.27, 3.33, side * 0.56));
-    bone.addBetween(V(0.15, 3.5, z), V(0.22, 2.9, side * 0.45), 0.055, 0.035, 6);
+    const z = side * 0.42;
+    const shoulder = SKELETON_ARMS[side === 1 ? 0 : 1].shoulder;
+    shade.add(scapula.clone(), V(0.7, 3.43, z));
+    bone.add(coracoid.clone(), V(1.2, 3.14, side * 0.45));
+    bone.addBetween(V(0.18, 3.5, 0), V(0.08, 3.57, z), 0.05, 0.04, 6);
+    bone.addBetween(V(1.18, 3.18, side * 0.44), shoulder, 0.055, 0.045, 6);
+    bone.addBetween(shoulder, V(1.43, 3.2, 0), 0.035, 0.025, 6);
   }
 }
 
@@ -371,7 +393,7 @@ function buildSkeleton(): THREE.Group {
   addSkeletonShoulderGirdle(bone, shade);
 
   HIND_LIMBS.forEach((limb) => addSkeletonHindLeg(bone, limb));
-  ARMS.forEach((arm) => addSkeletonArm(bone, arm));
+  SKELETON_ARMS.forEach((arm) => addSkeletonArm(bone, arm));
 
   ellipsoid(bone, V(2.78, 4.2, 0), V(0.92, 0.68, 0.73), 10, 7);
   ellipsoid(bone, V(3.75, 4.14, 0), V(1.05, 0.58, 0.68), 10, 6);
