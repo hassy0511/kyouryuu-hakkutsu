@@ -382,7 +382,9 @@ function buildSkeleton(): THREE.Group {
   bone.addBetween(V(2.45, 3.73, 0), V(5.18, 3.61, 0), 0.1, 0.055, 7);
 
   for (const side of [-1, 1]) {
-    ellipsoid(dark, V(3.05, 4.42, side * 0.65), V(0.32, 0.27, 0.08), 8, 6);
+    // The rear temporal opening is deliberately smaller than the orbit so it
+    // does not read as a second eye in the simplified skull.
+    ellipsoid(dark, V(3.05, 4.42, side * 0.65), V(0.2, 0.14, 0.055), 8, 5);
     ellipsoid(dark, V(3.72, 4.22, side * 0.64), V(0.34, 0.23, 0.075), 8, 6);
     ellipsoid(dark, V(4.78, 4.2, side * 0.48), V(0.1, 0.065, 0.03), 7, 5);
     for (let index = 0; index < 7; index += 1) {
