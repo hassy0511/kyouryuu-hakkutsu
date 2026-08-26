@@ -35,6 +35,11 @@ const SPECIES = {
     feature: '🔍 おやゆびの スパイクと まっすぐな しっぽに ちゅうもく!',
     skeletonTip: 'おやゆびスパイク・5ほんゆび・かたい しっぽを みてみよう!',
   },
+  ichthyosaurus: {
+    name: 'イクチオサウルス',
+    feature: '🔍 おおきな めと タテむきの おびれに ちゅうもく!',
+    skeletonTip: 'めの なかの ほねのリングと したに まがる せぼねを みてみよう!',
+  },
   mosasaurus: {
     name: 'モササウルス',
     feature: '🔍 4まいの ひれと したに まがる しっぽに ちゅうもく!',
@@ -219,7 +224,9 @@ function fitCameraToModel(): void {
           ? 2.25
           : speciesId === 'plesiosaurus'
             ? 1.5
-            : 1.15;
+            : speciesId === 'ichthyosaurus'
+              ? 1.4
+              : 1.15;
   const distance = Math.max(distanceForHeight, distanceForWidth) * cameraPadding;
 
   controls.target.copy(center);
