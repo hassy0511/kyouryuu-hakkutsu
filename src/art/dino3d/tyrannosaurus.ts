@@ -312,39 +312,20 @@ function addSkeletonPelvis(bone: GeometryBatch, shade: GeometryBatch, dark: Geom
   bone.addBetween(V(0, 1.72, -0.38), V(0, 1.72, 0.38), 0.03, 0.03, 6);
 }
 
-function addSkeletonShoulderGirdle(bone: GeometryBatch, shade: GeometryBatch): void {
-  const scapula = silhouetteGeometry(
-    [
-      new THREE.Vector2(-0.72, 0.18),
-      new THREE.Vector2(-0.55, 0.24),
-      new THREE.Vector2(0.67, -0.12),
-      new THREE.Vector2(0.78, -0.22),
-      new THREE.Vector2(0.62, -0.28),
-      new THREE.Vector2(0.45, -0.23),
-      new THREE.Vector2(-0.65, 0.1),
-    ],
-    0.035,
-  );
-  const coracoid = silhouetteGeometry(
-    [
-      new THREE.Vector2(-0.18, 0.08),
-      new THREE.Vector2(-0.04, 0.14),
-      new THREE.Vector2(0.17, 0.08),
-      new THREE.Vector2(0.19, -0.09),
-      new THREE.Vector2(0, -0.16),
-      new THREE.Vector2(-0.16, -0.08),
-    ],
-    0.04,
-  );
-
+function addSkeletonShoulderGirdle(bone: GeometryBatch): void {
   for (const side of [-1, 1]) {
-    const z = side * 0.42;
     const shoulder = SKELETON_ARMS[side === 1 ? 0 : 1].shoulder;
-    shade.add(scapula.clone(), V(0.7, 3.43, z));
-    bone.add(coracoid.clone(), V(1.2, 3.14, side * 0.45));
-    bone.addBetween(V(0.18, 3.5, 0), V(0.08, 3.57, z), 0.05, 0.04, 6);
-    bone.addBetween(V(1.18, 3.18, side * 0.44), shoulder, 0.055, 0.045, 6);
-    bone.addBetween(shoulder, V(1.43, 3.2, 0), 0.035, 0.025, 6);
+    const scapulaRoot = V(0.1, 3.54, side * 0.34);
+    const scapulaMid = V(0.72, 3.36, side * 0.4);
+    const coracoidBase = V(0.92, 2.98, side * 0.34);
+    const chestAnchor = V(1.02, 3.02, side * 0.12);
+
+    bone.addBetween(V(0.18, 3.5, 0), scapulaRoot, 0.05, 0.04, 6);
+    bone.addBetween(scapulaRoot, scapulaMid, 0.06, 0.05, 7);
+    bone.addBetween(scapulaMid, shoulder, 0.05, 0.04, 7);
+    bone.addBetween(shoulder, coracoidBase, 0.045, 0.03, 6);
+    bone.addBetween(coracoidBase, chestAnchor, 0.03, 0.025, 6);
+    bone.addBetween(shoulder, V(1.43, 3.16, 0), 0.035, 0.025, 6);
   }
 }
 
@@ -390,7 +371,7 @@ function buildSkeleton(): THREE.Group {
   }
 
   addSkeletonPelvis(bone, shade, dark);
-  addSkeletonShoulderGirdle(bone, shade);
+  addSkeletonShoulderGirdle(bone);
 
   HIND_LIMBS.forEach((limb) => addSkeletonHindLeg(bone, limb));
   SKELETON_ARMS.forEach((arm) => addSkeletonArm(bone, arm));
