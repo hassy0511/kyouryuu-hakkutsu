@@ -55,6 +55,11 @@ const SPECIES = {
     feature: '🔍 ながい とさかと つばさの くすりゆびに ちゅうもく!',
     skeletonTip: 'うでから のびる ながい第4指と むねの りゅうこつを みてみよう!',
   },
+  quetzalcoatlus: {
+    name: 'ケツァルコアトルス',
+    feature: '🔍 キリンのような ながいくびと たたんだ つばさに ちゅうもく!',
+    skeletonTip: 'ながい くびのほねと おりたたまれた第4指を みてみよう!',
+  },
   spinosaurus: {
     name: 'スピノサウルス',
     feature: '🔍 せなかの おおきな ほ! スピノサウルスの しるし',
@@ -234,14 +239,21 @@ function fitCameraToModel(): void {
               ? 1.4
               : speciesId === 'pteranodon'
                 ? 1.08
-                : 1.15;
+                : speciesId === 'quetzalcoatlus'
+                  ? 2
+                  : 1.15;
   const distance = Math.max(distanceForHeight, distanceForWidth) * cameraPadding;
 
-  controls.target.copy(center);
+  const targetOffsetY = speciesId === 'quetzalcoatlus' ? size.y * 0.1 : 0;
+  controls.target.set(center.x, center.y + targetOffsetY, center.z);
   const cameraOffsetX = speciesId === 'pteranodon' ? distance * 0.72 : size.x * 0.015;
   const cameraOffsetZ = speciesId === 'pteranodon' ? distance * 0.72 : distance;
   const cameraOffsetY = speciesId === 'pteranodon' ? distance * 0.28 : size.y * 0.08;
-  camera.position.set(center.x + cameraOffsetX, center.y + cameraOffsetY, center.z + cameraOffsetZ);
+  camera.position.set(
+    center.x + cameraOffsetX,
+    center.y + targetOffsetY + cameraOffsetY,
+    center.z + cameraOffsetZ,
+  );
   controls.minDistance = Math.max(size.y * 1.25, distance * 0.45);
   controls.maxDistance = distance * 2.25;
   controls.update();

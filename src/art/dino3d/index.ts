@@ -8,6 +8,7 @@ import { buildIchthyosaurus } from './ichthyosaurus';
 import { buildMosasaurus } from './mosasaurus';
 import { buildPlesiosaurus } from './plesiosaurus';
 import { buildPteranodon } from './pteranodon';
+import { buildQuetzalcoatlus } from './quetzalcoatlus';
 import { buildSpinosaurus, type DinoViews } from './spinosaurus';
 import { buildStegosaurus } from './stegosaurus';
 import { buildTriceratops } from './triceratops';
@@ -25,6 +26,7 @@ const BUILDERS: Record<string, () => DinoViews> = {
   mosasaurus: buildMosasaurus,
   plesiosaurus: buildPlesiosaurus,
   pteranodon: buildPteranodon,
+  quetzalcoatlus: buildQuetzalcoatlus,
   spinosaurus: buildSpinosaurus,
   stegosaurus: buildStegosaurus,
   triceratops: buildTriceratops,
