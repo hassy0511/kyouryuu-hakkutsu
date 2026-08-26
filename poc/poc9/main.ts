@@ -10,6 +10,11 @@ const SPECIES = {
     feature: '🔍 3ぼんの ゆびと めのうえの つのに ちゅうもく!',
     skeletonTip: 'めのうえの つの・3ぼんゆび・ほそながい あたまを みてみよう!',
   },
+  archelon: {
+    name: 'アーケロン',
+    feature: '🔍 おおきな まえびれと ひくい こうらに ちゅうもく!',
+    skeletonTip: 'すきまのある こうらの わく・ひれの ながい ゆびを みてみよう!',
+  },
   ammonite: {
     name: 'アンモナイト',
     feature: '🔍 うずまきの からと 10ぽんの しょくわんに ちゅうもく!',
@@ -205,9 +210,11 @@ function fitCameraToModel(): void {
       ? 1.42
       : speciesId === 'brachiosaurus'
         ? 1.6
-        : speciesId === 'plesiosaurus'
-          ? 1.5
-          : 1.15;
+        : speciesId === 'archelon'
+          ? 2.25
+          : speciesId === 'plesiosaurus'
+            ? 1.5
+            : 1.15;
   const distance = Math.max(distanceForHeight, distanceForWidth) * cameraPadding;
 
   controls.target.copy(center);
