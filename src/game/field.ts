@@ -25,7 +25,9 @@ export function groundHeight(x: number, z: number, amp = 1): number {
   const openSouth = 1 - THREE.MathUtils.smoothstep(z, 8, 20);
   const rim = THREE.MathUtils.smoothstep(r, 19, 27) * 7 * openSouth;
   const beachFlat = THREE.MathUtils.smoothstep(z, 11, 17);
-  return dunes * (1 - beachFlat) * (1 - THREE.MathUtils.smoothstep(r, 19, 23)) + rim;
+  // すなはまの先は うみへ しずむ(みぎわは z≈20。遊べる範囲 z<=18.5 は不変)
+  const seaDip = THREE.MathUtils.smoothstep(z, 19.5, 26) * 3.5;
+  return dunes * (1 - beachFlat) * (1 - THREE.MathUtils.smoothstep(r, 19, 23)) + rim - seaDip;
 }
 
 // 島ごとの見た目(地形の色・空・海・植生)。形の共通部は当面共有し、雰囲気で差別化する
@@ -112,6 +114,11 @@ export class FieldMode {
   private pendingInteract: string | null = null;
   private walkPhase = 0;
   private readonly camTarget = new THREE.Vector3();
+  private boat: THREE.Group | null = null;
+  private boatBaseY = 0;
+  private waveRing: THREE.Mesh | null = null;
+  private boatAlert: HTMLElement | null = null;
+  private time = 0;
 
   constructor(
     private readonly renderer: THREE.WebGLRenderer,
@@ -572,30 +579,95 @@ export class FieldMode {
     this.addHotspot('hakase', 'hakase', hakasePos, 1.4);
   }
 
+  // すなはまから うみへ のびる さんばし + うみに うかぶ ふね。
+  // 「ふねで しまを いききできる」が ひとめで つたわるように、ふねは水上・目印は⛵
   private buildBoat(): void {
-    const pos = new THREE.Vector3(3.2, 0.05, 17.2);
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0x8a6b47, roughness: 0.9 });
+    const plankMat = new THREE.MeshStandardMaterial({ color: 0xa8865c, roughness: 1 });
+    const pier = new THREE.Group();
+    for (let n = 0; n < 10; n++) {
+      const plank = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.09, 0.52), plankMat);
+      plank.position.set(0, 0.42, n * 0.6);
+      plank.castShadow = true;
+      plank.receiveShadow = true;
+      pier.add(plank);
+    }
+    for (const [sx, pz] of [
+      [-1, 0.3],
+      [1, 0.3],
+      [-1, 2.5],
+      [1, 2.5],
+      [-1, 5.2],
+      [1, 5.2],
+    ] as const) {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 2.1, 6), woodMat);
+      post.position.set(sx * 0.68, -0.55, pz);
+      post.castShadow = true;
+      pier.add(post);
+    }
+    pier.position.set(3.2, 0, 15.4);
+    this.scene.add(pier);
+
+    // ふね: 桟橋の さきに、へさきを うみへ むけて 停泊(ぷかぷか ゆれる)
     const boat = new THREE.Group();
-    const hullMat = new THREE.MeshStandardMaterial({ color: 0x8a5a33, roughness: 0.8 });
-    const hull = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.35, 2.4, 8), hullMat);
+    const hullMat = new THREE.MeshStandardMaterial({ color: 0x9c6238, roughness: 0.8 });
+    const hull = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.42, 3.0, 10), hullMat);
     hull.rotation.z = Math.PI / 2;
-    hull.scale.y = 0.55;
-    hull.position.y = 0.25;
+    hull.scale.set(0.6, 1, 0.85); // たてに ひらたく(回転後: x=高さ, z=はば)
+    hull.position.y = 0.1;
     hull.castShadow = true;
-    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.5, 6), hullMat);
-    mast.position.y = 1.0;
-    const sailMat = new THREE.MeshStandardMaterial({
-      color: 0xfff6e0,
-      roughness: 1,
-      side: THREE.DoubleSide,
-    });
-    const sail = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 1.0), sailMat);
-    sail.position.set(0.05, 1.05, 0);
-    sail.rotation.y = Math.PI / 2;
-    boat.add(hull, mast, sail);
-    boat.position.copy(pos);
-    boat.rotation.y = -0.5;
+    boat.add(hull);
+    const bow = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.0, 8), hullMat);
+    bow.rotation.z = -Math.PI / 2 + 0.3;
+    bow.scale.set(0.62, 1, 0.85);
+    bow.position.set(1.8, 0.3, 0);
+    bow.castShadow = true;
+    boat.add(bow);
+    const stern = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.95), hullMat);
+    stern.position.set(-1.5, 0.28, 0);
+    stern.castShadow = true;
+    boat.add(stern);
+    const bench = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.09, 0.95), plankMat);
+    bench.position.set(0.6, 0.34, 0);
+    boat.add(bench);
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 2.3, 6), woodMat);
+    mast.position.set(-0.4, 1.25, 0);
+    mast.castShadow = true;
+    boat.add(mast);
+    const sail = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.5, 1.4),
+      new THREE.MeshStandardMaterial({ color: 0xfff6e0, roughness: 1, side: THREE.DoubleSide }),
+    );
+    sail.position.set(0.45, 1.45, 0);
+    sail.castShadow = true;
+    boat.add(sail);
+    const pennant = new THREE.Mesh(
+      new THREE.ConeGeometry(0.11, 0.4, 4),
+      new THREE.MeshStandardMaterial({ color: 0xd94a4a, roughness: 0.9 }),
+    );
+    pennant.rotation.z = -Math.PI / 2;
+    pennant.position.set(-0.16, 2.42, 0);
+    boat.add(pennant);
+    this.boatBaseY = 0.16;
+    boat.position.set(3.2, this.boatBaseY, 22.2);
+    boat.rotation.y = -Math.PI / 2; // へさきは おきの ほう
     this.scene.add(boat);
-    this.addHotspot('boat', 'boat', pos, 1.7);
+    this.boat = boat;
+
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(2.0, 0.05, 6, 26).rotateX(-Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35 }),
+    );
+    ring.position.set(3.2, -0.06, 22.2);
+    this.scene.add(ring);
+    this.waveRing = ring;
+
+    this.addHotspot('boat', 'boat', new THREE.Vector3(3.2, 0.42, 19.6), 2.3);
+
+    const alert = document.createElement('div');
+    alert.className = 'site-alert';
+    el('alerts').appendChild(alert);
+    this.boatAlert = alert;
   }
 
   private buildMuseum(): void {
@@ -794,12 +866,15 @@ export class FieldMode {
     this.controls.dispose();
     this.alertEls.forEach((a) => a.remove());
     this.alertEls.clear();
+    this.boatAlert?.remove();
+    this.boatAlert = null;
   }
 
   deactivate(): void {
     this.controls.enabled = false;
     el('field-ui').classList.add('hidden');
     this.alertEls.forEach((a) => (a.style.display = 'none'));
+    if (this.boatAlert) this.boatAlert.style.display = 'none';
     this.moveTarget = null;
     this.pendingInteract = null;
   }
@@ -901,6 +976,17 @@ export class FieldMode {
       }
     }
 
+    this.time += dt;
+    if (this.boat) {
+      this.boat.position.y = this.boatBaseY + Math.sin(this.time * 1.5) * 0.05;
+      this.boat.rotation.z = Math.sin(this.time * 1.1) * 0.035;
+    }
+    if (this.waveRing) {
+      const k = (this.time * 0.45) % 1;
+      this.waveRing.scale.setScalar(1 + k * 0.3);
+      (this.waveRing.material as THREE.MeshBasicMaterial).opacity = 0.35 * (1 - k);
+    }
+
     this.camTarget.set(
       this.player.position.x,
       this.player.position.y + 1.3,
@@ -932,6 +1018,19 @@ export class FieldMode {
       alert.textContent = state === 'hidden' ? (pit.clue === 'none' ? '❓' : '❗') : '⛏️';
       alert.style.left = `${((p.x + 1) / 2) * this.renderer.domElement.clientWidth}px`;
       alert.style.top = `${((1 - p.y) / 2) * this.renderer.domElement.clientHeight}px`;
+    }
+    // ⛵ ふねの目じるし: さんばしの上に いつも うかべる(遠すぎるときだけ消す)
+    if (this.boatAlert) {
+      const dist = Math.hypot(this.player.position.x - 3.2, this.player.position.z - 19);
+      const p = new THREE.Vector3(3.2, 2.9, 21.6).project(this.camera);
+      if (dist > 17 || p.z > 1) {
+        this.boatAlert.style.display = 'none';
+      } else {
+        this.boatAlert.style.display = 'block';
+        this.boatAlert.textContent = '⛵';
+        this.boatAlert.style.left = `${((p.x + 1) / 2) * this.renderer.domElement.clientWidth}px`;
+        this.boatAlert.style.top = `${((1 - p.y) / 2) * this.renderer.domElement.clientHeight}px`;
+      }
     }
   }
 
