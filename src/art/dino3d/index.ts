@@ -2,6 +2,7 @@ import { buildAmmonite } from './ammonite';
 import { buildBrachiosaurus } from './brachiosaurus';
 import { buildIguanodon } from './iguanodon';
 import { buildSpinosaurus, type DinoViews } from './spinosaurus';
+import { buildStegosaurus } from './stegosaurus';
 import { buildTriceratops } from './triceratops';
 import { buildTyrannosaurus } from './tyrannosaurus';
 
@@ -11,6 +12,7 @@ const BUILDERS: Record<string, () => DinoViews> = {
   brachiosaurus: buildBrachiosaurus,
   iguanodon: buildIguanodon,
   spinosaurus: buildSpinosaurus,
+  stegosaurus: buildStegosaurus,
   triceratops: buildTriceratops,
   tyrannosaurus: buildTyrannosaurus,
 };

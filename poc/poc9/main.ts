@@ -25,6 +25,11 @@ const SPECIES = {
     feature: '🔍 せなかの おおきな ほ! スピノサウルスの しるし',
     skeletonTip: 'ながい口・せなかのトゲ・ひらたいしっぽに ちゅうもく!',
   },
+  stegosaurus: {
+    name: 'ステゴサウルス',
+    feature: '🔍 2れつの いたと しっぽの 4ほんトゲに ちゅうもく!',
+    skeletonTip: 'ほねの いた・4ほんの トゲ・たかい こしを みてみよう!',
+  },
   tyrannosaurus: {
     name: 'ティラノサウルス',
     feature: '🔍 おおきな あたま と 2ほんゆびに ちゅうもく!',
