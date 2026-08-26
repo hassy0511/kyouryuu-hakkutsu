@@ -313,8 +313,24 @@ function buildSkeleton(): THREE.Group {
     }
   }
 
-  ellipsoid(shade, V(2.2, 2.08, 0), V(0.5, 0.34, 0.68), 8, 6);
-  ellipsoid(shade, V(-1.65, 1.92, 0), V(0.58, 0.36, 0.72), 8, 6);
+  for (const side of [-1, 1]) {
+    const frontPaddle = (side > 0 ? PADDLES[0] : PADDLES[1])!;
+    const rearPaddle = (side > 0 ? PADDLES[2] : PADDLES[3])!;
+
+    // Marine girdles are broad, but expressed as connected bars rather than
+    // solid body-like ellipsoids so the paddle roots remain readable.
+    const shoulderBlade = V(1.72, 1.84, side * 0.54);
+    shade.addBetween(V(2.55, 2.12, side * 0.12), shoulderBlade, 0.085, 0.055, 6);
+    bone.addBetween(shoulderBlade, frontPaddle.root, 0.06, 0.045, 6);
+    bone.addBetween(frontPaddle.root, V(2.08, 1.5, side * 0.18), 0.055, 0.035, 6);
+    bone.addBetween(V(2.08, 1.5, side * 0.18), V(2.08, 1.48, 0), 0.035, 0.025, 5);
+
+    const pelvicBlade = V(-2.18, 1.86, side * 0.56);
+    shade.addBetween(V(-1.28, 1.98, side * 0.12), pelvicBlade, 0.08, 0.052, 6);
+    bone.addBetween(pelvicBlade, rearPaddle.root, 0.058, 0.043, 6);
+    bone.addBetween(rearPaddle.root, V(-1.72, 1.46, side * 0.17), 0.05, 0.032, 6);
+    bone.addBetween(V(-1.72, 1.46, side * 0.17), V(-1.72, 1.44, 0), 0.032, 0.023, 5);
+  }
   PADDLES.forEach((paddle) => addPaddleBones(bone, paddle));
 
   bone.addBetween(V(4.08, 2.22, 0), V(4.55, 2.28, 0), 0.1, 0.08, 6);

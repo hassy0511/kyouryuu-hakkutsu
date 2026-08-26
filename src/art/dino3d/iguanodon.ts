@@ -285,7 +285,22 @@ function buildSkeleton(): THREE.Group {
     }
   }
 
-  ellipsoid(shade, V(-0.75, 2.4, 0), V(0.58, 0.48, 0.7), 9, 6);
+  for (const side of [-1, 1]) {
+    const hindLimb = side > 0 ? HIND_LIMBS[0] : HIND_LIMBS[1];
+    const arm = side > 0 ? ARMS[0] : ARMS[1];
+
+    shade.addBetween(V(-1.38, 2.62, side * 0.18), V(-0.2, 2.7, side * 0.55), 0.1, 0.06, 6);
+    bone.addBetween(V(-0.82, 2.72, side * 0.07), hindLimb.hip, 0.07, 0.05, 6);
+    bone.addBetween(hindLimb.hip, V(-0.28, 1.7, side * 0.43), 0.06, 0.034, 6);
+    bone.addBetween(hindLimb.hip, V(-1.2, 1.8, side * 0.4), 0.055, 0.03, 6);
+
+    const scapula = V(0.76, 2.72, side * 0.46);
+    const chest = V(1.0, 2.18, side * 0.16);
+    bone.addBetween(V(1.2, 2.9, side * 0.07), scapula, 0.055, 0.04, 6);
+    bone.addBetween(scapula, arm.shoulder, 0.05, 0.04, 6);
+    bone.addBetween(arm.shoulder, chest, 0.045, 0.03, 6);
+    bone.addBetween(chest, V(1.0, 2.14, 0), 0.03, 0.022, 5);
+  }
   HIND_LIMBS.forEach((limb) => addBoneHindLeg(bone, limb));
   ARMS.forEach((arm) => addBoneArm(bone, arm));
 

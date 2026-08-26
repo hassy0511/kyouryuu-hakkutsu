@@ -291,8 +291,22 @@ function buildSkeleton(): THREE.Group {
     }
   }
 
-  ellipsoid(shade, V(0.2, 0.95, 0), V(0.22, 0.16, 0.42), 7, 5);
-  ellipsoid(shade, V(-0.68, 0.9, 0), V(0.24, 0.16, 0.43), 7, 5);
+  for (const side of [-1, 1]) {
+    const frontPaddle = (side > 0 ? PADDLES[0] : PADDLES[1])!;
+    const rearPaddle = (side > 0 ? PADDLES[2] : PADDLES[3])!;
+
+    const pectoralBar = V(-0.02, 0.77, side * 0.34);
+    shade.addBetween(V(0.36, 1.02, side * 0.05), pectoralBar, 0.04, 0.027, 5);
+    bone.addBetween(pectoralBar, frontPaddle.root, 0.032, 0.023, 5);
+    bone.addBetween(frontPaddle.root, V(0.16, 0.59, side * 0.12), 0.029, 0.019, 5);
+    bone.addBetween(V(0.16, 0.59, side * 0.12), V(0.16, 0.58, 0), 0.019, 0.013, 5);
+
+    const pelvicBar = V(-0.92, 0.78, side * 0.34);
+    shade.addBetween(V(-0.5, 0.98, side * 0.05), pelvicBar, 0.038, 0.025, 5);
+    bone.addBetween(pelvicBar, rearPaddle.root, 0.03, 0.022, 5);
+    bone.addBetween(rearPaddle.root, V(-0.68, 0.56, side * 0.12), 0.027, 0.018, 5);
+    bone.addBetween(V(-0.68, 0.56, side * 0.12), V(-0.68, 0.55, 0), 0.018, 0.012, 5);
+  }
   PADDLES.forEach((paddle) => addPaddleBones(bone, paddle));
 
   ellipsoid(bone, V(1.98, 1.32, 0), V(0.2, 0.15, 0.18), 8, 5);
