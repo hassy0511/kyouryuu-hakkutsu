@@ -18,6 +18,16 @@
       "wood": 3,
       "iron": 2,
       "crystal": 1
+    },
+    "lamp": {
+      "wood": 2,
+      "stone": 2,
+      "crystal": 2
+    },
+    "chisel": {
+      "wood": 1,
+      "iron": 3,
+      "stone": 2
     }
   },
   "pickMaxHp": 140,
@@ -37,12 +47,22 @@
     "darkrock": {
       "nameJa": "まっくらな どうくつの おく",
       "color": "2b2f3a"
+    },
+    "slabrock": {
+      "nameJa": "いしばんの かたまり",
+      "color": "8f8a7a"
+    },
+    "sandrock": {
+      "nameJa": "かたい すなの そう",
+      "color": "d4b96a"
     }
   },
   "needLabels": {
     "pick2": "⛏️がんじょうピッケル",
     "pick3": "⛏️くろがねの ピッケル",
     "pump": "💧みずぬきポンプ",
-    "lamp": "🏮ランタン（まだ みぬ どうぐ）"
+    "lamp": "🏮ランタン",
+    "chisel": "🔨のみ（チゼル）",
+    "sieve": "🧺ふるい（まだ みぬ どうぐ）"
   }
 }

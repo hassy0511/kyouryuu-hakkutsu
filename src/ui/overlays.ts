@@ -54,6 +54,8 @@ export class Overlays {
     el('craft-upgrade').addEventListener('click', () => this.craft('upgrade'));
     el('craft-upgrade2').addEventListener('click', () => this.craft('upgrade2'));
     el('craft-pump').addEventListener('click', () => this.craft('pump'));
+    el('craft-lamp').addEventListener('click', () => this.craft('lamp'));
+    el('craft-chisel').addEventListener('click', () => this.craft('chisel'));
     el('celebrate-close').addEventListener('click', () => {
       this.hide('ov-celebrate');
       if (this.lastRestored && hasDinoModel(this.lastRestored)) {
@@ -282,20 +284,47 @@ export class Overlays {
       level >= 2 || !this.state.canAfford(RECIPES.upgrade);
     (el('craft-upgrade2') as HTMLButtonElement).disabled =
       level !== 2 || !knowsIron || !this.state.canAfford(RECIPES.upgrade2);
-    // どうぐ(ピッケル以外): うみのしま到達で ポンプのレシピ解禁。つくったら行ごと消える
-    const knowsPump = this.state.flag('visited:k3');
-    const hasPump = this.state.flag('item:pump');
-    el('craft-pump-cost').innerHTML = costHtml([
-      ['🪵', inv.wood, RECIPES.pump.wood],
-      ['🔩', inv.iron, RECIPES.pump.iron],
-      ['💎', inv.crystal, RECIPES.pump.crystal],
-    ]);
-    el('craft-pump-row').classList.toggle('hidden', !knowsPump || hasPump);
-    (el('craft-pump') as HTMLButtonElement).disabled =
-      hasPump || !this.state.canAfford(RECIPES.pump);
+    // どうぐ(ピッケル以外): 章の島に到達でレシピ解禁。つくったら行ごと消える
+    const toolRows: ['pump' | 'lamp' | 'chisel', string, [string, number, number][]][] = [
+      [
+        'pump',
+        'k3',
+        [
+          ['🪵', inv.wood, RECIPES.pump.wood],
+          ['🔩', inv.iron, RECIPES.pump.iron],
+          ['💎', inv.crystal, RECIPES.pump.crystal],
+        ],
+      ],
+      [
+        'lamp',
+        'k4',
+        [
+          ['🪵', inv.wood, RECIPES.lamp.wood],
+          ['🪨', inv.stone, RECIPES.lamp.stone],
+          ['💎', inv.crystal, RECIPES.lamp.crystal],
+        ],
+      ],
+      [
+        'chisel',
+        'k4',
+        [
+          ['🪵', inv.wood, RECIPES.chisel.wood],
+          ['🔩', inv.iron, RECIPES.chisel.iron],
+          ['🪨', inv.stone, RECIPES.chisel.stone],
+        ],
+      ],
+    ];
+    for (const [kind, islandId, parts] of toolRows) {
+      const known = this.state.flag(`visited:${islandId}`);
+      const has = this.state.flag(`item:${kind}`);
+      el(`craft-${kind}-cost`).innerHTML = costHtml(parts);
+      el(`craft-${kind}-row`).classList.toggle('hidden', !known || has);
+      (el(`craft-${kind}`) as HTMLButtonElement).disabled =
+        has || !this.state.canAfford(RECIPES[kind]);
+    }
   }
 
-  private craft(kind: 'repair' | 'upgrade' | 'upgrade2' | 'pump'): void {
+  private craft(kind: 'repair' | 'upgrade' | 'upgrade2' | 'pump' | 'lamp' | 'chisel'): void {
     if (kind === 'repair') {
       if (!this.state.canAfford(RECIPES.repair)) return;
       this.state.spend(RECIPES.repair);
@@ -312,12 +341,17 @@ export class Overlays {
         lines.push('📍 きになるリストの ふういんが あけられるぞ! まえの しまも みてみよう');
       }
       this.hooks.queueMsgs(lines);
-    } else if (kind === 'pump') {
-      if (this.state.flag('item:pump') || !this.state.canAfford(RECIPES.pump)) return;
-      this.state.spend(RECIPES.pump);
-      this.state.setFlag('item:pump');
+    } else if (kind === 'pump' || kind === 'lamp' || kind === 'chisel') {
+      if (this.state.flag(`item:${kind}`) || !this.state.canAfford(RECIPES[kind])) return;
+      this.state.spend(RECIPES[kind]);
+      this.state.setFlag(`item:${kind}`);
       this.sfx.fanfare();
-      const lines = ['💧 みずぬきポンプ かんせい! みずの しみだす いわも ほれるぞ!'];
+      const doneLine = {
+        pump: '💧 みずぬきポンプ かんせい! みずの しみだす いわも ほれるぞ!',
+        lamp: '🏮 ランタン かんせい! まっくらな ばしょも ほれるぞ!',
+        chisel: '🔨 のみ かんせい! いしばんの かたまりを けずりだせるぞ!',
+      }[kind];
+      const lines = [doneLine];
       if (this.state.openableMarks().length > 0) {
         lines.push('📍 きになるリストの ふういんが あけられるぞ! まえの しまも みてみよう');
       }
@@ -356,6 +390,10 @@ export class Overlays {
       this.runWingCeremony('k3');
       return;
     }
+    if (this.state.flag('wing:k3') && this.state.allRestored('k4') && !this.state.flag('wing:k4')) {
+      this.runWingCeremony('k4');
+      return;
+    }
     const cards = SPECIES.filter((sp) => this.state.isSpeciesVisible(sp.id))
       .map((sp) => {
         if (this.state.isRestored(sp.id)) {
@@ -383,13 +421,15 @@ export class Overlays {
       </div>`;
       })
       .join('');
-    const wingLabel = this.state.flag('wing:k3')
+    const wingLabel = this.state.flag('wing:k4')
       ? '？？？の ウィング'
-      : this.state.flag('wing:k2')
-        ? 'うみの ウィング'
-        : this.state.flag('ceremonyDone')
-          ? 'ジュラの ウィング'
-          : 'あたらしい ウィング';
+      : this.state.flag('wing:k3')
+        ? 'そらの ウィング'
+        : this.state.flag('wing:k2')
+          ? 'うみの ウィング'
+          : this.state.flag('ceremonyDone')
+            ? 'ジュラの ウィング'
+            : 'あたらしい ウィング';
     el('museum-cards').innerHTML =
       cards +
       `<div class="mu-card wing"><div class="mu-emoji">🚪</div><b>${wingLabel}</b><div class="dim">じゅんびちゅう…</div></div>`;

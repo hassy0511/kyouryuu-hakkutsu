@@ -36,6 +36,7 @@ interface IslandLook {
   terrainAmp: number;
   jungle: boolean;
   shore: boolean;
+  crag: boolean;
 }
 const ISLAND_LOOKS: Record<string, IslandLook> = {
   k1: {
@@ -45,6 +46,7 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     terrainAmp: 1,
     jungle: false,
     shore: false,
+    crag: false,
   },
   k2: {
     sky: 0x8fc9d8,
@@ -53,6 +55,7 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     terrainAmp: 1.35,
     jungle: true,
     shore: false,
+    crag: false,
   },
   k3: {
     sky: 0xaadff0,
@@ -61,6 +64,16 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     terrainAmp: 0.8,
     jungle: false,
     shore: true,
+    crag: false,
+  },
+  k4: {
+    sky: 0xa9c6dc,
+    sea: 0x4f7f9e,
+    terrain: 0xb0a284,
+    terrainAmp: 1.6,
+    jungle: false,
+    shore: false,
+    crag: true,
   },
 };
 
@@ -271,6 +284,102 @@ export class FieldMode {
           coral.castShadow = true;
           this.scene.add(coral);
         }
+      } else if (this.look.crag) {
+        // そらのがけ: 風の高地。岩の柱・かぜ草・低い雲・よくりゅうの巣
+        const pillarMat = new THREE.MeshStandardMaterial({
+          color: 0x8f8272,
+          roughness: 1,
+          flatShading: true,
+        });
+        for (const [x, z, h] of [
+          [-11, 6, 4.4],
+          [12, -5, 3.6],
+          [-6, -9, 5.0],
+          [15, 8, 3.2],
+        ] as const) {
+          const pillar = new THREE.Group();
+          let y = 0;
+          for (let seg = 0; seg < 4; seg++) {
+            const r = 0.9 - seg * 0.16;
+            const segH = h * (0.3 - seg * 0.02);
+            const block = new THREE.Mesh(
+              new THREE.CylinderGeometry(r * 0.82, r, segH, 7),
+              pillarMat,
+            );
+            block.position.y = y + segH / 2;
+            block.rotation.y = seg * 0.8 + x;
+            block.castShadow = true;
+            pillar.add(block);
+            y += segH * 0.94;
+          }
+          const cap = new THREE.Mesh(new THREE.IcosahedronGeometry(0.5, 0), pillarMat);
+          cap.position.y = y + 0.2;
+          cap.scale.y = 0.6;
+          cap.castShadow = true;
+          pillar.add(cap);
+          pillar.position.set(x, this.ground(x, z), z);
+          this.scene.add(pillar);
+        }
+        const grassMat = new THREE.MeshStandardMaterial({
+          color: 0xb9b06a,
+          roughness: 1,
+          flatShading: true,
+        });
+        for (const [x, z] of [
+          [3, 7],
+          [-8, 0],
+          [9, -4],
+          [-3, -7],
+          [13, 3],
+          [-13, -6],
+        ] as const) {
+          const tuft = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.8, 5), grassMat);
+          tuft.position.set(x, this.ground(x, z) + 0.32, z);
+          tuft.rotation.z = 0.35; // かぜで ななめ
+          tuft.rotation.y = x * 1.3;
+          tuft.castShadow = true;
+          this.scene.add(tuft);
+        }
+        const cloudMat = new THREE.MeshStandardMaterial({
+          color: 0xf4f7fa,
+          transparent: true,
+          opacity: 0.85,
+          roughness: 1,
+        });
+        for (const [x, y, z] of [
+          [-14, 9.5, -10],
+          [10, 11, -16],
+          [16, 8.5, 6],
+        ] as const) {
+          for (const [dx, r] of [
+            [-1.1, 0.9],
+            [0, 1.4],
+            [1.3, 1.0],
+          ] as const) {
+            const puff = new THREE.Mesh(new THREE.SphereGeometry(r, 8, 6), cloudMat);
+            puff.position.set(x + dx, y + r * 0.2, z);
+            this.scene.add(puff);
+          }
+        }
+        // よくりゅうの巣(かざり): 枝の わっか + たまご2つ
+        const nest = new THREE.Group();
+        const twigMat = new THREE.MeshStandardMaterial({ color: 0x8b7355, roughness: 1 });
+        for (let i = 0; i < 8; i++) {
+          const twig = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.7, 5), twigMat);
+          const a = (i / 8) * Math.PI * 2;
+          twig.position.set(Math.cos(a) * 0.45, 0.1, Math.sin(a) * 0.45);
+          twig.rotation.set(Math.PI / 2.3, 0, a + Math.PI / 2);
+          nest.add(twig);
+        }
+        const eggMat = new THREE.MeshStandardMaterial({ color: 0xf2ecd8, roughness: 0.8 });
+        for (const ex of [-0.14, 0.16] as const) {
+          const egg = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 6), eggMat);
+          egg.scale.y = 1.25;
+          egg.position.set(ex, 0.16, ex * 0.5);
+          nest.add(egg);
+        }
+        nest.position.set(-10.2, this.ground(-10.2, 6.8), 6.8);
+        this.scene.add(nest);
       } else if (!this.look.jungle) {
         for (const [x, z, rot] of [
           [-8, 4, 0.4],

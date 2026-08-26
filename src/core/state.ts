@@ -54,6 +54,8 @@ export interface PitDef {
   nameJa: string;
   pos: [number, number];
   clue: 'bone' | 'crack' | 'rubble' | 'shell' | 'none';
+  /** 掘る向き。'wall' は崖を横から掘る壁面発掘(省略時は 'floor') */
+  dig?: 'floor' | 'wall';
   discoverText: string;
   fossils: FossilDef[];
   rocks: [number, number, number][];
@@ -80,6 +82,8 @@ export const RECIPES = gameJson.recipes as {
   upgrade: { wood: number; iron: number; crystal: number };
   upgrade2: { wood: number; iron: number; crystal: number };
   pump: { wood: number; iron: number; crystal: number };
+  lamp: { wood: number; stone: number; crystal: number };
+  chisel: { wood: number; iron: number; stone: number };
 };
 export const PICK_MAX_HP = gameJson.pickMaxHp as number;
 export const GATE_LOOKS = gameJson.gateLooks as Record<string, { nameJa: string; color: string }>;

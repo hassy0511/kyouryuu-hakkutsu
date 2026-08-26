@@ -165,6 +165,56 @@ const fish: Builder = (def, material, pitch) => {
   return group;
 };
 
+// つばさの ゆびのほね(よくりゅう): 関節つきの ながい ゆびが ゆるく そりあがる
+const wingfinger: Builder = (def, material, pitch) => {
+  const group = new THREE.Group();
+  const len = Math.max(def.cells.length, 2) * pitch * 0.92;
+  const segs = 4;
+  let x = -len / 2;
+  for (let s = 0; s < segs; s++) {
+    const segLen = (len / segs) * (1 - s * 0.06);
+    const bone = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.065 - s * 0.008, 0.078 - s * 0.008, segLen * 0.9, 8),
+      material,
+    );
+    bone.rotation.z = Math.PI / 2;
+    bone.position.set(x + segLen / 2, s * 0.05, 0);
+    group.add(bone);
+    const joint = new THREE.Mesh(new THREE.SphereGeometry(0.095 - s * 0.012, 8, 6), material);
+    joint.position.set(x, s * 0.05, 0);
+    group.add(joint);
+    x += segLen;
+  }
+  const alongX = (def.cells[1]?.[0] ?? def.cells[0]![0] + 1) !== def.cells[0]![0];
+  if (!alongX) group.rotation.y = Math.PI / 2;
+  return group;
+};
+
+// いしばんの はねの かせき(しそちょう): いた + ひらいた はね + からだ
+const featherslab: Builder = (def, material, pitch) => {
+  const group = new THREE.Group();
+  const w = pitch * Math.sqrt(def.cells.length) * 0.9;
+  const plate = new THREE.Mesh(new THREE.BoxGeometry(w * 1.9, 0.14, w * 1.9), material);
+  group.add(plate);
+  const dark = new THREE.MeshStandardMaterial({ color: 0x86755a, roughness: 1 });
+  for (let k = -2; k <= 2; k++) {
+    const feather = new THREE.Mesh(new THREE.CapsuleGeometry(0.03, w * 0.55, 4, 6), dark);
+    feather.rotation.z = Math.PI / 2;
+    feather.rotation.y = k * 0.32;
+    feather.position.set(-w * 0.12, 0.08, 0);
+    group.add(feather);
+  }
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), dark);
+  body.scale.set(1.4, 0.4, 0.9);
+  body.position.set(w * 0.28, 0.08, 0);
+  group.add(body);
+  const skull = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 6), dark);
+  skull.scale.y = 0.5;
+  skull.position.set(w * 0.52, 0.08, 0.14);
+  group.add(skull);
+  return group;
+};
+
 // めの ほねリング(イクチオサウルスの こうまくりん)
 const ring: Builder = (_def, material) => {
   const group = new THREE.Group();
@@ -187,6 +237,8 @@ const SHAPES: Record<string, Builder> = {
   shell,
   fish,
   ring,
+  wingfinger,
+  featherslab,
 };
 
 export function buildBoneShape(

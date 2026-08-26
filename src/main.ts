@@ -143,6 +143,10 @@ const FIELD_CALLBACKS: FieldCallbacks = {
       queueMsgs(STORY.hakase.preWingK3);
       return;
     }
+    if (state.flag('wing:k3') && state.allRestored('k4') && !state.flag('wing:k4')) {
+      queueMsgs(STORY.hakase.preWingK4);
+      return;
+    }
     // 詰み防止: ピッケルが こわれて 修理素材も 足りないときは 分けてくれる
     if (state.tool.broken && !state.canAfford(RECIPES.repair)) {
       const giveWood = Math.max(0, RECIPES.repair.wood - state.inv.wood);
@@ -174,6 +178,24 @@ function enterPit(def: PitDef): void {
     showMsg,
     onExit: exitPit,
     onGateBlocked(look) {
+      if (look === 'slabrock') {
+        if (!state.flag('slabrockSeen')) {
+          state.setFlag('slabrockSeen');
+          queueMsgs(['🪨 カツン… いしの いたが かさなってる!', ...STORY.hakase.slabrockBlocked]);
+        } else {
+          showMsg('🪨 いしばんの かたまりは のみ（チゼル）が ないと ほれない…');
+        }
+        return;
+      }
+      if (look === 'sandrock') {
+        if (!state.flag('sandrockSeen')) {
+          state.setFlag('sandrockSeen');
+          queueMsgs(['🫙 サラサラ… すなが かたく つまってる!', ...STORY.hakase.sandrockBlocked]);
+        } else {
+          showMsg('🫙 かたい すなの そうは ふるいの ような どうぐが いる…');
+        }
+        return;
+      }
       if (look === 'darkrock') {
         if (!state.flag('darkrockSeen')) {
           state.setFlag('darkrockSeen');
@@ -253,6 +275,14 @@ function enterPit(def: PitDef): void {
   el('pit-ui').classList.remove('hidden');
   setTool('pick');
   fitViewport();
+  // 壁面発掘の初回だけ、掘り方(横から掘る・上を削ると崩れる)を説明する
+  if (def.dig === 'wall' && !state.flag('wallSeen')) {
+    state.setFlag('wallSeen');
+    queueMsgs([
+      '🧗 ここは がけの よこっぱらを ほる「へきめん はっくつ」だ!',
+      '⚠️ うえの いわを けずりすぎると、うえから くずれてくるぞ',
+    ]);
+  }
 }
 
 function exitPit(): void {
@@ -474,6 +504,7 @@ function applyAdminUnlock(): void {
     'ceremonyDone',
     'wing:k2',
     'wing:k3',
+    'wing:k4',
     'firstFossil',
     'firstReveal',
     'firstRestore',
@@ -481,8 +512,13 @@ function applyAdminUnlock(): void {
     'redrockSeen',
     'wetrockSeen',
     'darkrockSeen',
+    'slabrockSeen',
+    'sandrockSeen',
+    'wallSeen',
     'item:pump',
     'item:lamp',
+    'item:chisel',
+    'item:sieve',
   ];
   for (const flag of flags) state.setFlag(flag);
   const homeIsland = state.data.currentIsland;

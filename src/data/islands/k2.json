@@ -416,6 +416,51 @@
       "ores": [[7, 1, 4]]
     },
     {
+      "id": "jp9",
+      "nameJa": "はねいしの がけ",
+      "pos": [15, 9],
+      "clue": "crack",
+      "discoverText": "うすい いしの いたが かさなってる…はねの もようが すけて みえる!?",
+      "fossils": [
+        {
+          "speciesId": "archaeopteryx",
+          "boneId": "feather",
+          "kind": "featherslab",
+          "layer": 5,
+          "cells": [
+            [3, 3],
+            [4, 3]
+          ]
+        }
+      ],
+      "rocks": [[6, 6, 1]],
+      "crystals": [
+        [0, 7, 2],
+        [7, 0, 3]
+      ],
+      "branches": [
+        [0, 0, 0],
+        [7, 7, 0]
+      ],
+      "gates": [
+        {
+          "look": "slabrock",
+          "needs": "chisel",
+          "cells": [
+            [3, 3, 4],
+            [4, 3, 4],
+            [2, 3, 5],
+            [5, 3, 5],
+            [3, 2, 5],
+            [4, 2, 5],
+            [3, 4, 5],
+            [4, 4, 5]
+          ]
+        }
+      ],
+      "ores": [[1, 1, 4]]
+    },
+    {
       "id": "jp8",
       "nameJa": "しずかな くぼみ",
       "pos": [2, -9],

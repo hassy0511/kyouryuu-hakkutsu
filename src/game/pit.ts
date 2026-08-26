@@ -180,6 +180,9 @@ export class PitMode {
   private introT = 0;
   private readonly camFrom = new THREE.Vector3(9, 6, 10);
   private readonly camTo = new THREE.Vector3(0, 8.6, 4.6);
+  // 壁面発掘(dig:'wall'): 格子を90°立てて崖を横から掘る。layer=壁の奥行き / gz=上下(重力)
+  private readonly wall: boolean;
+  private readonly rootBase = new THREE.Vector3();
 
   private readonly labels = new Map<FossilPiece, HTMLElement>();
 
@@ -193,16 +196,25 @@ export class PitMode {
     this.scene.background = new THREE.Color(0x9ed4ef);
     this.scene.fog = new THREE.Fog(0x9ed4ef, 40, 90);
     this.camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 200);
+    this.wall = def.dig === 'wall';
+    if (this.wall) {
+      this.root.rotation.x = Math.PI / 2;
+      this.rootBase.set(0, (GRID_Z * PITCH) / 2 + 0.32, 0);
+      this.camFrom.set(6.5, 4.2, 9.5);
+      this.camTo.set(0, this.rootBase.y + 0.4, 7.6);
+    }
+    this.root.position.copy(this.rootBase);
+    this.root.updateMatrixWorld();
     this.camera.position.copy(this.camFrom);
 
     this.controls = new OrbitControls(this.camera, renderer.domElement);
-    this.controls.target.set(0, -1, 0);
+    this.controls.target.set(0, this.wall ? this.rootBase.y : -1, 0);
     this.controls.enableDamping = true;
     this.controls.enablePan = false;
     this.controls.minDistance = 4.5;
     this.controls.maxDistance = 14;
-    this.controls.minPolarAngle = THREE.MathUtils.degToRad(8);
-    this.controls.maxPolarAngle = THREE.MathUtils.degToRad(52);
+    this.controls.minPolarAngle = THREE.MathUtils.degToRad(this.wall ? 55 : 8);
+    this.controls.maxPolarAngle = THREE.MathUtils.degToRad(this.wall ? 104 : 52);
     this.controls.touches = { ONE: null as unknown as THREE.TOUCH, TWO: THREE.TOUCH.DOLLY_ROTATE };
     this.controls.mouseButtons = {
       LEFT: null as unknown as THREE.MOUSE,
@@ -336,6 +348,10 @@ export class PitMode {
   }
 
   private buildSurroundings(): void {
+    if (this.wall) {
+      this.buildCliffSurroundings();
+      return;
+    }
     const plotHalf = (GRID_X * PITCH) / 2 - 0.03;
     const shape = new THREE.Shape();
     shape.moveTo(-40, -40);
@@ -401,6 +417,74 @@ export class PitMode {
       const sc = 0.25 + ((i * 13) % 8) / 16;
       const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 0), rockMat);
       rock.position.set(Math.cos(a) * r, sc * 0.3, Math.sin(a) * r);
+      rock.scale.set(sc, sc * 0.7, sc);
+      rock.castShadow = true;
+      this.scene.add(rock);
+    }
+  }
+
+  // 壁面発掘のまわり: 崖の岩壁(発掘面に穴)・足もとの岩棚・木のやぐら
+  private buildCliffSurroundings(): void {
+    const half = (GRID_X * PITCH) / 2 - 0.03;
+    const vhalf = (GRID_Z * PITCH) / 2 - 0.03;
+    const cy = this.rootBase.y;
+    const shape = new THREE.Shape();
+    shape.moveTo(-40, cy - 24);
+    shape.lineTo(40, cy - 24);
+    shape.lineTo(40, cy + 26);
+    shape.lineTo(-40, cy + 26);
+    shape.closePath();
+    const hole = new THREE.Path();
+    hole.moveTo(-half, cy - vhalf);
+    hole.lineTo(half, cy - vhalf);
+    hole.lineTo(half, cy + vhalf);
+    hole.lineTo(-half, cy + vhalf);
+    hole.closePath();
+    shape.holes.push(hole);
+    const cliff = new THREE.Mesh(
+      new THREE.ShapeGeometry(shape),
+      new THREE.MeshStandardMaterial({ color: 0x9b8a70, roughness: 1 }),
+    );
+    cliff.receiveShadow = true;
+    this.scene.add(cliff);
+
+    const depth = GRID_DEPTH * PITCH + 0.3;
+    const shell = new THREE.Mesh(
+      new THREE.BoxGeometry(GRID_X * PITCH + 0.12, GRID_Z * PITCH + 0.12, depth),
+      new THREE.MeshStandardMaterial({ color: 0x4a3a2c, roughness: 1, side: THREE.BackSide }),
+    );
+    shell.position.set(0, cy, -depth / 2 + 0.02);
+    this.scene.add(shell);
+
+    const ledge = new THREE.Mesh(
+      new THREE.PlaneGeometry(80, 40).rotateX(-Math.PI / 2),
+      new THREE.MeshStandardMaterial({ color: 0xb0a284, roughness: 1 }),
+    );
+    ledge.position.set(0, 0, 20);
+    ledge.receiveShadow = true;
+    this.scene.add(ledge);
+
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0x8a6b47, roughness: 0.9 });
+    const postH = cy + vhalf + 0.4;
+    for (const sx of [-1, 1]) {
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, postH, 6), woodMat);
+      post.position.set(sx * (half + 0.35), postH / 2, 0.55);
+      post.castShadow = true;
+      this.scene.add(post);
+    }
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(half * 2 + 0.9, 0.09, 0.09), woodMat);
+    beam.position.set(0, cy + vhalf + 0.32, 0.55);
+    this.scene.add(beam);
+    const rockMat = new THREE.MeshStandardMaterial({
+      color: 0x9b8f7c,
+      roughness: 1,
+      flatShading: true,
+    });
+    for (let i = 0; i < 5; i++) {
+      const a = i * 2.6;
+      const sc = 0.3 + ((i * 17) % 6) / 12;
+      const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 0), rockMat);
+      rock.position.set(Math.cos(a) * (6 + i), sc * 0.3, 6 + Math.abs(Math.sin(a)) * 6);
       rock.scale.set(sc, sc * 0.7, sc);
       rock.castShadow = true;
       this.scene.add(rock);
@@ -547,7 +631,7 @@ export class PitMode {
     cell.crust.visible = true;
     fossil.group.visible = true;
     if (!silent) {
-      this.particles.burst(cellCenter(i), new THREE.Color(0xbfa88a), 5);
+      this.particles.burst(this.worldOf(i), new THREE.Color(0xbfa88a), 5);
       this.cb.onFirstReveal();
     }
   }
@@ -578,7 +662,7 @@ export class PitMode {
           phase: n % 7,
           collecting: -1,
         });
-        if (!silent) this.settleColumn(nx, nz);
+        if (!silent) this.settleColumn(n);
       }
     }
   }
@@ -593,15 +677,31 @@ export class PitMode {
     return false;
   }
 
-  private settleColumn(gx: number, gz: number): void {
-    for (let l = GRID_DEPTH - 2; l >= 0; l--) {
-      const i = idx(gx, gz, l);
-      const below = idx(gx, gz, l + 1);
+  // 重力方向の「ひとつ下」。床掘り=深い層(layer+1) / 壁掘り=画面の下(gz+1)。端なら null
+  private belowIndex(i: number): number | null {
+    const { gx, gz, layer } = coords(i);
+    if (this.wall) return gz + 1 < GRID_Z ? idx(gx, gz + 1, layer) : null;
+    return layer + 1 < GRID_DEPTH ? idx(gx, gz, layer + 1) : null;
+  }
+
+  // 格子ローカル座標 → ワールド座標(壁面発掘では root が回転しているため)
+  private worldOf(i: number): THREE.Vector3 {
+    return this.root.localToWorld(cellCenter(i));
+  }
+
+  // 落下方向の列を整理する。anchor と同じ列(床=同じgx,gz / 壁=同じgx,layer)を上から詰める
+  private settleColumn(anchor: number): void {
+    const { gx, gz, layer } = coords(anchor);
+    const len = this.wall ? GRID_Z : GRID_DEPTH;
+    const cellAt = (k: number): number => (this.wall ? idx(gx, k, layer) : idx(gx, gz, k));
+    for (let k = len - 2; k >= 0; k--) {
+      const i = cellAt(k);
+      const below = cellAt(k + 1);
       if (this.cellSolid(below)) continue;
       if (this.alive[i] && !this.gateAt.has(i)) {
         this.alive[i] = false;
         this.setSoilMatrix(i, 0);
-        this.particles.burst(cellCenter(i), this.baseColors[i]!, 6);
+        this.particles.burst(this.worldOf(i), this.baseColors[i]!, 6);
         this.sfx.rub();
         if (this.branchSet.has(i)) {
           this.branchSet.delete(i);
@@ -612,19 +712,19 @@ export class PitMode {
       }
       const rock = this.rocks.get(i);
       if (rock && rock.hp > 0) {
-        let l2 = l + 1;
-        while (l2 < GRID_DEPTH && !this.cellSolid(idx(gx, gz, l2))) l2++;
-        const destLayer = l2 - 1;
-        if (destLayer > l) {
-          const dest = idx(gx, gz, destLayer);
+        let k2 = k + 1;
+        while (k2 < len && !this.cellSolid(cellAt(k2))) k2++;
+        const destK = k2 - 1;
+        if (destK > k) {
+          const dest = cellAt(destK);
           this.rocks.delete(i);
           this.rocks.set(dest, rock);
           rock.mesh.position.copy(cellCenter(dest));
           rock.mesh.visible = true;
-          this.particles.burst(cellCenter(dest), new THREE.Color(0x8f8678), 6);
+          this.particles.burst(this.worldOf(dest), new THREE.Color(0x8f8678), 6);
           this.sfx.knockFull();
-          if (l2 < GRID_DEPTH) {
-            const under = idx(gx, gz, l2);
+          if (k2 < len) {
+            const under = cellAt(k2);
             const fossil = this.cellOwner.get(under);
             if (fossil && !fossil.collected) {
               fossil.damage++;
@@ -646,8 +746,8 @@ export class PitMode {
       if (fossil.collected) continue;
       let supported = 0;
       for (const i of fossil.cells.keys()) {
-        const { gx, gz, layer } = coords(i);
-        if (layer >= GRID_DEPTH - 1 || this.cellSolid(idx(gx, gz, layer + 1))) supported++;
+        const below = this.belowIndex(i);
+        if (below === null || this.cellSolid(below)) supported++;
       }
       const ratio = supported / fossil.cells.size;
       const stage = ratio >= 1 ? 0 : ratio >= 0.5 ? 1 : ratio > 0 ? 2 : 3;
@@ -673,15 +773,14 @@ export class PitMode {
 
   private afterRemoval(removed: number): void {
     this.exposeNeighbors(removed);
-    const { gx, gz } = coords(removed);
-    this.settleColumn(gx, gz);
+    this.settleColumn(removed);
     this.updateSupports();
   }
 
   private removeSoil(i: number): void {
     this.alive[i] = false;
     this.setSoilMatrix(i, 0);
-    this.particles.burst(cellCenter(i), this.baseColors[i]!, 8);
+    this.particles.burst(this.worldOf(i), this.baseColors[i]!, 8);
     if (this.branchSet.has(i)) {
       this.branchSet.delete(i);
       this.sfx.hint();
@@ -703,13 +802,13 @@ export class PitMode {
     if (rock && rock.hp > 0) {
       rock.hp--;
       this.sfx.clank();
-      this.particles.burst(cellCenter(i), new THREE.Color(0x8f8678), 6);
+      this.particles.burst(this.worldOf(i), new THREE.Color(0x8f8678), 6);
       rock.mesh.visible = true;
       rock.mesh.scale.setScalar(0.6 + rock.hp * 0.14);
       rock.flash = 1;
       if (rock.hp === 0) {
         rock.mesh.visible = false;
-        this.particles.burst(cellCenter(i), new THREE.Color(0x7f7668), 10);
+        this.particles.burst(this.worldOf(i), new THREE.Color(0x7f7668), 10);
         const drop = rock.kind === 'iron' ? 'iron' : 'stone';
         this.spawnPickup(drop, cellCenter(i), 0.16);
         this.spawnPickup(drop, cellCenter(i), -0.16);
@@ -822,7 +921,7 @@ export class PitMode {
       cell.status = 'clean';
       cell.crust.visible = false;
       this.sfx.shine();
-      this.particles.burst(cellCenter(i), new THREE.Color(0xfff2b8), 8);
+      this.particles.burst(this.worldOf(i), new THREE.Color(0xfff2b8), 8);
       this.checkFossil(fossil);
     }
   }
@@ -920,10 +1019,7 @@ export class PitMode {
     } else if (p.fossil) {
       const fossil = p.fossil;
       fossil.collected = true;
-      for (const i of fossil.cells.keys()) {
-        const { gx, gz } = coords(i);
-        this.settleColumn(gx, gz);
-      }
+      for (const i of fossil.cells.keys()) this.settleColumn(i);
       this.updateSupports();
       this.cb.onBoneCollected(fossil.def.speciesId, fossil.def.boneId, fossil.stars());
     }
@@ -1080,7 +1176,7 @@ export class PitMode {
     if (now - this.lastRubAt > 120) {
       this.lastRubAt = now;
       this.sfx.rub();
-      this.particles.burst(cellCenter(target), new THREE.Color(0xcbb391), 2);
+      this.particles.burst(this.worldOf(target), new THREE.Color(0xcbb391), 2);
     }
     return true;
   }
@@ -1096,7 +1192,7 @@ export class PitMode {
   }
 
   cellScreen(gx: number, gz: number, layer: number): { x: number; y: number } {
-    const p = cellCenter(idx(gx, gz, layer)).project(this.camera);
+    const p = this.worldOf(idx(gx, gz, layer)).project(this.camera);
     const w = this.renderer.domElement.clientWidth;
     const h = this.renderer.domElement.clientHeight;
     return { x: ((p.x + 1) / 2) * w, y: ((1 - p.y) / 2) * h };
@@ -1180,7 +1276,11 @@ export class PitMode {
         p.mesh.rotation.y += dt * 9;
         p.mesh.scale.setScalar(Math.max(0.001, 1 - k * k));
         if (p.collecting >= 1) {
-          this.particles.burst(p.mesh.position.clone(), new THREE.Color(0xfff2b8), 6);
+          this.particles.burst(
+            this.root.localToWorld(p.mesh.position.clone()),
+            new THREE.Color(0xfff2b8),
+            6,
+          );
           this.root.remove(p.mesh);
           this.pickups.splice(n, 1);
           this.completePickup(p);
@@ -1191,12 +1291,12 @@ export class PitMode {
     if (this.shake > 0) {
       this.shake = Math.max(0, this.shake - dt * 3.2);
       this.root.position.set(
-        (Math.random() - 0.5) * 0.1 * this.shake,
-        (Math.random() - 0.5) * 0.06 * this.shake,
-        0,
+        this.rootBase.x + (Math.random() - 0.5) * 0.1 * this.shake,
+        this.rootBase.y + (Math.random() - 0.5) * 0.06 * this.shake,
+        this.rootBase.z,
       );
     } else {
-      this.root.position.set(0, 0, 0);
+      this.root.position.copy(this.rootBase);
     }
 
     // 骨名ラベル: 露出=？？？ / 1マスみがくと名前判明 / 完了=タップ
@@ -1218,8 +1318,8 @@ export class PitMode {
         label.textContent = '？？？のホネ';
         label.classList.remove('ready');
       }
-      const p = fossil.group.position
-        .clone()
+      const p = fossil.group
+        .getWorldPosition(new THREE.Vector3())
         .add(new THREE.Vector3(0, 0.8, 0))
         .project(this.camera);
       if (p.z > 1) {
