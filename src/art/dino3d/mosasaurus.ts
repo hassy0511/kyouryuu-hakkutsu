@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {
   coneBetween,
   ellipsoid,
+  embeddedSideZ,
   GeometryBatch,
   loftGeometry,
   makeFlatMaterial,
@@ -260,16 +261,46 @@ function buildLiving(): THREE.Group {
   PADDLES.forEach((paddle) => addLivingPaddle(back, farPaddles, paddleTips, paddle));
 
   for (const side of [-1, 1]) {
-    ellipsoid(dark, V(5.45, 2.57, side * 0.82), V(0.22, 0.2, 0.06), 8, 6);
-    ellipsoid(iris, V(5.47, 2.58, side * 0.875), V(0.13, 0.13, 0.028), 8, 6);
-    ellipsoid(dark, V(5.5, 2.58, side * 0.898), V(0.045, 0.075, 0.012), 6, 4);
-    ellipsoid(glint, V(5.43, 2.65, side * 0.912), V(0.026, 0.03, 0.008), 5, 4);
-    ellipsoid(dark, V(7.05, 2.38, side * 0.52), V(0.08, 0.05, 0.02), 6, 4);
-    dark.add(new THREE.BoxGeometry(2.8, 0.045, 0.03), V(6.22, 1.85, side * 0.64));
+    const eyeSurface = 0.82;
+    ellipsoid(dark, V(5.45, 2.57, embeddedSideZ(side, eyeSurface, 0.06)), V(0.22, 0.2, 0.06), 8, 6);
+    ellipsoid(
+      iris,
+      V(5.47, 2.58, embeddedSideZ(side, eyeSurface + 0.015, 0.028)),
+      V(0.13, 0.13, 0.028),
+      8,
+      6,
+    );
+    ellipsoid(
+      dark,
+      V(5.5, 2.58, embeddedSideZ(side, eyeSurface + 0.024, 0.012)),
+      V(0.045, 0.075, 0.012),
+      6,
+      4,
+    );
+    ellipsoid(
+      glint,
+      V(5.43, 2.65, embeddedSideZ(side, eyeSurface + 0.03, 0.008)),
+      V(0.026, 0.03, 0.008),
+      5,
+      4,
+    );
+    ellipsoid(dark, V(7.05, 2.38, embeddedSideZ(side, 0.52, 0.02)), V(0.08, 0.05, 0.02), 6, 4);
+    const mouth = [
+      V(4.82, 1.88, embeddedSideZ(side, 0.68, 0.023)),
+      V(5.72, 1.85, embeddedSideZ(side, 0.62, 0.021)),
+      V(6.52, 1.83, embeddedSideZ(side, 0.48, 0.018)),
+      V(7.18, 1.86, embeddedSideZ(side, 0.25, 0.013)),
+      V(7.6, 1.96, embeddedSideZ(side, 0.08, 0.007)),
+    ];
+    dark.addBetween(mouth[0]!, mouth[1]!, 0.023, 0.021, 6);
+    dark.addBetween(mouth[1]!, mouth[2]!, 0.021, 0.018, 6);
+    dark.addBetween(mouth[2]!, mouth[3]!, 0.018, 0.013, 6);
+    dark.addBetween(mouth[3]!, mouth[4]!, 0.013, 0.007, 6);
 
     for (let index = 0; index < 9; index += 1) {
       const x = 5.08 + index * 0.28;
-      coneBetween(teeth, V(x, 1.91, side * 0.62), V(x + 0.02, 1.75, side * 0.62), 0.034, 5);
+      const gumZ = embeddedSideZ(side, 0.62, 0.034, 0);
+      coneBetween(teeth, V(x, 1.91, gumZ), V(x + 0.02, 1.75, gumZ), 0.034, 5);
     }
   }
 

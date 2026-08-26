@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {
   ellipsoid,
+  embeddedSideZ,
   GeometryBatch,
   makeFlatMaterial,
   makeOrganicMaterial,
@@ -163,10 +164,35 @@ function buildLiving(): THREE.Group {
   });
 
   for (const side of [-1, 1]) {
-    ellipsoid(dark, V(0.092, 0.16, side * 0.041), V(0.019, 0.018, 0.006), 7, 5);
-    ellipsoid(iris, V(0.094, 0.161, side * 0.046), V(0.012, 0.012, 0.003), 7, 5);
-    ellipsoid(dark, V(0.096, 0.161, side * 0.0485), V(0.0045, 0.0065, 0.0015), 5, 4);
-    ellipsoid(glint, V(0.091, 0.166, side * 0.0505), V(0.0026, 0.0028, 0.0008), 5, 4);
+    const eyeSurface = 0.041;
+    ellipsoid(
+      dark,
+      V(0.092, 0.16, embeddedSideZ(side, eyeSurface, 0.006)),
+      V(0.019, 0.018, 0.006),
+      7,
+      5,
+    );
+    ellipsoid(
+      iris,
+      V(0.094, 0.161, embeddedSideZ(side, eyeSurface + 0.003, 0.003)),
+      V(0.012, 0.012, 0.003),
+      7,
+      5,
+    );
+    ellipsoid(
+      dark,
+      V(0.096, 0.161, embeddedSideZ(side, eyeSurface + 0.0044, 0.0015)),
+      V(0.0045, 0.0065, 0.0015),
+      5,
+      4,
+    );
+    ellipsoid(
+      glint,
+      V(0.091, 0.166, embeddedSideZ(side, eyeSurface + 0.0052, 0.0008)),
+      V(0.0026, 0.0028, 0.0008),
+      5,
+      4,
+    );
   }
 
   group.add(

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {
   ellipsoid,
+  embeddedSideZ,
   GeometryBatch,
   loftGeometry,
   makeFlatMaterial,
@@ -225,10 +226,35 @@ function buildLiving(): THREE.Group {
   FLIPPERS.forEach((flipper) => addLivingFlipper(body, farBody, flipper));
 
   for (const side of [-1, 1]) {
-    ellipsoid(dark, V(1.72, 1.24, side * 0.29), V(0.105, 0.1, 0.035), 7, 5);
-    ellipsoid(iris, V(1.73, 1.24, side * 0.323), V(0.063, 0.063, 0.016), 7, 5);
-    ellipsoid(dark, V(1.745, 1.24, side * 0.337), V(0.021, 0.034, 0.007), 5, 4);
-    ellipsoid(glint, V(1.71, 1.275, side * 0.345), V(0.013, 0.014, 0.004), 5, 4);
+    const eyeSurface = 0.29;
+    ellipsoid(
+      dark,
+      V(1.72, 1.24, embeddedSideZ(side, eyeSurface, 0.035)),
+      V(0.105, 0.1, 0.035),
+      7,
+      5,
+    );
+    ellipsoid(
+      iris,
+      V(1.73, 1.24, embeddedSideZ(side, eyeSurface + 0.009, 0.016)),
+      V(0.063, 0.063, 0.016),
+      7,
+      5,
+    );
+    ellipsoid(
+      dark,
+      V(1.745, 1.24, embeddedSideZ(side, eyeSurface + 0.014, 0.007)),
+      V(0.021, 0.034, 0.007),
+      5,
+      4,
+    );
+    ellipsoid(
+      glint,
+      V(1.71, 1.275, embeddedSideZ(side, eyeSurface + 0.017, 0.004)),
+      V(0.013, 0.014, 0.004),
+      5,
+      4,
+    );
   }
 
   group.add(

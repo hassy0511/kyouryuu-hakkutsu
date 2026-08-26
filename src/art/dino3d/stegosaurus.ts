@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {
   coneBetween,
   ellipsoid,
+  embeddedSideZ,
   GeometryBatch,
   loftGeometry,
   makeFlatMaterial,
@@ -195,10 +196,35 @@ function buildLiving(): THREE.Group {
   ellipsoid(cream, V(4.06, 1.08, 0), V(0.15, 0.1, 0.16), 7, 5);
 
   for (const side of [-1, 1]) {
-    ellipsoid(dark, V(3.62, 1.31, side * 0.24), V(0.12, 0.105, 0.035), 7, 5);
-    ellipsoid(iris, V(3.64, 1.31, side * 0.27), V(0.067, 0.067, 0.015), 7, 5);
-    ellipsoid(dark, V(3.66, 1.31, side * 0.282), V(0.026, 0.041, 0.007), 5, 4);
-    ellipsoid(glint, V(3.62, 1.345, side * 0.29), V(0.015, 0.017, 0.004), 5, 4);
+    const eyeSurface = 0.24;
+    ellipsoid(
+      dark,
+      V(3.62, 1.31, embeddedSideZ(side, eyeSurface, 0.035)),
+      V(0.12, 0.105, 0.035),
+      7,
+      5,
+    );
+    ellipsoid(
+      iris,
+      V(3.64, 1.31, embeddedSideZ(side, eyeSurface + 0.009, 0.015)),
+      V(0.067, 0.067, 0.015),
+      7,
+      5,
+    );
+    ellipsoid(
+      dark,
+      V(3.66, 1.31, embeddedSideZ(side, eyeSurface + 0.014, 0.007)),
+      V(0.026, 0.041, 0.007),
+      5,
+      4,
+    );
+    ellipsoid(
+      glint,
+      V(3.62, 1.345, embeddedSideZ(side, eyeSurface + 0.017, 0.004)),
+      V(0.015, 0.017, 0.004),
+      5,
+      4,
+    );
   }
 
   group.add(

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {
   coneBetween,
   ellipsoid,
+  embeddedSideZ,
   GeometryBatch,
   loftGeometry,
   makeFlatMaterial,
@@ -120,11 +121,42 @@ function addFaceDetails(
 
   for (const side of [-1, 1]) {
     coneBetween(cream, V(2.27, 2.14, side * 0.43), V(3.43, 2.55, side * 0.45), 0.18, 9);
-    ellipsoid(dark, V(2.4, 2.04, side * 0.52), V(0.18, 0.15, 0.055), 8, 5);
-    ellipsoid(iris, V(2.43, 2.05, side * 0.565), V(0.105, 0.105, 0.026), 8, 5);
-    ellipsoid(dark, V(2.45, 2.05, side * 0.588), V(0.043, 0.066, 0.012), 6, 4);
-    ellipsoid(glint, V(2.41, 2.1, side * 0.603), V(0.025, 0.028, 0.008), 5, 4);
-    dark.add(new THREE.BoxGeometry(0.5, 0.035, 0.028), V(3.13, 1.43, side * 0.29));
+    const eyeSurface = 0.52;
+    ellipsoid(
+      dark,
+      V(2.4, 2.04, embeddedSideZ(side, eyeSurface, 0.055)),
+      V(0.18, 0.15, 0.055),
+      8,
+      5,
+    );
+    ellipsoid(
+      iris,
+      V(2.43, 2.05, embeddedSideZ(side, eyeSurface + 0.014, 0.026)),
+      V(0.105, 0.105, 0.026),
+      8,
+      5,
+    );
+    ellipsoid(
+      dark,
+      V(2.45, 2.05, embeddedSideZ(side, eyeSurface + 0.022, 0.012)),
+      V(0.043, 0.066, 0.012),
+      6,
+      4,
+    );
+    ellipsoid(
+      glint,
+      V(2.41, 2.1, embeddedSideZ(side, eyeSurface + 0.028, 0.008)),
+      V(0.025, 0.028, 0.008),
+      5,
+      4,
+    );
+    const mouth = [
+      V(2.88, 1.46, embeddedSideZ(side, 0.27, 0.016)),
+      V(3.12, 1.43, embeddedSideZ(side, 0.18, 0.013)),
+      V(3.38, 1.46, embeddedSideZ(side, 0.06, 0.007)),
+    ];
+    dark.addBetween(mouth[0]!, mouth[1]!, 0.016, 0.013, 6);
+    dark.addBetween(mouth[1]!, mouth[2]!, 0.013, 0.007, 6);
   }
 
   group.add(

@@ -85,6 +85,21 @@ export function ellipsoid(
   );
 }
 
+/**
+ * Places a thin detail across a body's side surface while keeping most of its
+ * depth inside the underlying volume. This prevents layered eyes, nostrils and
+ * gum details from reading as detached stickers when viewed from above.
+ */
+export function embeddedSideZ(
+  side: number,
+  surfaceDepth: number,
+  detailHalfDepth: number,
+  exposedFraction = 0.25,
+): number {
+  const clampedExposure = THREE.MathUtils.clamp(exposedFraction, 0, 1);
+  return side * (surfaceDepth - detailHalfDepth * (1 - clampedExposure));
+}
+
 export function coneBetween(
   batch: GeometryBatch,
   base: THREE.Vector3,

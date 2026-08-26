@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {
   ellipsoid,
+  embeddedSideZ,
   GeometryBatch,
   loftGeometry,
   makeFlatMaterial,
@@ -223,10 +224,35 @@ function buildLiving(): THREE.Group {
   PADDLES.forEach((paddle) => addLivingPaddle(fins, paddle));
 
   for (const side of [-1, 1]) {
-    ellipsoid(dark, V(0.78, 1.04, side * 0.275), V(0.19, 0.18, 0.026), 10, 7);
-    ellipsoid(iris, V(0.8, 1.045, side * 0.298), V(0.105, 0.11, 0.014), 9, 7);
-    ellipsoid(dark, V(0.82, 1.045, side * 0.31), V(0.042, 0.065, 0.008), 7, 5);
-    ellipsoid(glint, V(0.77, 1.095, side * 0.318), V(0.018, 0.022, 0.004), 6, 4);
+    const eyeSurface = 0.275;
+    ellipsoid(
+      dark,
+      V(0.78, 1.04, embeddedSideZ(side, eyeSurface, 0.026)),
+      V(0.19, 0.18, 0.026),
+      10,
+      7,
+    );
+    ellipsoid(
+      iris,
+      V(0.8, 1.045, embeddedSideZ(side, eyeSurface + 0.007, 0.014)),
+      V(0.105, 0.11, 0.014),
+      9,
+      7,
+    );
+    ellipsoid(
+      dark,
+      V(0.82, 1.045, embeddedSideZ(side, eyeSurface + 0.012, 0.008)),
+      V(0.042, 0.065, 0.008),
+      7,
+      5,
+    );
+    ellipsoid(
+      glint,
+      V(0.77, 1.095, embeddedSideZ(side, eyeSurface + 0.016, 0.004)),
+      V(0.018, 0.022, 0.004),
+      6,
+      4,
+    );
   }
 
   const finMaterial = makeOrganicMaterial(ICHTHYOSAURUS_COLORS.backDark);
