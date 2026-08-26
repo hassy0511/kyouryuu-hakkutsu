@@ -258,8 +258,22 @@ function buildSkeleton(): THREE.Group {
     }
   }
 
-  ellipsoid(shade, V(-1.08, 1.92, 0), V(0.52, 0.42, 0.68), 9, 6);
-  ellipsoid(shade, V(0.98, 1.88, 0), V(0.42, 0.38, 0.62), 9, 6);
+  for (const side of [-1, 1]) {
+    const frontLeg = side > 0 ? LEGS[0] : LEGS[1];
+    const hindLeg = side > 0 ? LEGS[2] : LEGS[3];
+
+    shade.addBetween(V(-1.72, 2.04, side * 0.17), V(-0.55, 2.16, side * 0.54), 0.1, 0.06, 6);
+    bone.addBetween(V(-1.25, 2.08, side * 0.07), hindLeg.upper, 0.07, 0.05, 6);
+    bone.addBetween(hindLeg.upper, V(-0.78, 1.28, side * 0.42), 0.06, 0.034, 6);
+    bone.addBetween(hindLeg.upper, V(-1.62, 1.35, side * 0.4), 0.055, 0.03, 6);
+
+    const scapula = V(0.72, 1.98, side * 0.5);
+    const chest = V(0.98, 1.28, side * 0.16);
+    bone.addBetween(V(1.38, 2.03, side * 0.07), scapula, 0.06, 0.045, 6);
+    bone.addBetween(scapula, frontLeg.upper, 0.055, 0.043, 6);
+    bone.addBetween(frontLeg.upper, chest, 0.05, 0.034, 6);
+    bone.addBetween(chest, V(0.98, 1.24, 0), 0.034, 0.024, 5);
+  }
   LEGS.forEach((leg) => addBoneLeg(bone, leg));
 
   const frill = new THREE.Mesh(

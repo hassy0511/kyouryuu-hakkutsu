@@ -307,8 +307,24 @@ function buildSkeleton(): THREE.Group {
     if (next) bone.addBetween(point, next, radius * 0.45, radius * 0.35, 5);
   });
 
-  ellipsoid(shade, V(0.67, 1, 0), V(0.29, 0.18, 0.51), 8, 5);
-  ellipsoid(shade, V(-0.9, 0.94, 0), V(0.27, 0.17, 0.48), 8, 5);
+  for (const side of [-1, 1]) {
+    const frontFlipper = (side > 0 ? FLIPPERS[0] : FLIPPERS[1])!;
+    const rearFlipper = (side > 0 ? FLIPPERS[2] : FLIPPERS[3])!;
+
+    // These braces sit inside the shell frame and terminate directly at the
+    // flipper roots, avoiding the former pair of disconnected rounded blocks.
+    const pectoralBrace = V(0.28, 0.83, side * 0.52);
+    shade.addBetween(V(0.92, 1.05, side * 0.1), pectoralBrace, 0.052, 0.034, 6);
+    bone.addBetween(pectoralBrace, frontFlipper.root, 0.04, 0.03, 6);
+    bone.addBetween(frontFlipper.root, V(0.58, 0.67, side * 0.14), 0.036, 0.024, 6);
+    bone.addBetween(V(0.58, 0.67, side * 0.14), V(0.58, 0.65, 0), 0.024, 0.017, 5);
+
+    const pelvicBrace = V(-1.2, 0.81, side * 0.43);
+    shade.addBetween(V(-0.62, 1.0, side * 0.09), pelvicBrace, 0.046, 0.03, 6);
+    bone.addBetween(pelvicBrace, rearFlipper.root, 0.036, 0.027, 6);
+    bone.addBetween(rearFlipper.root, V(-0.92, 0.66, side * 0.12), 0.032, 0.021, 6);
+    bone.addBetween(V(-0.92, 0.66, side * 0.12), V(-0.92, 0.64, 0), 0.021, 0.015, 5);
+  }
   FLIPPERS.forEach((flipper) => addFlipperBones(bone, flipper));
 
   ellipsoid(bone, V(1.63, 1.1, 0), V(0.33, 0.27, 0.31), 9, 6);

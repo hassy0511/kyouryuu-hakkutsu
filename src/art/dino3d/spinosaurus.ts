@@ -350,10 +350,24 @@ function buildSkeleton(): THREE.Group {
     }
   }
 
-  ellipsoid(shade, V(-0.58, 2.92, 0), V(0.62, 0.34, 0.76), 8, 6);
   for (const side of [-1, 1]) {
-    bone.addBetween(V(1.1, 3.48, side * 0.08), V(0.86, 3.04, side * 0.54), 0.09, 0.055, 6);
-    bone.addBetween(V(-1.05, 3.14, side * 0.1), V(-0.58, 2.68, side * 0.6), 0.11, 0.07, 6);
+    const arm = side > 0 ? ARMS[0] : ARMS[1];
+
+    // A narrow paired ilium replaces the old single pelvic block. The sacral,
+    // pubic and ischial struts make the connection to the hind limb explicit.
+    shade.addBetween(V(-1.18, 3.13, side * 0.18), V(-0.12, 3.27, side * 0.52), 0.11, 0.065, 6);
+    bone.addBetween(V(-0.88, 3.18, side * 0.07), V(-0.58, 2.78, side * 0.6), 0.075, 0.055, 6);
+    bone.addBetween(V(-0.58, 2.78, side * 0.6), V(-0.2, 2.08, side * 0.43), 0.065, 0.035, 6);
+    bone.addBetween(V(-0.58, 2.78, side * 0.6), V(-1.28, 2.2, side * 0.42), 0.06, 0.03, 6);
+
+    // Rib-like shoulder girdle: spine -> scapula -> arm, with a coracoid brace
+    // down toward the chest instead of a floating plate.
+    const scapula = V(0.72, 3.18, side * 0.48);
+    const chest = V(0.9, 2.86, side * 0.18);
+    bone.addBetween(V(1.08, 3.48, side * 0.08), scapula, 0.065, 0.045, 6);
+    bone.addBetween(scapula, arm.shoulder, 0.055, 0.045, 6);
+    bone.addBetween(arm.shoulder, chest, 0.05, 0.035, 6);
+    bone.addBetween(chest, V(0.9, 2.82, 0), 0.035, 0.025, 5);
   }
 
   HIND_LIMBS.forEach((limb) => addSkeletonHindLeg(bone, limb));

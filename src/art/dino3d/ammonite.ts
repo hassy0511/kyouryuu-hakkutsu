@@ -24,10 +24,21 @@ const SHELL_CENTER = V(-0.035, 0.145, 0);
 const SHELL_RADIUS = 0.105;
 const SHELL_HALF_DEPTH = 0.036;
 
+function shellSurfaceZ(radius: number, side: number, offset: number): number {
+  const normalizedRadius = THREE.MathUtils.clamp(radius / SHELL_RADIUS, 0, 1);
+  const surfaceDepth = SHELL_HALF_DEPTH * Math.sqrt(1 - normalizedRadius * normalizedRadius);
+  return side * (surfaceDepth + offset);
+}
+
 function addSpiral(batch: GeometryBatch, side: number, lineRadius: number): void {
   const turns = Math.PI * 4.15;
   const segments = 48;
-  let previous = V(SHELL_CENTER.x + 0.008, SHELL_CENTER.y, side * (SHELL_HALF_DEPTH + 0.003));
+  const startRadius = 0.008;
+  let previous = V(
+    SHELL_CENTER.x + startRadius,
+    SHELL_CENTER.y,
+    shellSurfaceZ(startRadius, side, lineRadius * 0.42),
+  );
 
   for (let index = 1; index <= segments; index += 1) {
     const angle = (index / segments) * turns;
@@ -35,7 +46,7 @@ function addSpiral(batch: GeometryBatch, side: number, lineRadius: number): void
     const point = V(
       SHELL_CENTER.x + Math.cos(angle) * radius,
       SHELL_CENTER.y + Math.sin(angle) * radius,
-      side * (SHELL_HALF_DEPTH + 0.003),
+      shellSurfaceZ(radius, side, lineRadius * 0.42),
     );
     batch.addBetween(previous, point, lineRadius, lineRadius * 0.88, 5);
     previous = point;
@@ -47,17 +58,16 @@ function addShellRibs(batch: GeometryBatch, side: number, lineRadius: number): v
     const angle = -Math.PI + (index / 14) * Math.PI * 2;
     const innerRadius = 0.052;
     const outerRadius = 0.078;
-    const z = side * (SHELL_HALF_DEPTH + 0.0025);
     batch.addBetween(
       V(
         SHELL_CENTER.x + Math.cos(angle) * innerRadius,
         SHELL_CENTER.y + Math.sin(angle) * innerRadius,
-        z,
+        shellSurfaceZ(innerRadius, side, lineRadius * 0.42),
       ),
       V(
         SHELL_CENTER.x + Math.cos(angle) * outerRadius,
         SHELL_CENTER.y + Math.sin(angle) * outerRadius,
-        z,
+        shellSurfaceZ(outerRadius, side, lineRadius * 0.42),
       ),
       lineRadius,
       lineRadius * 0.75,
