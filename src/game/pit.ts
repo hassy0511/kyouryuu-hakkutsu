@@ -319,7 +319,9 @@ export class PitMode {
       this.setSoilMatrix(i, 0);
     }
 
-    this.restoreFrom(state.pitSave(def.id));
+    // ほりつくした現場は「きねんほり」: 土が ぜんぶ もどった状態で 何度でも掘れる。
+    // 化石は おなじ場所に よみがえる(柱2)。とりなおしても ★は 高いほうが 残る
+    if (!state.pitDone(def.id)) this.restoreFrom(state.pitSave(def.id));
 
     const labelHost = document.getElementById('pit-labels');
     if (labelHost) {

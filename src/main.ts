@@ -196,10 +196,20 @@ function enterPit(def: PitDef): void {
       }
     },
     onBoneCollected(speciesId, boneId, boneStars) {
+      const prevStars = state.hasBone(speciesId, boneId) ? state.boneStars(speciesId, boneId) : -1;
       state.collectBone(speciesId, boneId, boneStars);
       const sp = speciesById(speciesId);
       const bone = sp.bones.find((b) => b.id === boneId);
       const starsText = '★'.repeat(boneStars) + '☆'.repeat(3 - boneStars);
+      if (prevStars >= 0) {
+        // きねんほり(とりなおし): 鑑定ずみのホネは 短い報告にして、★の記録だけ伝える
+        const lines = [`🔁 ${sp.nameJa}の 「${bone?.nameJa}」を ほりなおした! ${starsText}`];
+        if (boneStars > prevStars) lines.push('✨ ★が あがった! ノートに きろくしたぞ');
+        else if (boneStars < prevStars) lines.push(`だいじょうぶ、きろくは ★${prevStars}の まま`);
+        queueMsgs(lines);
+        updateHud();
+        return;
+      }
       const lines = [
         `${sp.id === 'ammonite' ? '🐚' : '🦴'} これは… ${sp.nameJa}の 「${bone?.nameJa}」だ! ${starsText}`,
       ];

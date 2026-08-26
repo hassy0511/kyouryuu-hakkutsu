@@ -653,7 +653,9 @@ export class FieldMode {
     } else if (state === 'found') {
       this.cb.onEnterPit(pit);
     } else {
-      this.cb.showMsg('✅ ここは ぜんぶ ほりだした げんばだ');
+      // ほりつくした現場も「きねんほり」で 何度でも掘れる(✅の記録は残る)
+      this.cb.showMsg('🔁 ほりおわった げんば! きねんに もういちど ほれるぞ');
+      this.cb.onEnterPit(pit);
     }
   }
 
