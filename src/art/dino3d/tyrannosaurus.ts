@@ -7,6 +7,7 @@ import {
   makeFlatMaterial,
   makeOrganicMaterial,
   setShadowFlags,
+  silhouetteGeometry,
 } from './common';
 import type { DinoViews } from './spinosaurus';
 
@@ -261,6 +262,70 @@ function addSkeletonArm(bone: GeometryBatch, arm: (typeof ARMS)[number]): void {
   }
 }
 
+function addSkeletonPelvis(bone: GeometryBatch, shade: GeometryBatch, dark: GeometryBatch): void {
+  const ilium = silhouetteGeometry(
+    [
+      new THREE.Vector2(-0.9, 0.03),
+      new THREE.Vector2(-0.68, 0.33),
+      new THREE.Vector2(-0.14, 0.45),
+      new THREE.Vector2(0.5, 0.34),
+      new THREE.Vector2(0.82, 0.12),
+      new THREE.Vector2(0.62, -0.12),
+      new THREE.Vector2(0.08, -0.25),
+      new THREE.Vector2(-0.55, -0.21),
+    ],
+    0.065,
+  );
+
+  for (const side of [-1, 1]) {
+    const z = side * 0.52;
+    shade.add(ilium.clone(), V(-0.76, 3.2, z));
+
+    const socket = V(-0.7, 2.96, side * 0.6);
+    const pubisKnee = V(-0.36, 2.32, side * 0.49);
+    const pubisTip = V(0.02, 1.65, side * 0.4);
+    const ischiumTip = V(-1.58, 1.98, side * 0.42);
+    bone.addBetween(socket, pubisKnee, 0.085, 0.065, 7);
+    bone.addBetween(pubisKnee, pubisTip, 0.065, 0.035, 7);
+    bone.addBetween(socket, ischiumTip, 0.075, 0.035, 7);
+    ellipsoid(dark, socket, V(0.22, 0.18, 0.035), 9, 6);
+  }
+
+  bone.addBetween(V(0.02, 1.65, -0.4), V(0.02, 1.65, 0.4), 0.035, 0.035, 6);
+}
+
+function addSkeletonShoulderGirdle(bone: GeometryBatch, shade: GeometryBatch): void {
+  const scapula = silhouetteGeometry(
+    [
+      new THREE.Vector2(-0.82, 0.13),
+      new THREE.Vector2(-0.58, 0.28),
+      new THREE.Vector2(0.52, 0.18),
+      new THREE.Vector2(0.82, 0.02),
+      new THREE.Vector2(0.55, -0.14),
+      new THREE.Vector2(-0.62, -0.12),
+    ],
+    0.05,
+  );
+  const coracoid = silhouetteGeometry(
+    [
+      new THREE.Vector2(-0.28, 0.1),
+      new THREE.Vector2(-0.05, 0.24),
+      new THREE.Vector2(0.27, 0.13),
+      new THREE.Vector2(0.32, -0.12),
+      new THREE.Vector2(0.02, -0.28),
+      new THREE.Vector2(-0.25, -0.13),
+    ],
+    0.055,
+  );
+
+  for (const side of [-1, 1]) {
+    const z = side * 0.5;
+    shade.add(scapula.clone(), V(0.68, 3.58, z));
+    bone.add(coracoid.clone(), V(1.27, 3.33, side * 0.56));
+    bone.addBetween(V(0.15, 3.5, z), V(0.22, 2.9, side * 0.45), 0.055, 0.035, 6);
+  }
+}
+
 function buildSkeleton(): THREE.Group {
   const group = new THREE.Group();
   group.name = 'tyrannosaurus-skeleton';
@@ -302,8 +367,8 @@ function buildSkeleton(): THREE.Group {
     }
   }
 
-  ellipsoid(shade, V(-0.72, 3.02, 0), V(0.72, 0.46, 0.7), 9, 6);
-  ellipsoid(shade, V(0.72, 3.47, 0), V(0.58, 0.42, 0.63), 9, 6);
+  addSkeletonPelvis(bone, shade, dark);
+  addSkeletonShoulderGirdle(bone, shade);
 
   HIND_LIMBS.forEach((limb) => addSkeletonHindLeg(bone, limb));
   ARMS.forEach((arm) => addSkeletonArm(bone, arm));
