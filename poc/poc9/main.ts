@@ -10,6 +10,11 @@ const SPECIES = {
     feature: '🔍 3ぼんの ゆびと めのうえの つのに ちゅうもく!',
     skeletonTip: 'めのうえの つの・3ぼんゆび・ほそながい あたまを みてみよう!',
   },
+  archelon: {
+    name: 'アーケロン',
+    feature: '🔍 おおきな まえびれと ひくい こうらに ちゅうもく!',
+    skeletonTip: 'すきまのある こうらの わく・ひれの ながい ゆびを みてみよう!',
+  },
   ammonite: {
     name: 'アンモナイト',
     feature: '🔍 うずまきの からと 10ぽんの しょくわんに ちゅうもく!',
@@ -24,6 +29,16 @@ const SPECIES = {
     name: 'イグアノドン',
     feature: '🔍 おやゆびの スパイクと まっすぐな しっぽに ちゅうもく!',
     skeletonTip: 'おやゆびスパイク・5ほんゆび・かたい しっぽを みてみよう!',
+  },
+  mosasaurus: {
+    name: 'モササウルス',
+    feature: '🔍 4まいの ひれと したに まがる しっぽに ちゅうもく!',
+    skeletonTip: 'ながい あご・ひれの ゆび・したに まがる しっぽを みてみよう!',
+  },
+  plesiosaurus: {
+    name: 'プレシオサウルス',
+    feature: '🔍 ながい くびと おなじかたちの 4まいの ひれに ちゅうもく!',
+    skeletonTip: 'くびの ほねの れつ・4まいの ひれの ゆびを みてみよう!',
   },
   spinosaurus: {
     name: 'スピノサウルス',
@@ -191,7 +206,15 @@ function fitCameraToModel(): void {
   const distanceForHeight = size.y / (2 * Math.tan(verticalFov / 2));
   const distanceForWidth = size.x / (2 * Math.tan(verticalFov / 2) * camera.aspect);
   const cameraPadding =
-    speciesId === 'ammonite' ? 1.42 : speciesId === 'brachiosaurus' ? 1.6 : 1.15;
+    speciesId === 'ammonite'
+      ? 1.42
+      : speciesId === 'brachiosaurus'
+        ? 1.6
+        : speciesId === 'archelon'
+          ? 2.25
+          : speciesId === 'plesiosaurus'
+            ? 1.5
+            : 1.15;
   const distance = Math.max(distanceForHeight, distanceForWidth) * cameraPadding;
 
   controls.target.copy(center);
