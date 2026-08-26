@@ -85,6 +85,11 @@ const SPECIES = {
     feature: '🔍 2れつの いたと しっぽの 4ほんトゲに ちゅうもく!',
     skeletonTip: 'ほねの いた・4ほんの トゲ・たかい こしを みてみよう!',
   },
+  styracosaurus: {
+    name: 'スティラコサウルス',
+    feature: '🔍 フリルの 6ぽんの とげと ながい はなヅノに ちゅうもく!',
+    skeletonTip: 'とうこつと つながる フリルのとげ・はなヅノ・くちばしを みてみよう!',
+  },
   tyrannosaurus: {
     name: 'ティラノサウルス',
     feature: '🔍 おおきな あたま と 2ほんゆびに ちゅうもく!',
