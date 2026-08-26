@@ -20,6 +20,11 @@ const SPECIES = {
     feature: '🔍 うずまきの からと 10ぽんの しょくわんに ちゅうもく!',
     skeletonTip: 'ほうしゃじょうの すじと うずまきの ほうせんを みてみよう!',
   },
+  belemnite: {
+    name: 'ベレムナイト',
+    feature: '🔍 つつがたの かせきと 10ぽんの うでに ちゅうもく!',
+    skeletonTip: 'さきの とがった ロストルムと せいちょうの すじを みてみよう!',
+  },
   brachiosaurus: {
     name: 'ブラキオサウルス',
     feature: '🔍 たかい かた・ながい くび・ちいさな あたまに ちゅうもく!',
@@ -206,7 +211,7 @@ function fitCameraToModel(): void {
   const distanceForHeight = size.y / (2 * Math.tan(verticalFov / 2));
   const distanceForWidth = size.x / (2 * Math.tan(verticalFov / 2) * camera.aspect);
   const cameraPadding =
-    speciesId === 'ammonite'
+    speciesId === 'ammonite' || speciesId === 'belemnite'
       ? 1.42
       : speciesId === 'brachiosaurus'
         ? 1.6
