@@ -215,6 +215,68 @@ const featherslab: Builder = (def, material, pitch) => {
   return group;
 };
 
+// こんぼうの しっぽ(アンキロサウルス): 節のある じく + 先の おおきな かたまり
+const club: Builder = (def, material, pitch) => {
+  const group = new THREE.Group();
+  const len = Math.max(def.cells.length, 2) * pitch * 0.9;
+  for (let s = 0; s < 3; s++) {
+    const seg = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.09 - s * 0.012, 0.11 - s * 0.012, len * 0.24, 8),
+      material,
+    );
+    seg.rotation.z = Math.PI / 2;
+    seg.position.x = -len / 2 + len * 0.24 * (s + 0.5);
+    group.add(seg);
+  }
+  const knob = new THREE.Mesh(new THREE.SphereGeometry(0.26, 10, 8), material);
+  knob.scale.set(1.25, 0.85, 1.5);
+  knob.position.x = len * 0.36;
+  group.add(knob);
+  const alongX = (def.cells[1]?.[0] ?? def.cells[0]![0] + 1) !== def.cells[0]![0];
+  if (!alongX) group.rotation.y = Math.PI / 2;
+  return group;
+};
+
+// よろいの小板の むれ: ちいさな 五角形の板が ちらばる
+const scatter: Builder = (def, material, pitch) => {
+  const group = new THREE.Group();
+  const w = pitch * Math.sqrt(def.cells.length) * 0.85;
+  for (let k = 0; k < 7; k++) {
+    const a = k * 2.4;
+    const s = 0.1 + ((k * 13) % 5) / 30;
+    const plate = new THREE.Mesh(new THREE.ConeGeometry(s * 1.6, s * 1.1, 5), material);
+    plate.position.set(
+      Math.cos(a) * w * 0.55 * ((k % 3) + 1) * 0.33,
+      s * 0.4,
+      Math.sin(a) * w * 0.55 * ((k % 3) + 1) * 0.33,
+    );
+    plate.rotation.y = a;
+    group.add(plate);
+  }
+  return group;
+};
+
+// とげとげフリル(スティラコサウルス): おうぎ形の板 + ほうしゃじょうの とげ
+const spikefrill: Builder = (def, material, pitch) => {
+  const group = new THREE.Group();
+  const r = pitch * Math.sqrt(def.cells.length) * 0.5;
+  const fan = new THREE.Mesh(
+    new THREE.CylinderGeometry(r, r, 0.12, 14, 1, false, 0, Math.PI),
+    material,
+  );
+  group.add(fan);
+  const up = new THREE.Vector3(0, 1, 0);
+  for (let k = 0; k < 5; k++) {
+    const a = (k / 4) * Math.PI;
+    const dir = new THREE.Vector3(Math.sin(a), 0, Math.cos(a));
+    const spike = new THREE.Mesh(new THREE.ConeGeometry(0.07, r * 0.75, 6), material);
+    spike.position.copy(dir).multiplyScalar(r * 1.05);
+    spike.quaternion.setFromUnitVectors(up, dir);
+    group.add(spike);
+  }
+  return group;
+};
+
 // めの ほねリング(イクチオサウルスの こうまくりん)
 const ring: Builder = (_def, material) => {
   const group = new THREE.Group();
@@ -239,6 +301,9 @@ const SHAPES: Record<string, Builder> = {
   ring,
   wingfinger,
   featherslab,
+  club,
+  scatter,
+  spikefrill,
 };
 
 export function buildBoneShape(

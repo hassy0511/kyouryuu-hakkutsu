@@ -1,0 +1,420 @@
+{
+  "id": "k5",
+  "nameJa": "とげとよろいのもり",
+  "emoji": "🛡️",
+  "order": 5,
+  "unlock": "wing:k4",
+  "pits": [
+    {
+      "id": "f1",
+      "nameJa": "こけいわの ねもと",
+      "pos": [6, 15],
+      "clue": "bone",
+      "discoverText": "まるくて ぶあつい ほねの かけら…ヘルメットあたまの もちぬしだ!",
+      "fossils": [
+        {
+          "speciesId": "pachycephalosaurus",
+          "boneId": "dome",
+          "kind": "blob",
+          "layer": 2,
+          "cells": [
+            [3, 2],
+            [4, 2],
+            [3, 3],
+            [4, 3]
+          ]
+        },
+        {
+          "speciesId": "pachycephalosaurus",
+          "boneId": "spine",
+          "kind": "long",
+          "layer": 3,
+          "cells": [
+            [2, 5],
+            [3, 5],
+            [4, 5]
+          ]
+        }
+      ],
+      "rocks": [[6, 1, 1]],
+      "crystals": [[1, 6, 2]],
+      "branches": [
+        [0, 0, 0],
+        [7, 2, 0]
+      ],
+      "gates": [],
+      "ores": [[6, 6, 4]]
+    },
+    {
+      "id": "f2",
+      "nameJa": "よろいの さかみち",
+      "pos": [-13, -2],
+      "clue": "rubble",
+      "discoverText": "よろいのような かたい ほねが かおを だしてる。うごく ようさいの けはい!",
+      "fossils": [
+        {
+          "speciesId": "ankylosaurus",
+          "boneId": "skull",
+          "kind": "blob",
+          "layer": 2,
+          "cells": [
+            [2, 2],
+            [3, 2],
+            [2, 3],
+            [3, 3]
+          ]
+        },
+        {
+          "speciesId": "ankylosaurus",
+          "boneId": "legs",
+          "kind": "long",
+          "layer": 4,
+          "cells": [
+            [5, 4],
+            [5, 5],
+            [5, 6]
+          ]
+        }
+      ],
+      "rocks": [[6, 6, 1]],
+      "crystals": [[7, 0, 2]],
+      "branches": [
+        [0, 6, 0],
+        [7, 7, 0]
+      ],
+      "gates": [],
+      "ores": [[1, 1, 4]]
+    },
+    {
+      "id": "f3",
+      "nameJa": "とげフリルの くさち",
+      "pos": [12, -10],
+      "clue": "crack",
+      "discoverText": "ながい とげが ほうしゃじょうに…はでな フリルの もちぬしが ねむってる!",
+      "fossils": [
+        {
+          "speciesId": "styracosaurus",
+          "boneId": "frill",
+          "kind": "spikefrill",
+          "layer": 3,
+          "cells": [
+            [2, 2],
+            [3, 2],
+            [2, 3],
+            [3, 3]
+          ]
+        },
+        {
+          "speciesId": "styracosaurus",
+          "boneId": "horn",
+          "kind": "tube",
+          "layer": 4,
+          "cells": [
+            [5, 5],
+            [6, 5]
+          ]
+        }
+      ],
+      "rocks": [[1, 5, 1]],
+      "crystals": [[0, 0, 2]],
+      "branches": [
+        [7, 0, 0],
+        [3, 7, 0]
+      ],
+      "gates": [],
+      "ores": [[0, 7, 4]]
+    },
+    {
+      "id": "f4",
+      "nameJa": "こんぼうの おか",
+      "pos": [-8, 9],
+      "clue": "bone",
+      "discoverText": "せぼねの さきに、かたい すなに つつまれた おおきな かたまりが…!",
+      "fossils": [
+        {
+          "speciesId": "ankylosaurus",
+          "boneId": "spine",
+          "kind": "long",
+          "layer": 3,
+          "cells": [
+            [1, 2],
+            [2, 2],
+            [3, 2],
+            [4, 2]
+          ]
+        },
+        {
+          "speciesId": "ankylosaurus",
+          "boneId": "club",
+          "kind": "club",
+          "layer": 5,
+          "cells": [
+            [2, 4],
+            [3, 4],
+            [4, 4]
+          ]
+        }
+      ],
+      "rocks": [[6, 1, 1]],
+      "crystals": [
+        [7, 7, 2],
+        [0, 6, 3]
+      ],
+      "branches": [
+        [0, 0, 0],
+        [6, 7, 0]
+      ],
+      "gates": [
+        {
+          "look": "sandrock",
+          "needs": "sieve",
+          "cells": [
+            [2, 4, 4],
+            [3, 4, 4],
+            [4, 4, 4],
+            [1, 4, 5],
+            [5, 4, 5],
+            [2, 3, 5],
+            [3, 3, 5],
+            [4, 3, 5],
+            [2, 5, 5],
+            [3, 5, 5],
+            [4, 5, 5]
+          ]
+        }
+      ],
+      "ores": [[7, 0, 4]]
+    },
+    {
+      "id": "f5",
+      "nameJa": "こばんの ちらばる みち",
+      "pos": [9, 4],
+      "clue": "rubble",
+      "discoverText": "ちいさな ほねの こばんが あちこちに! ぜんぶ ひろって あげよう!",
+      "fossils": [
+        {
+          "speciesId": "armorscutes",
+          "boneId": "scutes",
+          "kind": "scatter",
+          "layer": 1,
+          "cells": [
+            [3, 3],
+            [4, 3],
+            [3, 4],
+            [4, 4]
+          ]
+        },
+        {
+          "speciesId": "styracosaurus",
+          "boneId": "legs",
+          "kind": "long",
+          "layer": 3,
+          "cells": [
+            [1, 5],
+            [2, 5],
+            [3, 5]
+          ]
+        }
+      ],
+      "rocks": [[6, 6, 1]],
+      "crystals": [[0, 1, 2]],
+      "branches": [
+        [7, 7, 0],
+        [0, 6, 0]
+      ],
+      "gates": [],
+      "ores": [[3, 7, 4]]
+    },
+    {
+      "id": "f6",
+      "nameJa": "わかばの くぼち",
+      "pos": [-4, -13],
+      "clue": "crack",
+      "discoverText": "はしるのが とくいそうな、ながい あしの ほねが みえてる!",
+      "fossils": [
+        {
+          "speciesId": "pachycephalosaurus",
+          "boneId": "legs",
+          "kind": "long",
+          "layer": 3,
+          "cells": [
+            [3, 3],
+            [4, 3],
+            [5, 3]
+          ]
+        }
+      ],
+      "rocks": [
+        [1, 5, 1],
+        [6, 1, 2]
+      ],
+      "crystals": [[7, 7, 2]],
+      "branches": [
+        [0, 0, 0],
+        [7, 0, 0]
+      ],
+      "gates": [],
+      "ores": [[1, 7, 4]]
+    },
+    {
+      "id": "f7",
+      "nameJa": "ねむりの ほらあな",
+      "pos": [-15, 4],
+      "clue": "none",
+      "discoverText": "もりの おくの かくれた ほらあな…おくから ラッパのような おとが きこえた!?",
+      "fossils": [
+        {
+          "speciesId": "parasaurolophus",
+          "boneId": "crest",
+          "kind": "tube",
+          "layer": 4,
+          "cells": [
+            [2, 3],
+            [3, 3]
+          ]
+        },
+        {
+          "speciesId": "parasaurolophus",
+          "boneId": "jaw",
+          "kind": "blob",
+          "layer": 4,
+          "cells": [
+            [5, 3],
+            [6, 3]
+          ]
+        },
+        {
+          "speciesId": "parasaurolophus",
+          "boneId": "spine",
+          "kind": "long",
+          "layer": 5,
+          "cells": [
+            [2, 5],
+            [3, 5],
+            [4, 5]
+          ]
+        },
+        {
+          "speciesId": "parasaurolophus",
+          "boneId": "legs",
+          "kind": "long",
+          "layer": 5,
+          "cells": [
+            [4, 3],
+            [5, 3],
+            [6, 3]
+          ]
+        }
+      ],
+      "rocks": [[7, 0, 1]],
+      "crystals": [
+        [1, 4, 5],
+        [6, 5, 5]
+      ],
+      "branches": [
+        [0, 0, 0],
+        [7, 7, 0]
+      ],
+      "gates": [
+        {
+          "look": "sandrock",
+          "needs": "sieve",
+          "cells": [
+            [1, 2, 3],
+            [1, 3, 3],
+            [1, 4, 3],
+            [1, 5, 3],
+            [2, 2, 3],
+            [2, 3, 3],
+            [2, 4, 3],
+            [2, 5, 3],
+            [3, 2, 3],
+            [3, 3, 3],
+            [3, 4, 3],
+            [3, 5, 3],
+            [4, 2, 3],
+            [4, 3, 3],
+            [4, 4, 3],
+            [4, 5, 3],
+            [5, 2, 3],
+            [5, 3, 3],
+            [5, 4, 3],
+            [5, 5, 3],
+            [6, 2, 3],
+            [6, 3, 3],
+            [6, 4, 3],
+            [6, 5, 3],
+            [0, 2, 4],
+            [0, 3, 4],
+            [0, 4, 4],
+            [0, 5, 4],
+            [0, 2, 5],
+            [0, 3, 5],
+            [0, 4, 5],
+            [0, 5, 5],
+            [7, 2, 4],
+            [7, 3, 4],
+            [7, 4, 4],
+            [7, 5, 4],
+            [7, 2, 5],
+            [7, 3, 5],
+            [7, 4, 5],
+            [7, 5, 5],
+            [1, 1, 4],
+            [2, 1, 4],
+            [3, 1, 4],
+            [4, 1, 4],
+            [5, 1, 4],
+            [6, 1, 4],
+            [1, 1, 5],
+            [2, 1, 5],
+            [3, 1, 5],
+            [4, 1, 5],
+            [5, 1, 5],
+            [6, 1, 5],
+            [1, 6, 4],
+            [2, 6, 4],
+            [3, 6, 4],
+            [4, 6, 4],
+            [5, 6, 4],
+            [6, 6, 4],
+            [1, 6, 5],
+            [2, 6, 5],
+            [3, 6, 5],
+            [4, 6, 5],
+            [5, 6, 5],
+            [6, 6, 5]
+          ]
+        }
+      ],
+      "ores": [[1, 2, 5]]
+    },
+    {
+      "id": "f8",
+      "nameJa": "しずかな したくさ",
+      "pos": [2, -9],
+      "clue": "none",
+      "discoverText": "したくさの したから コツコツ…かたい おとが きこえる!",
+      "fossils": [],
+      "rocks": [
+        [3, 3, 1],
+        [5, 5, 2]
+      ],
+      "crystals": [
+        [2, 6, 3],
+        [6, 2, 4]
+      ],
+      "branches": [
+        [0, 4, 0],
+        [7, 3, 0],
+        [4, 0, 0]
+      ],
+      "gates": [],
+      "ores": [
+        [1, 7, 4],
+        [6, 6, 5],
+        [3, 1, 5]
+      ]
+    }
+  ]
+}

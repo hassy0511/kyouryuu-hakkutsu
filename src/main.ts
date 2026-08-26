@@ -55,6 +55,7 @@ const state = new GameState(ADMIN ? 'honehori-save-admin' : undefined);
 // ---- メッセージ --------------------------------------------------------------
 
 let msgTimer: ReturnType<typeof setTimeout> | undefined;
+let msgNextTimer: ReturnType<typeof setTimeout> | undefined;
 const msgQueue: string[] = [];
 function displayMsg(text: string): void {
   const msg = el('msg');
@@ -64,7 +65,7 @@ function displayMsg(text: string): void {
   msgTimer = setTimeout(() => {
     msg.classList.remove('show');
     const next = msgQueue.shift();
-    if (next) setTimeout(() => displayMsg(next), 200);
+    if (next) msgNextTimer = setTimeout(() => displayMsg(next), 200);
   }, 2600);
 }
 function showMsg(text: string): void {
@@ -78,6 +79,8 @@ function showMsg(text: string): void {
 function queueMsgs(lines: string[]): void {
   const [first, ...rest] = lines;
   if (!first) return;
+  // 古いキューの「次を出す」予約が残っていると新しい1行目を上書きするため、必ず止める
+  clearTimeout(msgNextTimer);
   msgQueue.length = 0;
   msgQueue.push(...rest);
   displayMsg(first);
@@ -145,6 +148,10 @@ const FIELD_CALLBACKS: FieldCallbacks = {
     }
     if (state.flag('wing:k3') && state.allRestored('k4') && !state.flag('wing:k4')) {
       queueMsgs(STORY.hakase.preWingK4);
+      return;
+    }
+    if (state.flag('wing:k4') && state.allRestored('k5') && !state.flag('wing:k5')) {
+      queueMsgs(STORY.hakase.preWingK5);
       return;
     }
     // 詰み防止: ピッケルが こわれて 修理素材も 足りないときは 分けてくれる
@@ -505,6 +512,7 @@ function applyAdminUnlock(): void {
     'wing:k2',
     'wing:k3',
     'wing:k4',
+    'wing:k5',
     'firstFossil',
     'firstReveal',
     'firstRestore',

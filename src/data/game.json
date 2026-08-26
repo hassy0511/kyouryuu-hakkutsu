@@ -28,6 +28,11 @@
       "wood": 1,
       "iron": 3,
       "stone": 2
+    },
+    "sieve": {
+      "wood": 2,
+      "stone": 3,
+      "iron": 1
     }
   },
   "pickMaxHp": 140,
@@ -63,6 +68,6 @@
     "pump": "💧みずぬきポンプ",
     "lamp": "🏮ランタン",
     "chisel": "🔨のみ（チゼル）",
-    "sieve": "🧺ふるい（まだ みぬ どうぐ）"
+    "sieve": "🧺ふるい"
   }
 }
