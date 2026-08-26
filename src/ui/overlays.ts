@@ -53,6 +53,7 @@ export class Overlays {
     el('craft-repair').addEventListener('click', () => this.craft('repair'));
     el('craft-upgrade').addEventListener('click', () => this.craft('upgrade'));
     el('craft-upgrade2').addEventListener('click', () => this.craft('upgrade2'));
+    el('craft-pump').addEventListener('click', () => this.craft('pump'));
     el('celebrate-close').addEventListener('click', () => {
       this.hide('ov-celebrate');
       if (this.lastRestored && hasDinoModel(this.lastRestored)) {
@@ -281,9 +282,20 @@ export class Overlays {
       level >= 2 || !this.state.canAfford(RECIPES.upgrade);
     (el('craft-upgrade2') as HTMLButtonElement).disabled =
       level !== 2 || !knowsIron || !this.state.canAfford(RECIPES.upgrade2);
+    // どうぐ(ピッケル以外): うみのしま到達で ポンプのレシピ解禁。つくったら行ごと消える
+    const knowsPump = this.state.flag('visited:k3');
+    const hasPump = this.state.flag('item:pump');
+    el('craft-pump-cost').innerHTML = costHtml([
+      ['🪵', inv.wood, RECIPES.pump.wood],
+      ['🔩', inv.iron, RECIPES.pump.iron],
+      ['💎', inv.crystal, RECIPES.pump.crystal],
+    ]);
+    el('craft-pump-row').classList.toggle('hidden', !knowsPump || hasPump);
+    (el('craft-pump') as HTMLButtonElement).disabled =
+      hasPump || !this.state.canAfford(RECIPES.pump);
   }
 
-  private craft(kind: 'repair' | 'upgrade' | 'upgrade2'): void {
+  private craft(kind: 'repair' | 'upgrade' | 'upgrade2' | 'pump'): void {
     if (kind === 'repair') {
       if (!this.state.canAfford(RECIPES.repair)) return;
       this.state.spend(RECIPES.repair);
@@ -296,6 +308,16 @@ export class Overlays {
       this.state.setPickLevel(3);
       this.sfx.fanfare();
       const lines = ['⚒️ くろがねの ピッケル かんせい! あかい がんばんも ほれるぞ!'];
+      if (this.state.openableMarks().length > 0) {
+        lines.push('📍 きになるリストの ふういんが あけられるぞ! まえの しまも みてみよう');
+      }
+      this.hooks.queueMsgs(lines);
+    } else if (kind === 'pump') {
+      if (this.state.flag('item:pump') || !this.state.canAfford(RECIPES.pump)) return;
+      this.state.spend(RECIPES.pump);
+      this.state.setFlag('item:pump');
+      this.sfx.fanfare();
+      const lines = ['💧 みずぬきポンプ かんせい! みずの しみだす いわも ほれるぞ!'];
       if (this.state.openableMarks().length > 0) {
         lines.push('📍 きになるリストの ふういんが あけられるぞ! まえの しまも みてみよう');
       }
@@ -330,6 +352,10 @@ export class Overlays {
       this.runWingCeremony('k2');
       return;
     }
+    if (this.state.flag('wing:k2') && this.state.allRestored('k3') && !this.state.flag('wing:k3')) {
+      this.runWingCeremony('k3');
+      return;
+    }
     const cards = SPECIES.filter((sp) => this.state.isSpeciesVisible(sp.id))
       .map((sp) => {
         if (this.state.isRestored(sp.id)) {
@@ -357,11 +383,13 @@ export class Overlays {
       </div>`;
       })
       .join('');
-    const wingLabel = this.state.flag('wing:k2')
+    const wingLabel = this.state.flag('wing:k3')
       ? '？？？の ウィング'
-      : this.state.flag('ceremonyDone')
-        ? 'ジュラの ウィング'
-        : 'あたらしい ウィング';
+      : this.state.flag('wing:k2')
+        ? 'うみの ウィング'
+        : this.state.flag('ceremonyDone')
+          ? 'ジュラの ウィング'
+          : 'あたらしい ウィング';
     el('museum-cards').innerHTML =
       cards +
       `<div class="mu-card wing"><div class="mu-emoji">🚪</div><b>${wingLabel}</b><div class="dim">じゅんびちゅう…</div></div>`;
@@ -500,7 +528,7 @@ export class Overlays {
       [
         `<h1>${c.title}</h1>` + c.lines.map((l) => `<p>${l}</p>`).join(''),
         `<div class="letter">${c.letter.map((l) => `<p>${l}</p>`).join('')}</div>`,
-        `<div class="trophy">🏆</div><p><b>${c.outro}</b></p><p class="dim">— だい2しょう おわり。まだまだ つづく! —</p>`,
+        `<div class="trophy">🏆</div><p><b>${c.outro}</b></p><p class="dim">— だい${islandById(islandId).order}しょう おわり。まだまだ つづく! —</p>`,
       ],
       () => {
         this.state.setFlag(`wing:${islandId}`);

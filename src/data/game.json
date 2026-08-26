@@ -13,6 +13,11 @@
       "wood": 2,
       "iron": 4,
       "crystal": 2
+    },
+    "pump": {
+      "wood": 3,
+      "iron": 2,
+      "crystal": 1
     }
   },
   "pickMaxHp": 140,
@@ -28,11 +33,16 @@
     "wetrock": {
       "nameJa": "みずの しみだす いわ",
       "color": "3f6f8f"
+    },
+    "darkrock": {
+      "nameJa": "まっくらな どうくつの おく",
+      "color": "2b2f3a"
     }
   },
   "needLabels": {
     "pick2": "⛏️がんじょうピッケル",
     "pick3": "⛏️くろがねの ピッケル",
-    "pump": "💧ポンプ（まだ みぬ どうぐ）"
+    "pump": "💧みずぬきポンプ",
+    "lamp": "🏮ランタン（まだ みぬ どうぐ）"
   }
 }

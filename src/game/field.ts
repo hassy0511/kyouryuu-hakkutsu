@@ -35,10 +35,33 @@ interface IslandLook {
   terrain: number;
   terrainAmp: number;
   jungle: boolean;
+  shore: boolean;
 }
 const ISLAND_LOOKS: Record<string, IslandLook> = {
-  k1: { sky: 0x9ed4ef, sea: 0x5fb4e0, terrain: 0xd8c28e, terrainAmp: 1, jungle: false },
-  k2: { sky: 0x8fc9d8, sea: 0x3f92a8, terrain: 0x86a45e, terrainAmp: 1.35, jungle: true },
+  k1: {
+    sky: 0x9ed4ef,
+    sea: 0x5fb4e0,
+    terrain: 0xd8c28e,
+    terrainAmp: 1,
+    jungle: false,
+    shore: false,
+  },
+  k2: {
+    sky: 0x8fc9d8,
+    sea: 0x3f92a8,
+    terrain: 0x86a45e,
+    terrainAmp: 1.35,
+    jungle: true,
+    shore: false,
+  },
+  k3: {
+    sky: 0xaadff0,
+    sea: 0x2f9ec4,
+    terrain: 0xe8d9a8,
+    terrainAmp: 0.8,
+    jungle: false,
+    shore: true,
+  },
 };
 
 interface Interactable {
@@ -172,7 +195,83 @@ export class FieldMode {
         this.scene.add(rock);
       }
       const woodMat = new THREE.MeshStandardMaterial({ color: 0x8b7355, roughness: 1 });
-      if (!this.look.jungle) {
+      if (this.look.shore) {
+        // うみのしま: ヤシの木 + しおだまり + しろい さんごいし
+        const palmLeaf = new THREE.MeshStandardMaterial({
+          color: 0x3f9c5a,
+          roughness: 1,
+          flatShading: true,
+        });
+        for (const [x, z, lean] of [
+          [-10, 6, 1],
+          [12, -4, -1],
+          [-5, -9, 1],
+          [14, 8, -1],
+          [-16, -8, 1],
+        ] as const) {
+          const palm = new THREE.Group();
+          for (let seg = 0; seg < 3; seg++) {
+            const part = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.1 - seg * 0.012, 0.14 - seg * 0.012, 1.05, 6),
+              woodMat,
+            );
+            part.position.set(lean * (0.14 + seg * 0.3), 0.5 + seg * 0.92, 0);
+            part.rotation.z = -lean * 0.16 * (seg + 1);
+            part.castShadow = true;
+            palm.add(part);
+          }
+          for (let leaf = 0; leaf < 6; leaf++) {
+            const holder = new THREE.Group();
+            holder.position.set(lean * 0.85, 3.15, 0);
+            holder.rotation.y = (leaf / 6) * Math.PI * 2 + x;
+            const blade = new THREE.Mesh(new THREE.ConeGeometry(0.24, 1.5, 4), palmLeaf);
+            blade.scale.z = 0.45;
+            blade.position.x = 0.6;
+            blade.rotation.z = -2.05;
+            blade.castShadow = true;
+            holder.add(blade);
+            palm.add(holder);
+          }
+          palm.position.set(x, this.ground(x, z), z);
+          this.scene.add(palm);
+        }
+        const poolMat = new THREE.MeshStandardMaterial({
+          color: this.look.sea,
+          roughness: 0.25,
+          transparent: true,
+          opacity: 0.85,
+        });
+        for (const [x, z, r] of [
+          [3, 9, 1.5],
+          [-9, -1, 1.1],
+          [9, -6, 1.3],
+        ] as const) {
+          const pool = new THREE.Mesh(
+            new THREE.CircleGeometry(r, 18).rotateX(-Math.PI / 2),
+            poolMat,
+          );
+          pool.position.set(x, this.ground(x, z) + 0.03, z);
+          this.scene.add(pool);
+        }
+        const coralMat = new THREE.MeshStandardMaterial({
+          color: 0xefe6d4,
+          roughness: 1,
+          flatShading: true,
+        });
+        for (const [x, z, s] of [
+          [5, 12, 0.5],
+          [-3, 13, 0.4],
+          [-12, 10, 0.6],
+          [15, -2, 0.45],
+        ] as const) {
+          const coral = new THREE.Mesh(new THREE.IcosahedronGeometry(1, 0), coralMat);
+          coral.position.set(x, this.ground(x, z) + s * 0.25, z);
+          coral.scale.set(s, s * 0.55, s);
+          coral.rotation.y = x + z;
+          coral.castShadow = true;
+          this.scene.add(coral);
+        }
+      } else if (!this.look.jungle) {
         for (const [x, z, rot] of [
           [-8, 4, 0.4],
           [12, -3, 1.9],

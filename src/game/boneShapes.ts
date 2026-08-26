@@ -79,7 +79,115 @@ const slab: Builder = (_def, material, pitch) => {
   return group;
 };
 
-const SHAPES: Record<string, Builder> = { long, blob, ammonite, slab };
+// ひれあし(海生はちゅうるいのパドル): 平たい ひれ + 指の うね
+const fin: Builder = (def, material, pitch) => {
+  const group = new THREE.Group();
+  const len = Math.max(def.cells.length, 2) * pitch;
+  const paddle = new THREE.Mesh(new THREE.SphereGeometry(0.5, 10, 8), material);
+  paddle.scale.set(len * 0.92, 0.22, 0.62);
+  group.add(paddle);
+  for (const off of [-0.21, -0.07, 0.07, 0.21]) {
+    const digit = new THREE.Mesh(new THREE.CapsuleGeometry(0.05, len * 0.42, 4, 6), material);
+    digit.rotation.z = Math.PI / 2;
+    digit.position.set(len * 0.12, 0.09, off);
+    group.add(digit);
+  }
+  const alongX = (def.cells[1]?.[0] ?? def.cells[0]![0] + 1) !== def.cells[0]![0];
+  if (!alongX) group.rotation.y = Math.PI / 2;
+  return group;
+};
+
+// つつ形(ベレムナイトの しん): 円筒 + とがった 先
+const tube: Builder = (def, material, pitch) => {
+  const group = new THREE.Group();
+  const len = Math.max(def.cells.length, 2) * pitch * 0.82;
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.18, len * 0.6, 10), material);
+  body.rotation.z = Math.PI / 2;
+  body.position.x = -len * 0.14;
+  group.add(body);
+  const point = new THREE.Mesh(new THREE.ConeGeometry(0.15, len * 0.5, 10), material);
+  point.rotation.z = -Math.PI / 2;
+  point.position.x = len * 0.32;
+  group.add(point);
+  const alongX = (def.cells[1]?.[0] ?? def.cells[0]![0] + 1) !== def.cells[0]![0];
+  if (!alongX) group.rotation.y = Math.PI / 2;
+  return group;
+};
+
+// こうら(アーケロン): ドーム + ふちの リング + ほねの うね
+const shell: Builder = (def, material, pitch) => {
+  const group = new THREE.Group();
+  const r = pitch * Math.sqrt(def.cells.length) * 0.52;
+  const dome = new THREE.Mesh(
+    new THREE.SphereGeometry(r, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2),
+    material,
+  );
+  dome.scale.y = 0.42;
+  group.add(dome);
+  const brim = new THREE.Mesh(new THREE.TorusGeometry(r * 0.96, r * 0.09, 6, 22), material);
+  brim.rotation.x = Math.PI / 2;
+  group.add(brim);
+  for (let k = 0; k < 3; k++) {
+    const ridge = new THREE.Mesh(new THREE.CapsuleGeometry(0.05, r * 0.85, 4, 6), material);
+    ridge.rotation.z = Math.PI / 2;
+    ridge.rotation.y = (k / 3) * Math.PI;
+    ridge.position.y = r * 0.3;
+    group.add(ridge);
+  }
+  return group;
+};
+
+// いしばんの さかな: いた + せぼねの せん + ヒレ
+const fish: Builder = (def, material, pitch) => {
+  const group = new THREE.Group();
+  const w = pitch * Math.sqrt(def.cells.length) * 0.9;
+  const plate = new THREE.Mesh(new THREE.BoxGeometry(w * 1.9, 0.14, w * 1.9), material);
+  group.add(plate);
+  const dark = new THREE.MeshStandardMaterial({ color: 0x8a7a5e, roughness: 1 });
+  const spineLine = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, w * 1.2, 6), dark);
+  spineLine.rotation.z = Math.PI / 2;
+  spineLine.position.y = 0.08;
+  group.add(spineLine);
+  for (let k = -2; k <= 2; k++) {
+    const rib = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.3, 5), dark);
+    rib.rotation.x = Math.PI / 2;
+    rib.position.set(k * w * 0.2, 0.08, 0);
+    group.add(rib);
+  }
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), dark);
+  head.scale.set(1.3, 0.4, 1);
+  head.position.set(-w * 0.66, 0.08, 0);
+  group.add(head);
+  const tailFin = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 6), dark);
+  tailFin.scale.set(1.6, 0.4, 2.2);
+  tailFin.position.set(w * 0.66, 0.08, 0);
+  group.add(tailFin);
+  return group;
+};
+
+// めの ほねリング(イクチオサウルスの こうまくりん)
+const ring: Builder = (_def, material) => {
+  const group = new THREE.Group();
+  const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.09, 8, 18), material);
+  hoop.rotation.x = -Math.PI / 2;
+  group.add(hoop);
+  const inner = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.05, 6, 14), material);
+  inner.rotation.x = -Math.PI / 2;
+  group.add(inner);
+  return group;
+};
+
+const SHAPES: Record<string, Builder> = {
+  long,
+  blob,
+  ammonite,
+  slab,
+  fin,
+  tube,
+  shell,
+  fish,
+  ring,
+};
 
 export function buildBoneShape(
   def: FossilDef,

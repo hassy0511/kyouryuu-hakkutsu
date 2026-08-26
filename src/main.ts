@@ -139,6 +139,10 @@ const FIELD_CALLBACKS: FieldCallbacks = {
       queueMsgs(STORY.hakase.preWingK2);
       return;
     }
+    if (state.flag('wing:k2') && state.allRestored('k3') && !state.flag('wing:k3')) {
+      queueMsgs(STORY.hakase.preWingK3);
+      return;
+    }
     // 詰み防止: ピッケルが こわれて 修理素材も 足りないときは 分けてくれる
     if (state.tool.broken && !state.canAfford(RECIPES.repair)) {
       const giveWood = Math.max(0, RECIPES.repair.wood - state.inv.wood);
@@ -170,6 +174,15 @@ function enterPit(def: PitDef): void {
     showMsg,
     onExit: exitPit,
     onGateBlocked(look) {
+      if (look === 'darkrock') {
+        if (!state.flag('darkrockSeen')) {
+          state.setFlag('darkrockSeen');
+          queueMsgs(['🕳️ ここから さきは まっくら…!', ...STORY.hakase.darkrockBlocked]);
+        } else {
+          showMsg('🕳️ まっくらで ほれない… あかりに なる どうぐが いる');
+        }
+        return;
+      }
       if (look === 'wetrock') {
         if (!state.flag('wetrockSeen')) {
           state.setFlag('wetrockSeen');
@@ -267,8 +280,10 @@ function travelTo(islandId: string): void {
   field.activate();
   updateHud();
   const island = islandById(islandId);
-  if (islandId === 'k2' && firstVisit) {
-    queueMsgs(STORY.hakase.k2Arrival);
+  // 初上陸のはかせ口上は story.json の「<島id>Arrival」を拾う(データ駆動)
+  const arrival = (STORY.hakase as Record<string, unknown>)[`${islandId}Arrival`];
+  if (firstVisit && Array.isArray(arrival)) {
+    queueMsgs(arrival as string[]);
   } else {
     showMsg(`⛵ ${island.nameJa}に ついた!`);
   }
@@ -458,12 +473,16 @@ function applyAdminUnlock(): void {
     'letterSeen',
     'ceremonyDone',
     'wing:k2',
+    'wing:k3',
     'firstFossil',
     'firstReveal',
     'firstRestore',
     'bedrockSeen',
     'redrockSeen',
     'wetrockSeen',
+    'darkrockSeen',
+    'item:pump',
+    'item:lamp',
   ];
   for (const flag of flags) state.setFlag(flag);
   const homeIsland = state.data.currentIsland;
