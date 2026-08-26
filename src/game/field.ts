@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Sfx } from '../core/audio';
+import { buildCharacter, type CharacterRig } from '../art/chars';
 import { GameState, type PitDef } from '../core/state';
 
 // カセキ島「すなの谷」。タップ移動・手がかり発見・キャンプ(クラフト)・博物館の入口。
@@ -191,6 +192,9 @@ export class FieldMode {
   private waveRing: THREE.Mesh | null = null;
   private boatAlert: HTMLElement | null = null;
   private time = 0;
+  private playerRig: CharacterRig | null = null;
+  private hakaseRig: CharacterRig | null = null;
+  private playerMoving = false;
 
   constructor(
     private readonly renderer: THREE.WebGLRenderer,
@@ -1026,37 +1030,46 @@ export class FieldMode {
     this.addHotspot('tent', 'tent', tentPos, 1.6);
 
     const hakasePos = new THREE.Vector3(-0.3, this.ground(-0.3, -1.8), -1.8);
-    const hakase = new THREE.Group();
-    const coat = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.32, 0.6, 4, 10),
-      new THREE.MeshStandardMaterial({ color: 0xf2ede4, roughness: 0.9 }),
-    );
-    coat.position.y = 0.75;
-    coat.castShadow = true;
-    const head = new THREE.Mesh(
-      new THREE.SphereGeometry(0.26, 12, 10),
-      new THREE.MeshStandardMaterial({ color: 0xf0c8a0, roughness: 0.8 }),
-    );
-    head.position.y = 1.45;
-    const beard = new THREE.Mesh(
-      new THREE.SphereGeometry(0.18, 8, 6),
-      new THREE.MeshStandardMaterial({ color: 0xe8e8e8, roughness: 1 }),
-    );
-    beard.position.set(0, 1.3, 0.16);
-    const hat = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.3, 0.34, 0.16, 10),
-      new THREE.MeshStandardMaterial({ color: 0xc9b458, roughness: 1 }),
-    );
-    hat.position.y = 1.62;
-    const brim = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.5, 0.5, 0.04, 12),
-      new THREE.MeshStandardMaterial({ color: 0xc9b458, roughness: 1 }),
-    );
-    brim.position.y = 1.55;
-    hakase.add(coat, head, beard, hat, brim);
-    hakase.position.copy(hakasePos);
-    hakase.rotation.y = 0.6;
-    this.scene.add(hakase);
+    // Codex納品のキャラモデルが登録されていれば差し替え(なければ簡易モデル)
+    const hakaseRig = buildCharacter('hakase');
+    if (hakaseRig) {
+      this.hakaseRig = hakaseRig;
+      hakaseRig.group.position.copy(hakasePos);
+      hakaseRig.group.rotation.y = 0.6;
+      this.scene.add(hakaseRig.group);
+    } else {
+      const hakase = new THREE.Group();
+      const coat = new THREE.Mesh(
+        new THREE.CapsuleGeometry(0.32, 0.6, 4, 10),
+        new THREE.MeshStandardMaterial({ color: 0xf2ede4, roughness: 0.9 }),
+      );
+      coat.position.y = 0.75;
+      coat.castShadow = true;
+      const head = new THREE.Mesh(
+        new THREE.SphereGeometry(0.26, 12, 10),
+        new THREE.MeshStandardMaterial({ color: 0xf0c8a0, roughness: 0.8 }),
+      );
+      head.position.y = 1.45;
+      const beard = new THREE.Mesh(
+        new THREE.SphereGeometry(0.18, 8, 6),
+        new THREE.MeshStandardMaterial({ color: 0xe8e8e8, roughness: 1 }),
+      );
+      beard.position.set(0, 1.3, 0.16);
+      const hat = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.3, 0.34, 0.16, 10),
+        new THREE.MeshStandardMaterial({ color: 0xc9b458, roughness: 1 }),
+      );
+      hat.position.y = 1.62;
+      const brim = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.5, 0.5, 0.04, 12),
+        new THREE.MeshStandardMaterial({ color: 0xc9b458, roughness: 1 }),
+      );
+      brim.position.y = 1.55;
+      hakase.add(coat, head, beard, hat, brim);
+      hakase.position.copy(hakasePos);
+      hakase.rotation.y = 0.6;
+      this.scene.add(hakase);
+    }
     this.addHotspot('hakase', 'hakase', hakasePos, 1.4);
   }
 
@@ -1192,29 +1205,36 @@ export class FieldMode {
   }
 
   private buildPlayer(): void {
-    const body = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.3, 0.5, 4, 10),
-      new THREE.MeshStandardMaterial({ color: 0x4a90d9, roughness: 0.9 }),
-    );
-    body.position.y = 0.65;
-    body.castShadow = true;
-    const head = new THREE.Mesh(
-      new THREE.SphereGeometry(0.26, 12, 10),
-      new THREE.MeshStandardMaterial({ color: 0xf0c8a0, roughness: 0.8 }),
-    );
-    head.position.y = 1.3;
-    head.castShadow = true;
-    const cap = new THREE.Mesh(
-      new THREE.SphereGeometry(0.28, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
-      new THREE.MeshStandardMaterial({ color: 0xd94a4a, roughness: 0.9 }),
-    );
-    cap.position.y = 1.34;
-    const bill = new THREE.Mesh(
-      new THREE.BoxGeometry(0.3, 0.05, 0.22),
-      new THREE.MeshStandardMaterial({ color: 0xd94a4a, roughness: 0.9 }),
-    );
-    bill.position.set(0, 1.33, 0.3);
-    this.player.add(body, head, cap, bill);
+    // Codex納品のキャラモデルが登録されていれば差し替え(なければ簡易モデル)
+    const rig = buildCharacter('player');
+    if (rig) {
+      this.playerRig = rig;
+      this.player.add(rig.group);
+    } else {
+      const body = new THREE.Mesh(
+        new THREE.CapsuleGeometry(0.3, 0.5, 4, 10),
+        new THREE.MeshStandardMaterial({ color: 0x4a90d9, roughness: 0.9 }),
+      );
+      body.position.y = 0.65;
+      body.castShadow = true;
+      const head = new THREE.Mesh(
+        new THREE.SphereGeometry(0.26, 12, 10),
+        new THREE.MeshStandardMaterial({ color: 0xf0c8a0, roughness: 0.8 }),
+      );
+      head.position.y = 1.3;
+      head.castShadow = true;
+      const cap = new THREE.Mesh(
+        new THREE.SphereGeometry(0.28, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+        new THREE.MeshStandardMaterial({ color: 0xd94a4a, roughness: 0.9 }),
+      );
+      cap.position.y = 1.34;
+      const bill = new THREE.Mesh(
+        new THREE.BoxGeometry(0.3, 0.05, 0.22),
+        new THREE.MeshStandardMaterial({ color: 0xd94a4a, roughness: 0.9 }),
+      );
+      bill.position.set(0, 1.33, 0.3);
+      this.player.add(body, head, cap, bill);
+    }
     this.player.position.set(0, this.ground(0, 3), 3);
     this.scene.add(this.player);
   }
@@ -1438,14 +1458,25 @@ export class FieldMode {
         while (delta > Math.PI) delta -= Math.PI * 2;
         while (delta < -Math.PI) delta += Math.PI * 2;
         this.player.rotation.y += delta * Math.min(1, dt * 10);
-        this.walkPhase += dt * 11;
-        this.player.position.y =
-          this.ground(pos.x, pos.z) + Math.abs(Math.sin(this.walkPhase)) * 0.08;
+        this.playerMoving = true;
+        if (!this.playerRig) {
+          // 簡易モデルの歩き: 跳ねずに、ごく小さな上下ゆれだけ(歩行アニメは納品モデル側で行う)
+          this.walkPhase += dt * 11;
+          this.player.position.y =
+            this.ground(pos.x, pos.z) + Math.abs(Math.sin(this.walkPhase)) * 0.025;
+        } else {
+          this.player.position.y = this.ground(pos.x, pos.z);
+        }
       } else {
         this.moveTarget = null;
+        this.playerMoving = false;
         this.player.position.y = this.ground(pos.x, pos.z);
       }
+    } else {
+      this.playerMoving = false;
     }
+    this.playerRig?.update(dt, this.playerMoving, WALK_SPEED);
+    this.hakaseRig?.update(dt, false, 0);
 
     if (this.pendingInteract) {
       const target = this.interactables.find((i) => i.id === this.pendingInteract)!;
