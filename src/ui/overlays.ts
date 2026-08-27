@@ -219,15 +219,17 @@ export class Overlays {
         <button type="button" ${here || !unlocked ? 'disabled' : `data-travel="${island.id}"`}>${label}</button>
       </div>`;
     }).join('');
-    el('boat-list').innerHTML =
-      rows +
-      `<div class="recipe teaser">
+    // 全島解禁後は「うわさ」の行を出さない(第10章で航路はコンプリート)
+    const teaser = ISLANDS.every((i) => this.state.islandUnlocked(i.id))
+      ? ''
+      : `<div class="recipe teaser">
         <div>
           <b>？？？の しま</b>
           <small>あたらしい しまの うわさが きこえてくる…</small>
         </div>
         <button type="button" disabled>じゅんびちゅう</button>
       </div>`;
+    el('boat-list').innerHTML = rows + teaser;
     for (const btn of el('boat-list').querySelectorAll('button[data-travel]')) {
       btn.addEventListener('click', () => {
         this.hide('ov-boat');
@@ -451,6 +453,14 @@ export class Overlays {
       this.runWingCeremony('k9');
       return;
     }
+    if (
+      this.state.flag('wing:k9') &&
+      this.state.allRestored('k10') &&
+      !this.state.flag('wing:k10')
+    ) {
+      this.runWingCeremony('k10');
+      return;
+    }
     const cards = SPECIES.filter((sp) => this.state.isSpeciesVisible(sp.id))
       .map((sp) => {
         if (this.state.isRestored(sp.id)) {
@@ -479,7 +489,7 @@ export class Overlays {
       })
       .join('');
     const wingLabel = this.state.flag('wing:k9')
-      ? '？？？の ウィング'
+      ? 'いのちのうみの ウィング'
       : this.state.flag('wing:k8')
         ? 'こおりの ウィング'
         : this.state.flag('wing:k7')
@@ -497,9 +507,11 @@ export class Overlays {
                     : this.state.flag('ceremonyDone')
                       ? 'ジュラの ウィング'
                       : 'あたらしい ウィング';
-    el('museum-cards').innerHTML =
-      cards +
-      `<div class="mu-card wing"><div class="mu-emoji">🚪</div><b>${wingLabel}</b><div class="dim">じゅんびちゅう…</div></div>`;
+    // 10ウィングが そろったら 準備中の とびらは 完成カードに かわる
+    const wingCard = this.state.flag('wing:k10')
+      ? `<div class="mu-card wing gold-base"><div class="mu-emoji">🏆</div><b>だいはくぶつかん かんせい!</b><div class="dim">★あつめと ？？？さがしは つづく</div></div>`
+      : `<div class="mu-card wing"><div class="mu-emoji">🚪</div><b>${wingLabel}</b><div class="dim">じゅんびちゅう…</div></div>`;
+    el('museum-cards').innerHTML = cards + wingCard;
     for (const btn of el('museum-cards').querySelectorAll('button[data-restore]')) {
       btn.addEventListener('click', () =>
         this.startAssembly((btn as HTMLElement).dataset.restore!),

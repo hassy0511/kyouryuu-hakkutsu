@@ -1,0 +1,320 @@
+{
+  "id": "k10",
+  "nameJa": "おおむかしのうみ",
+  "emoji": "🌊",
+  "order": 10,
+  "unlock": "wing:k9",
+  "pits": [
+    {
+      "id": "u1",
+      "nameJa": "なみの きざはし",
+      "pos": [6, 15],
+      "clue": "bone",
+      "discoverText": "はんげつがたの ちいさな たて…だんごむし? いや、これが サンヨウチュウだ!",
+      "fossils": [
+        {
+          "speciesId": "trilobite",
+          "boneId": "headshield",
+          "kind": "blob",
+          "layer": 2,
+          "cells": [
+            [3, 3],
+            [4, 3]
+          ]
+        },
+        {
+          "speciesId": "trilobite",
+          "boneId": "segments",
+          "kind": "segment",
+          "layer": 3,
+          "cells": [
+            [5, 5],
+            [6, 5]
+          ]
+        }
+      ],
+      "rocks": [[6, 1, 1]],
+      "crystals": [[1, 6, 2]],
+      "branches": [
+        [0, 0, 0],
+        [7, 2, 0]
+      ],
+      "gates": [],
+      "ores": [[6, 6, 4]]
+    },
+    {
+      "id": "u2",
+      "nameJa": "しおだまりの すみか",
+      "pos": [-13, -2],
+      "clue": "none",
+      "discoverText": "ふるい うみぞこの いわの すきまに、ざいりょうが つまってる!",
+      "fossils": [],
+      "rocks": [
+        [3, 3, 1],
+        [5, 5, 2]
+      ],
+      "crystals": [
+        [2, 6, 2],
+        [6, 2, 3]
+      ],
+      "branches": [
+        [0, 4, 0],
+        [7, 3, 0],
+        [4, 0, 0]
+      ],
+      "gates": [],
+      "ores": [
+        [1, 7, 3],
+        [6, 6, 4],
+        [3, 1, 4]
+      ]
+    },
+    {
+      "id": "u3",
+      "nameJa": "むれの いしだたみ",
+      "pos": [12, -10],
+      "clue": "crack",
+      "discoverText": "おなじ もようが いちめんに ならんでる…いわ ぜんたいが むれの あとだ!",
+      "fossils": [
+        {
+          "speciesId": "trilobite",
+          "boneId": "swarm",
+          "kind": "swarm",
+          "layer": 3,
+          "swarm": true,
+          "cells": [
+            [1, 2],
+            [2, 3],
+            [3, 4],
+            [4, 4],
+            [5, 3],
+            [6, 2]
+          ]
+        }
+      ],
+      "rocks": [[7, 0, 1]],
+      "crystals": [[0, 7, 2]],
+      "branches": [
+        [0, 0, 0],
+        [7, 7, 0]
+      ],
+      "gates": [],
+      "ores": [[1, 1, 4]]
+    },
+    {
+      "id": "u4",
+      "nameJa": "よろいがおの ふち",
+      "pos": [-8, 9],
+      "clue": "bone",
+      "discoverText": "ぶあつい ほねの よろい…かおだ! よろいを きた さかなが いたんだ!",
+      "fossils": [
+        {
+          "speciesId": "dunkleosteus",
+          "boneId": "headarmor",
+          "kind": "blob",
+          "layer": 3,
+          "cells": [
+            [2, 3],
+            [3, 3],
+            [2, 4],
+            [3, 4]
+          ]
+        },
+        {
+          "speciesId": "dunkleosteus",
+          "boneId": "jawblade",
+          "kind": "claw",
+          "layer": 4,
+          "cells": [
+            [5, 4],
+            [6, 4]
+          ]
+        }
+      ],
+      "rocks": [[6, 6, 1]],
+      "crystals": [[7, 0, 2]],
+      "branches": [
+        [0, 6, 0],
+        [7, 7, 0]
+      ],
+      "gates": [],
+      "ores": [[0, 1, 4]]
+    },
+    {
+      "id": "u5",
+      "nameJa": "はさみの いわだな",
+      "pos": [9, 4],
+      "clue": "rubble",
+      "discoverText": "ながい はさみが いわから つきでてる…うみの サソリの すみかだ!",
+      "fossils": [
+        {
+          "speciesId": "eurypterus",
+          "boneId": "pincer",
+          "kind": "claw",
+          "layer": 3,
+          "cells": [
+            [3, 3],
+            [4, 3],
+            [5, 3]
+          ]
+        },
+        {
+          "speciesId": "eurypterus",
+          "boneId": "tailspike",
+          "kind": "claw",
+          "layer": 4,
+          "cells": [
+            [2, 5],
+            [3, 5]
+          ]
+        }
+      ],
+      "rocks": [[1, 5, 1]],
+      "crystals": [[0, 0, 2]],
+      "branches": [
+        [7, 0, 0],
+        [3, 7, 0]
+      ],
+      "gates": [],
+      "ores": [[0, 7, 4]]
+    },
+    {
+      "id": "u6",
+      "nameJa": "ふしぎな うでの ねどこ",
+      "pos": [-4, -13],
+      "clue": "crack",
+      "discoverText": "エビの しっぽ…? いや ちがう、これは だれかの「うで」だ!",
+      "fossils": [
+        {
+          "speciesId": "anomalocaris",
+          "boneId": "appendage",
+          "kind": "claw",
+          "layer": 3,
+          "cells": [
+            [3, 3],
+            [4, 3]
+          ]
+        },
+        {
+          "speciesId": "anomalocaris",
+          "boneId": "eye",
+          "kind": "ring",
+          "layer": 4,
+          "cells": [
+            [5, 5],
+            [6, 5]
+          ]
+        }
+      ],
+      "rocks": [[6, 1, 1]],
+      "crystals": [[7, 7, 2]],
+      "branches": [
+        [0, 0, 0],
+        [6, 7, 0]
+      ],
+      "gates": [],
+      "ores": [[7, 0, 4]]
+    },
+    {
+      "id": "u7",
+      "nameJa": "いちばん ふるい うみぞこ",
+      "pos": [-15, 4],
+      "clue": "none",
+      "discoverText": "ここが いちばん ふるい 層…しずかで、とても ちいさな けはいが する。",
+      "fossils": [
+        {
+          "speciesId": "opabinia",
+          "boneId": "eyes",
+          "kind": "blob",
+          "layer": 4,
+          "cells": [
+            [2, 4],
+            [3, 4]
+          ]
+        },
+        {
+          "speciesId": "opabinia",
+          "boneId": "nozzle",
+          "kind": "tube",
+          "layer": 5,
+          "cells": [
+            [4, 5],
+            [5, 5]
+          ]
+        },
+        {
+          "speciesId": "opabinia",
+          "boneId": "segments",
+          "kind": "segment",
+          "layer": 5,
+          "cells": [
+            [1, 2],
+            [2, 2]
+          ]
+        }
+      ],
+      "rocks": [[7, 0, 1]],
+      "crystals": [
+        [1, 4, 5],
+        [6, 5, 5]
+      ],
+      "branches": [
+        [0, 0, 0],
+        [7, 7, 0]
+      ],
+      "gates": [],
+      "ores": [[1, 6, 5]]
+    },
+    {
+      "id": "u8",
+      "nameJa": "うみの おわりの まど",
+      "pos": [2, -9],
+      "clue": "rubble",
+      "discoverText": "いろんな じだいの うみの なかまが、ひとつの いわに かさなってる!",
+      "fossils": [
+        {
+          "speciesId": "dunkleosteus",
+          "boneId": "spine",
+          "kind": "long",
+          "layer": 3,
+          "cells": [
+            [2, 3],
+            [3, 3],
+            [4, 3]
+          ]
+        },
+        {
+          "speciesId": "eurypterus",
+          "boneId": "segments",
+          "kind": "segment",
+          "layer": 4,
+          "cells": [
+            [4, 5],
+            [5, 5]
+          ]
+        },
+        {
+          "speciesId": "anomalocaris",
+          "boneId": "segments",
+          "kind": "segment",
+          "layer": 5,
+          "cells": [
+            [2, 2],
+            [3, 2]
+          ]
+        }
+      ],
+      "rocks": [[3, 3, 1]],
+      "crystals": [
+        [2, 6, 2],
+        [6, 2, 4]
+      ],
+      "branches": [
+        [0, 4, 0],
+        [7, 3, 0]
+      ],
+      "gates": [],
+      "ores": [[1, 7, 4]]
+    }
+  ]
+}

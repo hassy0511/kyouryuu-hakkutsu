@@ -167,6 +167,20 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     primal: false,
     frozen: true,
   },
+  k10: {
+    sky: 0x93bcb0,
+    sea: 0x2e7a6e,
+    terrain: 0x7d8274,
+    terrainAmp: 0.85,
+    jungle: false,
+    shore: false,
+    crag: false,
+    forest: false,
+    canyon: false,
+    nippon: false,
+    primal: false,
+    abyss: true,
+  },
 };
 
 interface Interactable {
@@ -384,6 +398,99 @@ export class FieldMode {
           coral.castShadow = true;
           this.scene.add(coral);
         }
+      } else if (this.look.abyss) {
+        // おおむかしのうみ: ストロマトライトの ドーム + しおだまり + いわの とう + うずまき貝の いわ
+        const stromMat = new THREE.MeshStandardMaterial({
+          color: 0x8a7a5e,
+          roughness: 1,
+          flatShading: true,
+        });
+        const stromDark = new THREE.MeshStandardMaterial({
+          color: 0x6e6250,
+          roughness: 1,
+          flatShading: true,
+        });
+        for (const [x, z, s] of [
+          [-11, 6, 1.0],
+          [12, -5, 0.85],
+          [-6, -9, 1.1],
+          [15, 8, 0.8],
+          [4, 12, 0.9],
+        ] as const) {
+          const strom = new THREE.Group();
+          let y = 0;
+          for (let band = 0; band < 4; band++) {
+            const r = (1.15 - band * 0.18) * s;
+            const h = 0.34 * s;
+            const disc = new THREE.Mesh(
+              new THREE.CylinderGeometry(r * 0.9, r, h, 9),
+              band % 2 === 0 ? stromMat : stromDark,
+            );
+            disc.position.y = y + h / 2;
+            disc.rotation.y = band * 0.5 + x;
+            disc.castShadow = true;
+            strom.add(disc);
+            y += h * 0.92;
+          }
+          const cap = new THREE.Mesh(new THREE.SphereGeometry(0.5 * s, 8, 6), stromMat);
+          cap.scale.y = 0.5;
+          cap.position.y = y;
+          cap.castShadow = true;
+          strom.add(cap);
+          strom.position.set(x, this.ground(x, z), z);
+          this.scene.add(strom);
+        }
+        // しおだまり(ふるい うみの みず)
+        const poolMat = new THREE.MeshStandardMaterial({
+          color: 0x2e7a6e,
+          roughness: 0.2,
+          transparent: true,
+          opacity: 0.85,
+        });
+        for (const [x, z, r] of [
+          [3, 7, 1.5],
+          [-9, -1, 1.1],
+          [9, -9, 1.3],
+          [-14, 10, 1.2],
+        ] as const) {
+          const pool = new THREE.Mesh(
+            new THREE.CircleGeometry(r, 18).rotateX(-Math.PI / 2),
+            poolMat,
+          );
+          pool.position.set(x, this.ground(x, z) + 0.03, z);
+          this.scene.add(pool);
+        }
+        // ほそい いわの とう(かいていの けむりの あと)
+        const spireMat = new THREE.MeshStandardMaterial({
+          color: 0x5e6458,
+          roughness: 1,
+          flatShading: true,
+        });
+        for (const [x, z, h] of [
+          [-16, -6, 2.6],
+          [16, 2, 2.2],
+          [-3, 14, 2.8],
+          [8, -14, 2.4],
+        ] as const) {
+          const spire = new THREE.Mesh(new THREE.ConeGeometry(0.5, h, 6), spireMat);
+          spire.position.set(x, this.ground(x, z) + h / 2 - 0.15, z);
+          spire.rotation.z = ((x % 3) - 1) * 0.05;
+          spire.castShadow = true;
+          this.scene.add(spire);
+        }
+        // はんぶん うまった きょだいな うずまき貝(ランドマーク)
+        const shellMat = new THREE.MeshStandardMaterial({
+          color: 0xc9bda4,
+          roughness: 0.9,
+          flatShading: true,
+        });
+        const bigShell = new THREE.Mesh(new THREE.TorusGeometry(2.4, 0.85, 8, 20), shellMat);
+        bigShell.position.set(-2, this.ground(-2, -24) + 0.4, -26);
+        bigShell.rotation.set(Math.PI / 2.3, 0, 0.4);
+        this.scene.add(bigShell);
+        const shellCore = new THREE.Mesh(new THREE.SphereGeometry(1.0, 8, 6), shellMat);
+        shellCore.position.set(-2, bigShell.position.y + 0.4, -26);
+        this.scene.add(shellCore);
       } else if (this.look.frozen) {
         // こおりのしま: ゆきの もみの木 + こおりの とげ + ひょうがのかべ + ゆきだまり + こおった いけ
         const pineMat = new THREE.MeshStandardMaterial({

@@ -345,6 +345,59 @@ const egg: Builder = (def, material, pitch) => {
   return group;
 };
 
+// ふし形(サンヨウチュウ・ふしのからだ): 頭の たて + せまくなる よこ板の れつ
+const segment: Builder = (def, material, pitch) => {
+  const group = new THREE.Group();
+  const len = Math.max(def.cells.length, 2) * pitch * 0.8;
+  const w = len * 0.42;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(w * 0.5, 8, 6), material);
+  head.scale.set(1, 0.4, 0.8);
+  head.position.z = len * 0.38;
+  group.add(head);
+  const plates = 5;
+  for (let k = 0; k < plates; k++) {
+    const t = k / (plates - 1);
+    const pw = w * (1 - t * 0.55);
+    const plate = new THREE.Mesh(new THREE.BoxGeometry(pw, w * 0.16, len * 0.11), material);
+    plate.position.z = len * (0.18 - t * 0.52);
+    group.add(plate);
+  }
+  return group;
+};
+
+// むれの いしばん(群体化石): おなじ むきに ならんだ 小さな ふし虫たち
+const swarm: Builder = (def, material, pitch) => {
+  const group = new THREE.Group();
+  let cgx = 0;
+  let cgz = 0;
+  for (const [gx, gz] of def.cells) {
+    cgx += gx;
+    cgz += gz;
+  }
+  cgx /= def.cells.length;
+  cgz /= def.cells.length;
+  for (const [gx, gz] of def.cells) {
+    const mini = new THREE.Group();
+    const head = new THREE.Mesh(new THREE.SphereGeometry(pitch * 0.16, 7, 5), material);
+    head.scale.set(1, 0.45, 0.85);
+    head.position.z = pitch * 0.12;
+    mini.add(head);
+    for (let k = 0; k < 3; k++) {
+      const plate = new THREE.Mesh(
+        new THREE.BoxGeometry(pitch * (0.26 - k * 0.06), pitch * 0.05, pitch * 0.07),
+        material,
+      );
+      plate.position.z = -pitch * (0.02 + k * 0.1);
+      mini.add(plate);
+    }
+    // むれ = ぜんいん おなじ むき(ここが 学びの 見せ場)
+    mini.rotation.y = 0.35;
+    mini.position.set((gx - cgx) * pitch, 0, (gz - cgz) * pitch);
+    group.add(mini);
+  }
+  return group;
+};
+
 // めの ほねリング(イクチオサウルスの こうまくりん)
 const ring: Builder = (_def, material) => {
   const group = new THREE.Group();
@@ -375,6 +428,8 @@ const SHAPES: Record<string, Builder> = {
   claw,
   tusk,
   egg,
+  segment,
+  swarm,
 };
 
 export function buildBoneShape(

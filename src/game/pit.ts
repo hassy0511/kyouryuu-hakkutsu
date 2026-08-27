@@ -643,6 +643,10 @@ export class PitMode {
         this.state.setFlag('anomalySeen');
         this.cb.showMsg('🔍 この あさい層に この ホネは おかしい…! したに ひみつが あるぞ!');
       }
+      if (fossil.def.swarm && !this.state.flag('swarmSeen')) {
+        this.state.setFlag('swarmSeen');
+        this.cb.showMsg('🔍 みんな おなじ むきに ならんでる…! むれごと かせきに なったんだ!');
+      }
     }
   }
 
