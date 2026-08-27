@@ -19,6 +19,7 @@ import { buildStegosaurus } from './stegosaurus';
 import { buildStyracosaurus } from './styracosaurus';
 import { buildTriceratops } from './triceratops';
 import { buildTyrannosaurus } from './tyrannosaurus';
+import { buildVelociraptor } from './velociraptor';
 
 // 展示モデルのレジストリ。種を追加したら builder を1行足す(未登録の種は2D表示のまま)
 const BUILDERS: Record<string, () => DinoViews> = {
@@ -43,6 +44,7 @@ const BUILDERS: Record<string, () => DinoViews> = {
   styracosaurus: buildStyracosaurus,
   triceratops: buildTriceratops,
   tyrannosaurus: buildTyrannosaurus,
+  velociraptor: buildVelociraptor,
 };
 
 export type { DinoViews };
