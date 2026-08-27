@@ -5,6 +5,7 @@ import { buildArchelon } from './archelon';
 import { buildBelemnite } from './belemnite';
 import { buildBrachiosaurus } from './brachiosaurus';
 import { buildCarnotaurus } from './carnotaurus';
+import { buildFutabasuzukiryu } from './futabasuzukiryu';
 import { buildIguanodon } from './iguanodon';
 import { buildIchthyosaurus } from './ichthyosaurus';
 import { buildKamuysaurus } from './kamuysaurus';
@@ -34,6 +35,7 @@ const BUILDERS: Record<string, () => DinoViews> = {
   ammonite: buildAmmonite,
   brachiosaurus: buildBrachiosaurus,
   carnotaurus: buildCarnotaurus,
+  futabasuzukiryu: buildFutabasuzukiryu,
   iguanodon: buildIguanodon,
   ichthyosaurus: buildIchthyosaurus,
   kamuysaurus: buildKamuysaurus,

@@ -95,6 +95,11 @@ const SPECIES = {
     feature: '🔍 ちいさな とさかと カモのような ひらたい くちばしに ちゅうもく!',
     skeletonTip: 'しっぽから あたままで きれいに つらなる せぼねを みてみよう!',
   },
+  futabasuzukiryu: {
+    name: 'フタバスズキリュウ',
+    feature: '🔍 とても ながく ほそい くびと 4まいの ひれに ちゅうもく!',
+    skeletonTip: 'ながく つらなる くびのほね・ちいさな あたま・ひれの ゆびを みてみよう!',
+  },
   pteranodon: {
     name: 'プテラノドン',
     feature: '🔍 ながい とさかと つばさの くすりゆびに ちゅうもく!',
@@ -283,23 +288,25 @@ function fitCameraToModel(): void {
   const projectedWidth = isFlyingPterosaur ? Math.max(size.x, size.z) : size.x;
   const distanceForWidth = projectedWidth / (2 * Math.tan(verticalFov / 2) * camera.aspect);
   const cameraPadding =
-    speciesId === 'ammonite' || speciesId === 'belemnite'
+    speciesId === 'futabasuzukiryu'
       ? 1.42
-      : speciesId === 'brachiosaurus'
-        ? 1.6
-        : speciesId === 'archelon'
-          ? 2.25
-          : speciesId === 'plesiosaurus'
-            ? 1.5
-            : speciesId === 'ichthyosaurus'
-              ? 1.4
-              : speciesId === 'pteranodon'
-                ? 1.08
-                : speciesId === 'rhamphorhynchus'
-                  ? 1.12
-                  : speciesId === 'quetzalcoatlus'
-                    ? 2
-                    : 1.15;
+      : speciesId === 'ammonite' || speciesId === 'belemnite'
+        ? 1.42
+        : speciesId === 'brachiosaurus'
+          ? 1.6
+          : speciesId === 'archelon'
+            ? 2.25
+            : speciesId === 'plesiosaurus'
+              ? 1.5
+              : speciesId === 'ichthyosaurus'
+                ? 1.4
+                : speciesId === 'pteranodon'
+                  ? 1.08
+                  : speciesId === 'rhamphorhynchus'
+                    ? 1.12
+                    : speciesId === 'quetzalcoatlus'
+                      ? 2
+                      : 1.15;
   const distance = Math.max(distanceForHeight, distanceForWidth) * cameraPadding;
 
   const targetOffsetY = speciesId === 'quetzalcoatlus' ? size.y * 0.1 : 0;
