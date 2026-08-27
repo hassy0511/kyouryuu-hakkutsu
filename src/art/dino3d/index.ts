@@ -11,6 +11,7 @@ import { buildEoraptor } from './eoraptor';
 import { buildFutabasuzukiryu } from './futabasuzukiryu';
 import { buildFukuiraptor } from './fukuiraptor';
 import { buildFukuisaurus } from './fukuisaurus';
+import { buildGlyptodon } from './glyptodon';
 import { buildHerrerasaurus } from './herrerasaurus';
 import { buildIguanodon } from './iguanodon';
 import { buildIchthyosaurus } from './ichthyosaurus';
@@ -51,6 +52,7 @@ const BUILDERS: Record<string, () => DinoViews> = {
   futabasuzukiryu: buildFutabasuzukiryu,
   fukuiraptor: buildFukuiraptor,
   fukuisaurus: buildFukuisaurus,
+  glyptodon: buildGlyptodon,
   herrerasaurus: buildHerrerasaurus,
   iguanodon: buildIguanodon,
   ichthyosaurus: buildIchthyosaurus,
