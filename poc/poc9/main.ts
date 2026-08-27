@@ -210,6 +210,11 @@ const SPECIES = {
     feature: '🔍 3ぼんの ツノと おおきな フリルに ちゅうもく!',
     skeletonTip: 'フリルと ツノ・くちばし・4ほんの あしを みてみよう!',
   },
+  trilobite: {
+    name: 'サンヨウチュウ',
+    feature: '🔍 たて3れつと よこに ならぶ ふしふしの からに ちゅうもく！',
+    skeletonTip: 'はんげつがたの あたまのたてと 3れつの からを みてみよう！',
+  },
 } as const;
 type SpeciesId = keyof typeof SPECIES;
 
@@ -400,8 +405,16 @@ function fitCameraToModel(): void {
   const targetOffsetY = speciesId === 'quetzalcoatlus' ? size.y * 0.1 : 0;
   controls.target.set(center.x, center.y + targetOffsetY, center.z);
   const cameraOffsetX = isFlyingPterosaur ? distance * 0.72 : size.x * 0.015;
-  const cameraOffsetZ = isFlyingPterosaur ? distance * 0.72 : distance;
-  const cameraOffsetY = isFlyingPterosaur ? distance * 0.28 : size.y * 0.08;
+  const cameraOffsetZ = isFlyingPterosaur
+    ? distance * 0.72
+    : speciesId === 'trilobite'
+      ? distance * 0.82
+      : distance;
+  const cameraOffsetY = isFlyingPterosaur
+    ? distance * 0.28
+    : speciesId === 'trilobite'
+      ? distance * 0.45
+      : size.y * 0.08;
   camera.position.set(
     center.x + cameraOffsetX,
     center.y + targetOffsetY + cameraOffsetY,
