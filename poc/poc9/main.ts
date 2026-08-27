@@ -135,6 +135,11 @@ const SPECIES = {
     feature: '🔍 うしろあしで たちあがる すがたと ながい くび、ちいさな あたまに ちゅうもく！',
     skeletonTip: 'おおきな うしろあし・ながい くび・ちいさな ずがいこつを みてみよう！',
   },
+  mammoth: {
+    name: 'マンモス',
+    feature: '🔍 ぐるんと まがった 2ほんの きばと ながい はな、もりあがった かたに ちゅうもく！',
+    skeletonTip: 'ほねには はなが ないこと・まがった きば・みじかい しっぽを みてみよう！',
+  },
   pteranodon: {
     name: 'プテラノドン',
     feature: '🔍 ながい とさかと つばさの くすりゆびに ちゅうもく!',
@@ -325,27 +330,29 @@ function fitCameraToModel(): void {
   const cameraPadding =
     speciesId === 'dimetrodon'
       ? 1.55
-      : speciesId === 'plateosaurus'
-        ? 1.35
-        : speciesId === 'futabasuzukiryu'
-          ? 1.42
-          : speciesId === 'ammonite' || speciesId === 'belemnite'
+      : speciesId === 'mammoth'
+        ? 1.42
+        : speciesId === 'plateosaurus'
+          ? 1.35
+          : speciesId === 'futabasuzukiryu'
             ? 1.42
-            : speciesId === 'brachiosaurus'
-              ? 1.6
-              : speciesId === 'archelon'
-                ? 2.25
-                : speciesId === 'plesiosaurus'
-                  ? 1.5
-                  : speciesId === 'ichthyosaurus'
-                    ? 1.4
-                    : speciesId === 'pteranodon'
-                      ? 1.08
-                      : speciesId === 'rhamphorhynchus'
-                        ? 1.12
-                        : speciesId === 'quetzalcoatlus'
-                          ? 2
-                          : 1.15;
+            : speciesId === 'ammonite' || speciesId === 'belemnite'
+              ? 1.42
+              : speciesId === 'brachiosaurus'
+                ? 1.6
+                : speciesId === 'archelon'
+                  ? 2.25
+                  : speciesId === 'plesiosaurus'
+                    ? 1.5
+                    : speciesId === 'ichthyosaurus'
+                      ? 1.4
+                      : speciesId === 'pteranodon'
+                        ? 1.08
+                        : speciesId === 'rhamphorhynchus'
+                          ? 1.12
+                          : speciesId === 'quetzalcoatlus'
+                            ? 2
+                            : 1.15;
   const distance = Math.max(distanceForHeight, distanceForWidth) * cameraPadding;
 
   const targetOffsetY = speciesId === 'quetzalcoatlus' ? size.y * 0.1 : 0;
