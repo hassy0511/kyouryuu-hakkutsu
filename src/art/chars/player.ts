@@ -114,19 +114,19 @@ function buildCap(): THREE.Mesh {
   }
   batch.add(
     new THREE.SphereGeometry(1, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2),
-    V(0, 0.25, 0),
-    V(0.225, 0.085, 0.22),
+    V(0, 0.215, 0),
+    V(0.225, 0.105, 0.22),
     PLAYER_COLORS.cap,
   );
   batch.add(
     new THREE.BoxGeometry(1, 1, 1),
-    V(0, 0.245, 0.17),
+    V(0, 0.205, 0.17),
     V(0.17, 0.026, 0.135),
     PLAYER_COLORS.cap,
   );
   batch.add(
     new THREE.BoxGeometry(1, 1, 1),
-    V(0, 0.27, -0.18),
+    V(0, 0.225, -0.18),
     V(0.08, 0.045, 0.035),
     PLAYER_COLORS.capShade,
   );
