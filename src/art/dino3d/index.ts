@@ -8,6 +8,7 @@ import { buildCarnotaurus } from './carnotaurus';
 import { buildIguanodon } from './iguanodon';
 import { buildIchthyosaurus } from './ichthyosaurus';
 import { buildMosasaurus } from './mosasaurus';
+import { buildOviraptor } from './oviraptor';
 import { buildPlesiosaurus } from './plesiosaurus';
 import { buildPachycephalosaurus } from './pachycephalosaurus';
 import { buildParasaurolophus } from './parasaurolophus';
@@ -34,6 +35,7 @@ const BUILDERS: Record<string, () => DinoViews> = {
   iguanodon: buildIguanodon,
   ichthyosaurus: buildIchthyosaurus,
   mosasaurus: buildMosasaurus,
+  oviraptor: buildOviraptor,
   plesiosaurus: buildPlesiosaurus,
   pachycephalosaurus: buildPachycephalosaurus,
   parasaurolophus: buildParasaurolophus,
