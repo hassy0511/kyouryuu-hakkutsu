@@ -1,4 +1,5 @@
 import type * as THREE from 'three';
+import { buildPlayerCharacter } from './player';
 
 // キャラクター(たんけんたいの子・かせきはかせ)のレジストリ。
 // Codex が builder を納品して1行登録すると、フィールドの簡易モデルと自動で差し替わる。
@@ -19,7 +20,7 @@ export interface CharacterRig {
 export type CharacterBuilder = () => CharacterRig;
 
 const BUILDERS: Partial<Record<'player' | 'hakase', CharacterBuilder>> = {
-  // player: buildPlayerCharacter,
+  player: buildPlayerCharacter,
   // hakase: buildHakaseCharacter,
 };
 

@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#18201e" />
+    <link rel="icon" href="data:," />
+    <title>たんけんたい キャラクタービューアー</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: 'Hiragino Maru Gothic ProN', 'BIZ UDGothic', system-ui, sans-serif;
+        color: #f8f2df;
+        background: #18201e;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body,
+      main {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+      }
+      body {
+        background: radial-gradient(circle at 50% 35%, #35423d, #18201e 72%);
+      }
+      canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        touch-action: none;
+      }
+      .heading {
+        position: absolute;
+        z-index: 2;
+        top: 16px;
+        left: 16px;
+        max-width: min(520px, calc(100vw - 32px));
+        padding: 12px 16px;
+        border: 1px solid #ffffff2e;
+        border-radius: 16px;
+        background: #111816c9;
+        backdrop-filter: blur(10px);
+        pointer-events: none;
+      }
+      h1 {
+        margin: 0;
+        font-size: clamp(22px, 4vw, 34px);
+      }
+      .heading p {
+        margin: 5px 0 0;
+        color: #d7ceb6;
+        font-size: 13px;
+      }
+      .panel {
+        position: absolute;
+        z-index: 3;
+        right: 16px;
+        bottom: 16px;
+        left: 16px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        pointer-events: none;
+      }
+      button {
+        min-width: min(360px, 100%);
+        min-height: 56px;
+        padding: 12px 20px;
+        border: 1px solid #ffd68a;
+        border-radius: 15px;
+        background: linear-gradient(#efb85e, #d99a3c);
+        color: #261d10;
+        font: inherit;
+        font-size: 17px;
+        font-weight: 800;
+        cursor: pointer;
+        box-shadow: 0 8px 26px #0005;
+        pointer-events: auto;
+      }
+      button:focus-visible {
+        outline: 3px solid white;
+        outline-offset: 3px;
+      }
+      #stats {
+        padding: 7px 10px;
+        border-radius: 8px;
+        background: #0d1412c9;
+        color: #bac5bc;
+        font:
+          11px/1.4 ui-monospace,
+          monospace;
+        pointer-events: none;
+      }
+      .loading {
+        position: absolute;
+        z-index: 5;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: #18201e;
+        transition: opacity 0.3s;
+      }
+      .loading.done {
+        opacity: 0;
+        pointer-events: none;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <canvas id="scene" aria-label="たんけんたいの キャラクターを まわしてみる"></canvas>
+      <header class="heading">
+        <h1>たんけんたいの なかまたち</h1>
+        <p>あるきかたと、とまっているときの うごきを みてみよう!</p>
+      </header>
+      <section class="panel" aria-label="うごきの きりかえ">
+        <button id="motion-button" type="button" aria-pressed="true">
+          🚶 あるいています → 🧍 とまる
+        </button>
+        <span id="stats" aria-hidden="true">△ -- / draw --</span>
+      </section>
+      <div id="loading" class="loading">キャラクターを じゅんびしています…</div>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
