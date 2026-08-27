@@ -7,6 +7,7 @@ export const PLAYER_COLORS = {
   clothesShade: '#3272B6',
   cap: '#D94A4A',
   capShade: '#B8383E',
+  hair: '#4A3528',
   skin: '#F0C8A0',
   cheek: '#ECA4A0',
   backpack: '#C9A96A',
@@ -80,6 +81,31 @@ function buildFace(): THREE.Mesh {
 
 function buildCap(): THREE.Mesh {
   const batch = new ColorGeometryBatch();
+  batch.add(
+    new THREE.SphereGeometry(1, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2),
+    V(0, 0.16, -0.005),
+    V(0.218, 0.12, 0.205),
+    PLAYER_COLORS.hair,
+  );
+  batch.ellipsoid(V(0, 0.125, -0.19), V(0.17, 0.11, 0.035), PLAYER_COLORS.hair, 9, 6);
+  for (const side of [-1, 1]) {
+    batch.ellipsoid(
+      V(side * 0.195, 0.13, -0.025),
+      V(0.038, 0.105, 0.105),
+      PLAYER_COLORS.hair,
+      7,
+      5,
+    );
+  }
+  for (const offset of [-0.11, 0, 0.11]) {
+    batch.ellipsoid(
+      V(offset, 0.205 - Math.abs(offset) * 0.2, 0.19),
+      V(0.072, 0.055, 0.022),
+      PLAYER_COLORS.hair,
+      7,
+      5,
+    );
+  }
   batch.add(
     new THREE.SphereGeometry(1, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2),
     V(0, 0.25, 0),
