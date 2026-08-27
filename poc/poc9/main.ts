@@ -60,6 +60,11 @@ const SPECIES = {
     feature: '🔍 ながい くびと おなじかたちの 4まいの ひれに ちゅうもく!',
     skeletonTip: 'くびの ほねの れつ・4まいの ひれの ゆびを みてみよう!',
   },
+  pachycephalosaurus: {
+    name: 'パキケファロサウルス',
+    feature: '🔍 ぶあつい あたまの ドームと ふちの こトゲに ちゅうもく!',
+    skeletonTip: 'まるく もりあがった とうこつ・2ほんあし・みじかい うでを みてみよう!',
+  },
   pteranodon: {
     name: 'プテラノドン',
     feature: '🔍 ながい とさかと つばさの くすりゆびに ちゅうもく!',
