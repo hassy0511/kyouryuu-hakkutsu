@@ -87,14 +87,20 @@ function buildCap(): THREE.Mesh {
     V(0.218, 0.12, 0.205),
     PLAYER_COLORS.hair,
   );
-  batch.ellipsoid(V(0, 0.125, -0.19), V(0.17, 0.11, 0.035), PLAYER_COLORS.hair, 9, 6);
+  batch.add(
+    new THREE.SphereGeometry(1, 12, 7, Math.PI, Math.PI, 0, Math.PI),
+    V(0, 0.1, -0.004),
+    V(0.228, 0.202, 0.21),
+    PLAYER_COLORS.hair,
+  );
   for (const side of [-1, 1]) {
-    batch.ellipsoid(
-      V(side * 0.195, 0.13, -0.025),
-      V(0.038, 0.105, 0.105),
+    batch.addBetween(
+      V(side * 0.19, 0.2, -0.015),
+      V(side * 0.205, 0.075, 0.01),
+      0.038,
+      0.018,
       PLAYER_COLORS.hair,
-      7,
-      5,
+      6,
     );
   }
   for (const offset of [-0.11, 0, 0.11]) {
