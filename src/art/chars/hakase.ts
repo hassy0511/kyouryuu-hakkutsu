@@ -116,19 +116,19 @@ function buildHat(): THREE.Mesh {
   const batch = new ColorGeometryBatch();
   batch.add(
     new THREE.CylinderGeometry(0.34, 0.34, 0.035, 12),
-    V(0, 0.235, 0),
+    V(0, 0.195, 0),
     V(1, 1, 0.92),
     HAKASE_COLORS.hat,
   );
   batch.add(
     new THREE.CylinderGeometry(0.205, 0.25, 0.22, 11),
-    V(0, 0.34, -0.015),
+    V(0, 0.3, -0.015),
     V(1, 1, 0.95),
     HAKASE_COLORS.hat,
   );
   batch.add(
     new THREE.CylinderGeometry(0.253, 0.253, 0.045, 11),
-    V(0, 0.255, -0.015),
+    V(0, 0.215, -0.015),
     V(1, 1, 0.95),
     HAKASE_COLORS.hatBand,
   );
@@ -138,8 +138,8 @@ function buildHat(): THREE.Mesh {
 function buildArm(side: -1 | 1): THREE.Mesh {
   const batch = new ColorGeometryBatch();
   batch.ellipsoid(V(0, -0.055, 0), V(0.115, 0.13, 0.115), HAKASE_COLORS.coat, 8, 6);
-  const elbow = V(-side * 0.05, -0.21, 0.07);
-  const hand = V(-side * 0.2, -0.34, 0.23);
+  const elbow = side < 0 ? V(0.04, -0.22, 0.1) : V(-0.05, -0.17, 0.12);
+  const hand = side < 0 ? V(0.16, -0.34, 0.39) : V(-0.18, -0.23, 0.4);
   batch.addBetween(V(0, -0.06, 0), elbow, 0.09, 0.075, HAKASE_COLORS.coat, 8);
   batch.addBetween(elbow, hand, 0.072, 0.055, HAKASE_COLORS.skin, 7);
   batch.ellipsoid(hand, V(0.07, 0.065, 0.06), HAKASE_COLORS.skin, 8, 6);
@@ -151,19 +151,19 @@ function buildNotebook(): THREE.Mesh {
   const tilt = new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.12, 0, 0));
   batch.add(
     new THREE.BoxGeometry(1, 1, 1),
-    V(0, 0.14, 0.31),
+    V(0, 0.14, 0.38),
     V(0.24, 0.175, 0.026),
     HAKASE_COLORS.notebook,
     tilt,
   );
   batch.add(
     new THREE.BoxGeometry(1, 1, 1),
-    V(0, 0.15, 0.337),
+    V(0, 0.15, 0.407),
     V(0.215, 0.15, 0.008),
     HAKASE_COLORS.notebookPage,
     tilt,
   );
-  batch.addBetween(V(-0.18, 0.26, 0.355), V(0.12, 0.08, 0.355), 0.012, 0.012, HAKASE_COLORS.eye, 6);
+  batch.addBetween(V(-0.18, 0.26, 0.425), V(0.12, 0.08, 0.425), 0.012, 0.012, HAKASE_COLORS.eye, 6);
   return batch.toMesh('hakase-notebook');
 }
 
