@@ -1,4 +1,5 @@
 import type * as THREE from 'three';
+import { buildHakaseCharacter } from './hakase';
 import { buildPlayerCharacter } from './player';
 
 // キャラクター(たんけんたいの子・かせきはかせ)のレジストリ。
@@ -21,7 +22,7 @@ export type CharacterBuilder = () => CharacterRig;
 
 const BUILDERS: Partial<Record<'player' | 'hakase', CharacterBuilder>> = {
   player: buildPlayerCharacter,
-  // hakase: buildHakaseCharacter,
+  hakase: buildHakaseCharacter,
 };
 
 export const hasCharacter = (id: 'player' | 'hakase'): boolean => id in BUILDERS;
