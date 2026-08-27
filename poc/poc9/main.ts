@@ -90,6 +90,11 @@ const SPECIES = {
     feature: '🔍 まるい あかい とさかと はのない くちばしに ちゅうもく!',
     skeletonTip: 'とうこつの とさか・はのない くちばし・ほそい うでを みてみよう!',
   },
+  opabinia: {
+    name: 'オパビニア',
+    feature: '🔍 5つのめと ホースのような くち、ひれのれつに ちゅうもく！',
+    skeletonTip: 'かたい から・5つのめの もりあがり・くちのツメを みてみよう！',
+  },
   microraptor: {
     name: 'ミクロラプトル',
     feature: '🔍 まえあしと うしろあしの 4まいの つばさに ちゅうもく!',
@@ -376,50 +381,55 @@ function fitCameraToModel(): void {
           ? 1.3
           : speciesId === 'eurypterus'
             ? 1.4
-            : speciesId === 'mammoth'
-              ? 1.42
-              : speciesId === 'smilodon'
-                ? 1.34
-                : speciesId === 'woollyrhino'
-                  ? 1.38
-                  : speciesId === 'glyptodon'
-                    ? 1.28
-                    : speciesId === 'megatherium'
-                      ? 1.4
-                      : speciesId === 'plateosaurus'
-                        ? 1.35
-                        : speciesId === 'futabasuzukiryu'
-                          ? 1.42
-                          : speciesId === 'ammonite' || speciesId === 'belemnite'
+            : speciesId === 'opabinia'
+              ? 1.5
+              : speciesId === 'mammoth'
+                ? 1.42
+                : speciesId === 'smilodon'
+                  ? 1.34
+                  : speciesId === 'woollyrhino'
+                    ? 1.38
+                    : speciesId === 'glyptodon'
+                      ? 1.28
+                      : speciesId === 'megatherium'
+                        ? 1.4
+                        : speciesId === 'plateosaurus'
+                          ? 1.35
+                          : speciesId === 'futabasuzukiryu'
                             ? 1.42
-                            : speciesId === 'brachiosaurus'
-                              ? 1.6
-                              : speciesId === 'archelon'
-                                ? 2.25
-                                : speciesId === 'plesiosaurus'
-                                  ? 1.5
-                                  : speciesId === 'ichthyosaurus'
-                                    ? 1.4
-                                    : speciesId === 'pteranodon'
-                                      ? 1.08
-                                      : speciesId === 'rhamphorhynchus'
-                                        ? 1.12
-                                        : speciesId === 'quetzalcoatlus'
-                                          ? 2
-                                          : 1.15;
+                            : speciesId === 'ammonite' || speciesId === 'belemnite'
+                              ? 1.42
+                              : speciesId === 'brachiosaurus'
+                                ? 1.6
+                                : speciesId === 'archelon'
+                                  ? 2.25
+                                  : speciesId === 'plesiosaurus'
+                                    ? 1.5
+                                    : speciesId === 'ichthyosaurus'
+                                      ? 1.4
+                                      : speciesId === 'pteranodon'
+                                        ? 1.08
+                                        : speciesId === 'rhamphorhynchus'
+                                          ? 1.12
+                                          : speciesId === 'quetzalcoatlus'
+                                            ? 2
+                                            : 1.15;
   const distance = Math.max(distanceForHeight, distanceForWidth) * cameraPadding;
+  camera.near = Math.max(0.001, distance * 0.02);
+  camera.far = Math.max(80, distance * 10);
+  camera.updateProjectionMatrix();
 
   const targetOffsetY = speciesId === 'quetzalcoatlus' ? size.y * 0.1 : 0;
   controls.target.set(center.x, center.y + targetOffsetY, center.z);
   const cameraOffsetX = isFlyingPterosaur ? distance * 0.72 : size.x * 0.015;
   const cameraOffsetZ = isFlyingPterosaur
     ? distance * 0.72
-    : speciesId === 'trilobite' || speciesId === 'eurypterus'
+    : speciesId === 'trilobite' || speciesId === 'eurypterus' || speciesId === 'opabinia'
       ? distance * 0.82
       : distance;
   const cameraOffsetY = isFlyingPterosaur
     ? distance * 0.28
-    : speciesId === 'trilobite' || speciesId === 'eurypterus'
+    : speciesId === 'trilobite' || speciesId === 'eurypterus' || speciesId === 'opabinia'
       ? distance * 0.45
       : size.y * 0.08;
   camera.position.set(
