@@ -44,6 +44,9 @@ interface IslandLook {
   canyon: boolean;
   nippon: boolean;
   primal: boolean;
+  // 後半の島は optional フラグで足す(既存エントリを触らない)
+  frozen?: boolean;
+  abyss?: boolean;
 }
 const ISLAND_LOOKS: Record<string, IslandLook> = {
   k1: {
@@ -149,6 +152,20 @@ const ISLAND_LOOKS: Record<string, IslandLook> = {
     canyon: false,
     nippon: false,
     primal: true,
+  },
+  k9: {
+    sky: 0xcfe8f4,
+    sea: 0x3d7fae,
+    terrain: 0xecf2f4,
+    terrainAmp: 1.45,
+    jungle: false,
+    shore: false,
+    crag: false,
+    forest: false,
+    canyon: false,
+    nippon: false,
+    primal: false,
+    frozen: true,
   },
 };
 
@@ -366,6 +383,118 @@ export class FieldMode {
           coral.rotation.y = x + z;
           coral.castShadow = true;
           this.scene.add(coral);
+        }
+      } else if (this.look.frozen) {
+        // こおりのしま: ゆきの もみの木 + こおりの とげ + ひょうがのかべ + ゆきだまり + こおった いけ
+        const pineMat = new THREE.MeshStandardMaterial({
+          color: 0x4a7a62,
+          roughness: 1,
+          flatShading: true,
+        });
+        const snowMat = new THREE.MeshStandardMaterial({
+          color: 0xf4f8fb,
+          roughness: 1,
+          flatShading: true,
+        });
+        for (const [x, z, h] of [
+          [-11, 6, 3.2],
+          [12, -5, 2.8],
+          [-6, -9, 3.4],
+          [15, 8, 2.6],
+          [-16, -7, 3.0],
+        ] as const) {
+          const tree = new THREE.Group();
+          const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, h * 0.3, 6), woodMat);
+          trunk.position.y = h * 0.15;
+          trunk.castShadow = true;
+          tree.add(trunk);
+          for (let tier = 0; tier < 3; tier++) {
+            const r = (0.95 - tier * 0.22) * (h / 3);
+            const cone = new THREE.Mesh(new THREE.ConeGeometry(r, h * 0.34, 7), pineMat);
+            cone.position.y = h * (0.36 + tier * 0.24);
+            cone.castShadow = true;
+            tree.add(cone);
+            const cap = new THREE.Mesh(new THREE.ConeGeometry(r * 0.72, h * 0.13, 7), snowMat);
+            cap.position.y = h * (0.45 + tier * 0.24);
+            tree.add(cap);
+          }
+          tree.position.set(x, this.ground(x, z), z);
+          tree.rotation.y = x + z;
+          this.scene.add(tree);
+        }
+        // こおりの とげ(すきとおる あおいろ)
+        const iceMat = new THREE.MeshStandardMaterial({
+          color: 0xbfe4f2,
+          roughness: 0.25,
+          transparent: true,
+          opacity: 0.82,
+          flatShading: true,
+        });
+        for (const [x, z, s] of [
+          [4, 8, 0.9],
+          [-9, 1, 0.7],
+          [9, -8, 1.0],
+          [-3, 13, 0.8],
+        ] as const) {
+          const cluster = new THREE.Group();
+          for (let k = 0; k < 3; k++) {
+            const spike = new THREE.Mesh(
+              new THREE.ConeGeometry(0.28 * s, (1.4 - k * 0.35) * s, 5),
+              iceMat,
+            );
+            spike.position.set(
+              Math.cos(k * 2.3) * 0.3 * s,
+              ((1.4 - k * 0.35) * s) / 2,
+              Math.sin(k * 2.3) * 0.3 * s,
+            );
+            spike.rotation.z = ((k % 3) - 1) * 0.18;
+            spike.castShadow = true;
+            cluster.add(spike);
+          }
+          cluster.position.set(x, this.ground(x, z), z);
+          cluster.rotation.y = x * 2;
+          this.scene.add(cluster);
+        }
+        // ひょうがの かべ(地平線の ランドマーク・到達不可)
+        const glacier = new THREE.Mesh(
+          new THREE.BoxGeometry(16, 7, 4),
+          new THREE.MeshStandardMaterial({ color: 0xd8ecf6, roughness: 0.8, flatShading: true }),
+        );
+        glacier.position.set(-3, this.ground(-3, -24) + 2.6, -27);
+        glacier.rotation.y = 0.18;
+        this.scene.add(glacier);
+        const glacierTop = new THREE.Mesh(new THREE.ConeGeometry(3.4, 2.6, 6), snowMat);
+        glacierTop.position.set(-7, glacier.position.y + 4.2, -26.5);
+        this.scene.add(glacierTop);
+        // ゆきだまり
+        for (const [x, z, s] of [
+          [2, 3, 1.0],
+          [-12, 11, 1.3],
+          [14, 2, 0.9],
+          [-7, -14, 1.1],
+        ] as const) {
+          const drift = new THREE.Mesh(new THREE.IcosahedronGeometry(s, 0), snowMat);
+          drift.position.set(x, this.ground(x, z) + s * 0.18, z);
+          drift.scale.set(1.4, 0.35, 1);
+          drift.rotation.y = x + z;
+          this.scene.add(drift);
+        }
+        // こおった いけ
+        const pondMat = new THREE.MeshStandardMaterial({
+          color: 0xcfe9f4,
+          roughness: 0.15,
+          metalness: 0.1,
+        });
+        for (const [x, z, r] of [
+          [6, -2, 1.6],
+          [-10, -4, 1.2],
+        ] as const) {
+          const pond = new THREE.Mesh(
+            new THREE.CircleGeometry(r, 16).rotateX(-Math.PI / 2),
+            pondMat,
+          );
+          pond.position.set(x, this.ground(x, z) + 0.03, z);
+          this.scene.add(pond);
         }
       } else if (this.look.primal) {
         // さんじょうきのたに: 地層しまもようの丘 + トクサの塔 + イチョウ + 古いシダ

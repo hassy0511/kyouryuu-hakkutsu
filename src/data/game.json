@@ -33,6 +33,11 @@
       "wood": 2,
       "stone": 3,
       "iron": 1
+    },
+    "firestone": {
+      "stone": 3,
+      "iron": 2,
+      "crystal": 1
     }
   },
   "pickMaxHp": 140,
@@ -73,6 +78,6 @@
     "lamp": "🏮ランタン",
     "chisel": "🔨のみ（チゼル）",
     "sieve": "🧺ふるい",
-    "firestone": "🔥ひばなの石（まだ みぬ どうぐ）"
+    "firestone": "🔥ひばなの石"
   }
 }

@@ -57,6 +57,7 @@ export class Overlays {
     el('craft-lamp').addEventListener('click', () => this.craft('lamp'));
     el('craft-chisel').addEventListener('click', () => this.craft('chisel'));
     el('craft-sieve').addEventListener('click', () => this.craft('sieve'));
+    el('craft-firestone').addEventListener('click', () => this.craft('firestone'));
     el('celebrate-close').addEventListener('click', () => {
       this.hide('ov-celebrate');
       if (this.lastRestored && hasDinoModel(this.lastRestored)) {
@@ -286,7 +287,11 @@ export class Overlays {
     (el('craft-upgrade2') as HTMLButtonElement).disabled =
       level !== 2 || !knowsIron || !this.state.canAfford(RECIPES.upgrade2);
     // どうぐ(ピッケル以外): 章の島に到達でレシピ解禁。つくったら行ごと消える
-    const toolRows: ['pump' | 'lamp' | 'chisel' | 'sieve', string, [string, number, number][]][] = [
+    const toolRows: [
+      'pump' | 'lamp' | 'chisel' | 'sieve' | 'firestone',
+      string,
+      [string, number, number][],
+    ][] = [
       [
         'pump',
         'k3',
@@ -323,6 +328,15 @@ export class Overlays {
           ['🔩', inv.iron, RECIPES.sieve.iron],
         ],
       ],
+      [
+        'firestone',
+        'k9',
+        [
+          ['🪨', inv.stone, RECIPES.firestone.stone],
+          ['🔩', inv.iron, RECIPES.firestone.iron],
+          ['💎', inv.crystal, RECIPES.firestone.crystal],
+        ],
+      ],
     ];
     for (const [kind, islandId, parts] of toolRows) {
       const known = this.state.flag(`visited:${islandId}`);
@@ -335,7 +349,7 @@ export class Overlays {
   }
 
   private craft(
-    kind: 'repair' | 'upgrade' | 'upgrade2' | 'pump' | 'lamp' | 'chisel' | 'sieve',
+    kind: 'repair' | 'upgrade' | 'upgrade2' | 'pump' | 'lamp' | 'chisel' | 'sieve' | 'firestone',
   ): void {
     if (kind === 'repair') {
       if (!this.state.canAfford(RECIPES.repair)) return;
@@ -353,7 +367,13 @@ export class Overlays {
         lines.push('📍 きになるリストの ふういんが あけられるぞ! まえの しまも みてみよう');
       }
       this.hooks.queueMsgs(lines);
-    } else if (kind === 'pump' || kind === 'lamp' || kind === 'chisel' || kind === 'sieve') {
+    } else if (
+      kind === 'pump' ||
+      kind === 'lamp' ||
+      kind === 'chisel' ||
+      kind === 'sieve' ||
+      kind === 'firestone'
+    ) {
       if (this.state.flag(`item:${kind}`) || !this.state.canAfford(RECIPES[kind])) return;
       this.state.spend(RECIPES[kind]);
       this.state.setFlag(`item:${kind}`);
@@ -363,8 +383,12 @@ export class Overlays {
         lamp: '🏮 ランタン かんせい! まっくらな ばしょも ほれるぞ!',
         chisel: '🔨 のみ かんせい! いしばんの かたまりを けずりだせるぞ!',
         sieve: '🧺 ふるい かんせい! かたい すなの そうも ほれるぞ!',
+        firestone: '🔥 ひばなの石 かんせい! こおった つちを とかして ほれるぞ!',
       }[kind];
       const lines = [doneLine];
+      if (kind === 'firestone') {
+        lines.push('🎩 はかせ「にっぽんのしまの こおりだな…あの おおきな きばも とかせるのう!」');
+      }
       if (this.state.openableMarks().length > 0) {
         lines.push('📍 きになるリストの ふういんが あけられるぞ! まえの しまも みてみよう');
       }
@@ -423,6 +447,10 @@ export class Overlays {
       this.runWingCeremony('k8');
       return;
     }
+    if (this.state.flag('wing:k8') && this.state.allRestored('k9') && !this.state.flag('wing:k9')) {
+      this.runWingCeremony('k9');
+      return;
+    }
     const cards = SPECIES.filter((sp) => this.state.isSpeciesVisible(sp.id))
       .map((sp) => {
         if (this.state.isRestored(sp.id)) {
@@ -450,23 +478,25 @@ export class Overlays {
       </div>`;
       })
       .join('');
-    const wingLabel = this.state.flag('wing:k8')
+    const wingLabel = this.state.flag('wing:k9')
       ? '？？？の ウィング'
-      : this.state.flag('wing:k7')
-        ? 'はじまりの ウィング'
-        : this.state.flag('wing:k6')
-          ? 'にっぽんの ウィング'
-          : this.state.flag('wing:k5')
-            ? 'かりうどの ウィング'
-            : this.state.flag('wing:k4')
-              ? 'よろいの ウィング'
-              : this.state.flag('wing:k3')
-                ? 'そらの ウィング'
-                : this.state.flag('wing:k2')
-                  ? 'うみの ウィング'
-                  : this.state.flag('ceremonyDone')
-                    ? 'ジュラの ウィング'
-                    : 'あたらしい ウィング';
+      : this.state.flag('wing:k8')
+        ? 'こおりの ウィング'
+        : this.state.flag('wing:k7')
+          ? 'はじまりの ウィング'
+          : this.state.flag('wing:k6')
+            ? 'にっぽんの ウィング'
+            : this.state.flag('wing:k5')
+              ? 'かりうどの ウィング'
+              : this.state.flag('wing:k4')
+                ? 'よろいの ウィング'
+                : this.state.flag('wing:k3')
+                  ? 'そらの ウィング'
+                  : this.state.flag('wing:k2')
+                    ? 'うみの ウィング'
+                    : this.state.flag('ceremonyDone')
+                      ? 'ジュラの ウィング'
+                      : 'あたらしい ウィング';
     el('museum-cards').innerHTML =
       cards +
       `<div class="mu-card wing"><div class="mu-emoji">🚪</div><b>${wingLabel}</b><div class="dim">じゅんびちゅう…</div></div>`;

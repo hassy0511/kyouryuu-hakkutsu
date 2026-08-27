@@ -89,6 +89,7 @@ export const RECIPES = gameJson.recipes as {
   lamp: { wood: number; stone: number; crystal: number };
   chisel: { wood: number; iron: number; stone: number };
   sieve: { wood: number; stone: number; iron: number };
+  firestone: { stone: number; iron: number; crystal: number };
 };
 export const PICK_MAX_HP = gameJson.pickMaxHp as number;
 export const GATE_LOOKS = gameJson.gateLooks as Record<string, { nameJa: string; color: string }>;

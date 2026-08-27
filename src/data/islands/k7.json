@@ -281,7 +281,7 @@
         {
           "speciesId": "mammoth",
           "boneId": "tusk",
-          "kind": "claw",
+          "kind": "tusk",
           "layer": 5,
           "cells": [
             [2, 4],

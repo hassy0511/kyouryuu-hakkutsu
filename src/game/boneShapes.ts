@@ -299,6 +299,28 @@ const claw: Builder = (def, material, pitch) => {
   return group;
 };
 
+// まがったきば(マンモス): ツメより おおきく ゆるやかに そりかえる
+const tusk: Builder = (def, material, pitch) => {
+  const group = new THREE.Group();
+  const s = Math.max(def.cells.length, 1) * pitch * 0.5;
+  const arc = new THREE.Mesh(
+    new THREE.TorusGeometry(s * 0.85, s * 0.13, 8, 18, Math.PI * 1.2),
+    material,
+  );
+  arc.rotation.x = -Math.PI / 2;
+  group.add(arc);
+  const base = new THREE.Mesh(new THREE.SphereGeometry(s * 0.2, 8, 6), material);
+  base.position.set(s * 0.85, 0, 0);
+  group.add(base);
+  const a = Math.PI * 1.2;
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(s * 0.12, s * 0.55, 8), material);
+  tip.position.set(Math.cos(a) * s * 0.85, 0, -Math.sin(a) * s * 0.85);
+  const tangent = new THREE.Vector3(-Math.sin(a), 0, -Math.cos(a)).normalize();
+  tip.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), tangent);
+  group.add(tip);
+  return group;
+};
+
 // たまごのす: 小枝の わっか + ならんだ たまご(もろい かせきの 見せ場)
 const egg: Builder = (def, material, pitch) => {
   const group = new THREE.Group();
@@ -351,6 +373,7 @@ const SHAPES: Record<string, Builder> = {
   scatter,
   spikefrill,
   claw,
+  tusk,
   egg,
 };
 

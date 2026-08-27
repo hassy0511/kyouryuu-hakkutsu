@@ -859,6 +859,17 @@ export class PitMode {
         if (newMark) this.cb.showMsg('📝 ノートの「きになるリスト」に かきとめた');
         return { damaged: false };
       }
+      // こおった土(frostrock)は ひばなの石が あれば 1タップで「とける」(軸1: 氷)
+      if (this.gateAt.get(i)?.look === 'frostrock') {
+        this.sfx.rub();
+        this.particles.burst(this.worldOf(i), new THREE.Color(0xeaf6ff), 12);
+        if (!this.state.flag('meltSeen')) {
+          this.state.setFlag('meltSeen');
+          this.cb.showMsg('🔥 ジュウウ…💨 ひばなの石の ねつで こおりが とけた!');
+        }
+        this.removeSoil(i);
+        return { damaged: false };
+      }
       if (this.hardHp[i]! > 1) {
         this.hardHp[i]!--;
         this.sfx.clank();
