@@ -71,7 +71,7 @@ const SPECIES = {
     skeletonTip: 'ながい くびのほねと おりたたまれた第4指を みてみよう!',
   },
   rhamphorhynchus: {
-    name: 'ラングフォリンクス',
+    name: 'ランフォリンクス',
     feature: '🔍 ながい しっぽと ひしがたの かじに ちゅうもく!',
     skeletonTip: 'ながい しっぽのほね・第4指・ちいさな まえばを みてみよう!',
   },
