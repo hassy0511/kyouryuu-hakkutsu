@@ -135,6 +135,11 @@ const SPECIES = {
     feature: '🔍 こどものような おおきめの あたまと ほそい からだに ちゅうもく！',
     skeletonTip: 'かるい ほねぐみ・ながい しっぽ・3ぼんゆびの てを みてみよう！',
   },
+  eurypterus: {
+    name: 'ウミサソリ',
+    feature: '🔍 ながい はさみ・オールのあし・しっぽのトゲに ちゅうもく！',
+    skeletonTip: 'ふしのからと およぐための オールのあしを みてみよう！',
+  },
   coelophysis: {
     name: 'コエロフィシス',
     feature: '🔍 とても ほそい からだと Sじの くび、むちのような しっぽに ちゅうもく！',
@@ -369,37 +374,39 @@ function fitCameraToModel(): void {
         ? 1.55
         : speciesId === 'dunkleosteus'
           ? 1.3
-          : speciesId === 'mammoth'
-            ? 1.42
-            : speciesId === 'smilodon'
-              ? 1.34
-              : speciesId === 'woollyrhino'
-                ? 1.38
-                : speciesId === 'glyptodon'
-                  ? 1.28
-                  : speciesId === 'megatherium'
-                    ? 1.4
-                    : speciesId === 'plateosaurus'
-                      ? 1.35
-                      : speciesId === 'futabasuzukiryu'
-                        ? 1.42
-                        : speciesId === 'ammonite' || speciesId === 'belemnite'
+          : speciesId === 'eurypterus'
+            ? 1.4
+            : speciesId === 'mammoth'
+              ? 1.42
+              : speciesId === 'smilodon'
+                ? 1.34
+                : speciesId === 'woollyrhino'
+                  ? 1.38
+                  : speciesId === 'glyptodon'
+                    ? 1.28
+                    : speciesId === 'megatherium'
+                      ? 1.4
+                      : speciesId === 'plateosaurus'
+                        ? 1.35
+                        : speciesId === 'futabasuzukiryu'
                           ? 1.42
-                          : speciesId === 'brachiosaurus'
-                            ? 1.6
-                            : speciesId === 'archelon'
-                              ? 2.25
-                              : speciesId === 'plesiosaurus'
-                                ? 1.5
-                                : speciesId === 'ichthyosaurus'
-                                  ? 1.4
-                                  : speciesId === 'pteranodon'
-                                    ? 1.08
-                                    : speciesId === 'rhamphorhynchus'
-                                      ? 1.12
-                                      : speciesId === 'quetzalcoatlus'
-                                        ? 2
-                                        : 1.15;
+                          : speciesId === 'ammonite' || speciesId === 'belemnite'
+                            ? 1.42
+                            : speciesId === 'brachiosaurus'
+                              ? 1.6
+                              : speciesId === 'archelon'
+                                ? 2.25
+                                : speciesId === 'plesiosaurus'
+                                  ? 1.5
+                                  : speciesId === 'ichthyosaurus'
+                                    ? 1.4
+                                    : speciesId === 'pteranodon'
+                                      ? 1.08
+                                      : speciesId === 'rhamphorhynchus'
+                                        ? 1.12
+                                        : speciesId === 'quetzalcoatlus'
+                                          ? 2
+                                          : 1.15;
   const distance = Math.max(distanceForHeight, distanceForWidth) * cameraPadding;
 
   const targetOffsetY = speciesId === 'quetzalcoatlus' ? size.y * 0.1 : 0;
@@ -407,12 +414,12 @@ function fitCameraToModel(): void {
   const cameraOffsetX = isFlyingPterosaur ? distance * 0.72 : size.x * 0.015;
   const cameraOffsetZ = isFlyingPterosaur
     ? distance * 0.72
-    : speciesId === 'trilobite'
+    : speciesId === 'trilobite' || speciesId === 'eurypterus'
       ? distance * 0.82
       : distance;
   const cameraOffsetY = isFlyingPterosaur
     ? distance * 0.28
-    : speciesId === 'trilobite'
+    : speciesId === 'trilobite' || speciesId === 'eurypterus'
       ? distance * 0.45
       : size.y * 0.08;
   camera.position.set(
