@@ -106,7 +106,7 @@ function addDomeSpikes(batch: GeometryBatch, boneView: boolean): void {
     for (const [base, tip] of [
       [V(0.93, 1.93, z), V(0.82, 1.93, side * 0.5)],
       [V(1.17, 1.82, z * 1.03), V(1.12, 1.75, side * 0.51)],
-      [V(1.46, 1.8, z * 0.94), V(1.51, 1.72, side * 0.48)],
+      [V(1.24, 1.7, z * 0.94), V(1.28, 1.58, side * 0.48)],
     ] as const) {
       const midpoint = new THREE.Vector3().lerpVectors(base, tip, 1 - scale);
       coneBetween(batch, midpoint, tip, boneView ? 0.045 : 0.055, 6);
