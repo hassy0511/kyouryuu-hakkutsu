@@ -334,8 +334,8 @@ function addFaceDetails(
   );
   // Sink each horn root into the skull, then continue into the cone. The
   // connector hides the cone's flat base from every viewing angle.
-  cream.addBetween(V(2.4, 1.52, 0), V(2.55, 1.67, 0), 0.15, 0.11, 9);
-  coneBetween(cream, V(2.55, 1.67, 0), V(2.82, 1.97, 0), 0.11, 9);
+  cream.addBetween(V(2.62, 1.48, 0), V(2.75, 1.61, 0), 0.14, 0.105, 9);
+  coneBetween(cream, V(2.75, 1.61, 0), V(2.98, 1.9, 0), 0.105, 9);
 
   for (const side of [-1, 1]) {
     const browHornRoot = V(1.64, 1.8, side * 0.38);
@@ -549,8 +549,8 @@ function buildSkeleton(): THREE.Group {
     ),
     V(0, 0, 0),
   );
-  bone.addBetween(V(2.41, 1.53, 0), V(2.55, 1.67, 0), 0.12, 0.085, 8);
-  coneBetween(bone, V(2.55, 1.67, 0), V(2.82, 1.97, 0), 0.085, 8);
+  bone.addBetween(V(2.63, 1.49, 0), V(2.75, 1.61, 0), 0.11, 0.08, 8);
+  coneBetween(bone, V(2.75, 1.61, 0), V(2.98, 1.9, 0), 0.08, 8);
   for (const side of [-1, 1]) {
     const browHornRoot = V(1.65, 1.81, side * 0.36);
     const browHornBase = V(1.87, 1.92, side * 0.42);
