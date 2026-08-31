@@ -81,6 +81,18 @@ const FRILL_OUTLINE_YZ = [
   new THREE.Vector2(0, 1.72),
 ] as const;
 
+// Low epoccipital bumps seated inside the rim, not spherical beads attached
+// outside it. Vector2 stores (positive z, y); the loop mirrors them left/right.
+const FRILL_RIM_BUMPS_YZ = [
+  new THREE.Vector2(1.0, 2.03),
+  new THREE.Vector2(0.99, 2.26),
+  new THREE.Vector2(0.91, 2.47),
+  new THREE.Vector2(0.77, 2.65),
+  new THREE.Vector2(0.56, 2.79),
+  new THREE.Vector2(0.29, 2.88),
+  new THREE.Vector2(0, 2.92),
+] as const;
+
 /**
  * Builds the broad frill across the back of the skull. The previous mesh put
  * its broad surface in XY and extruded it along Z, which made the side view
@@ -254,8 +266,26 @@ function addLivingLeg(body: GeometryBatch, claws: GeometryBatch, leg: (typeof LE
     ),
     V(0, 0, 0),
   );
-  body.addBetween(leg.ankle, leg.foot, 0.19, 0.15, 8);
-  ellipsoid(body, leg.foot, V(0.44, 0.17, 0.31), 9, 6);
+  body.add(
+    loftGeometry(
+      [
+        {
+          center: V(leg.ankle.x - 0.03, 0.16, leg.foot.z),
+          radiusY: 0.12,
+          radiusZ: 0.18,
+        },
+        {
+          center: V(THREE.MathUtils.lerp(leg.ankle.x, leg.foot.x, 0.55), 0.13, leg.foot.z),
+          radiusY: 0.15,
+          radiusZ: 0.26,
+        },
+        { center: V(leg.foot.x, 0.11, leg.foot.z), radiusY: 0.14, radiusZ: 0.31 },
+        { center: V(leg.foot.x + 0.29, 0.09, leg.foot.z), radiusY: 0.075, radiusZ: 0.25 },
+      ],
+      12,
+    ),
+    V(0, 0, 0),
+  );
 
   for (const zOffset of [-0.17, 0, 0.17]) {
     const toeBase = V(leg.foot.x + 0.22, 0.12, leg.foot.z + zOffset * 0.5);
@@ -409,6 +439,12 @@ function buildLiving(): THREE.Group {
   const outerFrill = new THREE.Mesh(frillTransverseGeometry(0.13, 0.028), livingFrillMaterial);
   outerFrill.name = 'triceratops-frill';
   group.add(outerFrill);
+  FRILL_RIM_BUMPS_YZ.forEach((bump) => {
+    const sides = bump.x === 0 ? [1] : [-1, 1];
+    sides.forEach((side) => {
+      ellipsoid(body, V(frillCenterX(bump.y), bump.y, side * bump.x), V(0.04, 0.062, 0.068), 8, 6);
+    });
+  });
 
   addFaceDetails(group, body, cream, eyeSocket, dark, iris, glint);
   group.add(
