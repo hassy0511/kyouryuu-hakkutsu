@@ -56,47 +56,58 @@ const LEGS = [
   },
 ] as const;
 
-const FRILL_OUTER = [
-  new THREE.Vector2(0.88, 1.24),
-  new THREE.Vector2(0.72, 1.58),
-  new THREE.Vector2(0.67, 1.94),
-  new THREE.Vector2(0.74, 2.3),
-  new THREE.Vector2(0.9, 2.62),
-  new THREE.Vector2(1.08, 2.87),
-  new THREE.Vector2(1.28, 2.92),
-  new THREE.Vector2(1.5, 2.78),
-  new THREE.Vector2(1.68, 2.55),
-  new THREE.Vector2(1.82, 2.28),
-  new THREE.Vector2(1.9, 1.98),
-  new THREE.Vector2(1.92, 1.65),
-  new THREE.Vector2(1.82, 1.36),
-  new THREE.Vector2(1.6, 1.18),
-  new THREE.Vector2(1.28, 1.12),
+// Viewed from the front, a Triceratops frill is a broad fan in the YZ plane.
+// Vector2 stores (z, y) here; X is reserved for its small fore-aft thickness.
+const FRILL_OUTLINE_YZ = [
+  new THREE.Vector2(-0.25, 1.14),
+  new THREE.Vector2(-0.58, 1.23),
+  new THREE.Vector2(-0.84, 1.42),
+  new THREE.Vector2(-1.02, 1.7),
+  new THREE.Vector2(-1.08, 2.01),
+  new THREE.Vector2(-1.02, 2.32),
+  new THREE.Vector2(-0.86, 2.59),
+  new THREE.Vector2(-0.62, 2.79),
+  new THREE.Vector2(-0.32, 2.92),
+  new THREE.Vector2(0, 2.97),
+  new THREE.Vector2(0.32, 2.92),
+  new THREE.Vector2(0.62, 2.79),
+  new THREE.Vector2(0.86, 2.59),
+  new THREE.Vector2(1.02, 2.32),
+  new THREE.Vector2(1.08, 2.01),
+  new THREE.Vector2(1.02, 1.7),
+  new THREE.Vector2(0.84, 1.42),
+  new THREE.Vector2(0.58, 1.23),
+  new THREE.Vector2(0.25, 1.14),
+  new THREE.Vector2(0, 1.08),
 ] as const;
 
-const FRILL_NUBS = [
-  V(0.72, 1.58, 0),
-  V(0.69, 1.94, 0),
-  V(0.77, 2.29, 0),
-  V(0.92, 2.6, 0),
-  V(1.1, 2.84, 0),
-  V(1.31, 2.89, 0),
-  V(1.51, 2.75, 0),
+const FRILL_RIM_NUBS_YZ = [
+  new THREE.Vector2(1.02, 1.7),
+  new THREE.Vector2(1.08, 2.01),
+  new THREE.Vector2(1.01, 2.33),
+  new THREE.Vector2(0.84, 2.59),
+  new THREE.Vector2(0.61, 2.79),
+  new THREE.Vector2(0.31, 2.92),
 ] as const;
 
 /**
- * Builds a convex shield whose depth tapers from the skull attachment to the
- * rim. A constant-depth silhouette extrusion makes the frill read as a short
- * cylinder when rotated, so this species uses an explicit three-dimensional
- * front surface, rear surface and thin connecting edge.
+ * Builds the broad frill across the back of the skull. The previous mesh put
+ * its broad surface in XY and extruded it along Z, which made the side view
+ * look like a cylinder. This mesh puts the fan in YZ and gives it only a thin
+ * X thickness, so the side view sees a blade-like edge.
  */
-function frillShieldGeometry(rootDepth: number, edgeDepth: number): THREE.BufferGeometry {
-  const root = new THREE.Vector2(1.54, 1.68);
+function frillCenterX(y: number): number {
+  const height = THREE.MathUtils.clamp((y - 1.08) / (2.97 - 1.08), 0, 1);
+  return THREE.MathUtils.lerp(1.5, 1.26, height);
+}
+
+function frillTransverseGeometry(rootDepth: number, edgeDepth: number): THREE.BufferGeometry {
+  const root = new THREE.Vector2(0, 1.62);
   const innerRatio = 0.55;
-  const boundaryDepths = FRILL_OUTER.map((point) => {
-    const forward = THREE.MathUtils.clamp((point.x - 1.48) / 0.48, 0, 1);
-    const low = THREE.MathUtils.clamp((1.92 - point.y) / 0.78, 0, 1);
-    return THREE.MathUtils.lerp(edgeDepth, rootDepth * 0.58, forward * low);
+  const boundaryDepths = FRILL_OUTLINE_YZ.map((point) => {
+    const central = THREE.MathUtils.clamp(1 - Math.abs(point.x) / 1.08, 0, 1);
+    const low = THREE.MathUtils.clamp((1.82 - point.y) / 0.74, 0, 1);
+    return THREE.MathUtils.lerp(edgeDepth, rootDepth * 0.62, central * low);
   });
 
   const positions: number[] = [];
@@ -105,27 +116,29 @@ function frillShieldGeometry(rootDepth: number, edgeDepth: number): THREE.Buffer
 
   for (const side of [-1, 1]) {
     const center = positions.length / 3;
-    positions.push(root.x, root.y, side * rootDepth);
+    positions.push(frillCenterX(root.y) + side * rootDepth, root.y, root.x);
 
     const inner = positions.length / 3;
-    FRILL_OUTER.forEach((point, index) => {
+    FRILL_OUTLINE_YZ.forEach((point, index) => {
       const rimDepth = boundaryDepths[index] ?? edgeDepth;
       const depth = THREE.MathUtils.lerp(rootDepth, rimDepth, innerRatio);
-      positions.push(
-        THREE.MathUtils.lerp(root.x, point.x, innerRatio),
-        THREE.MathUtils.lerp(root.y, point.y, innerRatio),
-        side * depth,
-      );
+      const z = THREE.MathUtils.lerp(root.x, point.x, innerRatio);
+      const y = THREE.MathUtils.lerp(root.y, point.y, innerRatio);
+      positions.push(frillCenterX(y) + side * depth, y, z);
     });
 
     const outer = positions.length / 3;
-    FRILL_OUTER.forEach((point, index) => {
-      positions.push(point.x, point.y, side * (boundaryDepths[index] ?? edgeDepth));
+    FRILL_OUTLINE_YZ.forEach((point, index) => {
+      positions.push(
+        frillCenterX(point.y) + side * (boundaryDepths[index] ?? edgeDepth),
+        point.y,
+        point.x,
+      );
     });
     sideStarts.push({ center, inner, outer });
   }
 
-  const count = FRILL_OUTER.length;
+  const count = FRILL_OUTLINE_YZ.length;
   sideStarts.forEach((starts, sideIndex) => {
     const front = sideIndex === 1;
     for (let index = 0; index < count; index += 1) {
@@ -328,10 +341,14 @@ function buildLiving(): THREE.Group {
 
   const livingFrillMaterial = makeOrganicMaterial(TRICERATOPS_COLORS.body);
   livingFrillMaterial.side = THREE.DoubleSide;
-  const outerFrill = new THREE.Mesh(frillShieldGeometry(0.68, 0.3), livingFrillMaterial);
+  const outerFrill = new THREE.Mesh(frillTransverseGeometry(0.17, 0.035), livingFrillMaterial);
   outerFrill.name = 'triceratops-frill';
   group.add(outerFrill);
-  FRILL_NUBS.forEach((nub) => ellipsoid(body, nub, V(0.085, 0.115, 0.54), 8, 6));
+  for (const side of [-1, 1]) {
+    FRILL_RIM_NUBS_YZ.forEach((nub) => {
+      ellipsoid(body, V(frillCenterX(nub.y), nub.y, side * nub.x), V(0.055, 0.07, 0.075), 8, 6);
+    });
+  }
 
   addFaceDetails(group, body, cream, eyeSocket, dark, iris, glint);
   group.add(
@@ -417,7 +434,7 @@ function buildSkeleton(): THREE.Group {
 
   const skeletonFrillMaterial = makeFlatMaterial(TRICERATOPS_COLORS.bone);
   skeletonFrillMaterial.side = THREE.DoubleSide;
-  const frill = new THREE.Mesh(frillShieldGeometry(0.085, 0.018), skeletonFrillMaterial);
+  const frill = new THREE.Mesh(frillTransverseGeometry(0.06, 0.012), skeletonFrillMaterial);
   frill.name = 'triceratops-skeleton-frill';
   group.add(frill);
 
