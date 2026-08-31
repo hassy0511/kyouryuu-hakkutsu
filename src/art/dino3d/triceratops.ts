@@ -58,25 +58,23 @@ const LEGS = [
 ] as const;
 
 const FRILL_OUTER = [
-  new THREE.Vector2(1.05, 1.35),
-  new THREE.Vector2(1.08, 2.1),
-  new THREE.Vector2(1.32, 2.58),
-  new THREE.Vector2(1.68, 2.84),
-  new THREE.Vector2(2.05, 2.76),
-  new THREE.Vector2(2.28, 2.38),
-  new THREE.Vector2(2.25, 1.52),
+  new THREE.Vector2(0.92, 1.38),
+  new THREE.Vector2(0.88, 1.72),
+  new THREE.Vector2(0.9, 2.08),
+  new THREE.Vector2(1, 2.39),
+  new THREE.Vector2(1.16, 2.66),
+  new THREE.Vector2(1.39, 2.85),
+  new THREE.Vector2(1.66, 2.93),
+  new THREE.Vector2(1.91, 2.88),
+  new THREE.Vector2(2.12, 2.72),
+  new THREE.Vector2(2.27, 2.48),
+  new THREE.Vector2(2.34, 2.18),
+  new THREE.Vector2(2.32, 1.88),
+  new THREE.Vector2(2.23, 1.58),
+  new THREE.Vector2(2.06, 1.34),
   new THREE.Vector2(1.78, 1.2),
-] as const;
-
-const FRILL_INNER = [
-  new THREE.Vector2(1.26, 1.43),
-  new THREE.Vector2(1.27, 2.06),
-  new THREE.Vector2(1.48, 2.42),
-  new THREE.Vector2(1.72, 2.61),
-  new THREE.Vector2(1.92, 2.55),
-  new THREE.Vector2(2.08, 2.28),
-  new THREE.Vector2(2.06, 1.59),
-  new THREE.Vector2(1.76, 1.39),
+  new THREE.Vector2(1.43, 1.2),
+  new THREE.Vector2(1.13, 1.28),
 ] as const;
 
 function addLivingLeg(body: GeometryBatch, claws: GeometryBatch, leg: (typeof LEGS)[number]): void {
@@ -106,54 +104,67 @@ function addFaceDetails(
   body.add(
     loftGeometry(
       [
-        { center: V(1.7, 1.82, 0), radiusY: 0.6, radiusZ: 0.72 },
-        { center: V(2.15, 1.82, 0), radiusY: 0.58, radiusZ: 0.64 },
-        { center: V(2.62, 1.75, 0), radiusY: 0.48, radiusZ: 0.52 },
-        { center: V(3.03, 1.63, 0), radiusY: 0.35, radiusZ: 0.38 },
+        { center: V(1.55, 1.82, 0), radiusY: 0.46, radiusZ: 0.58 },
+        { center: V(1.88, 1.82, 0), radiusY: 0.55, radiusZ: 0.61 },
+        { center: V(2.18, 1.78, 0), radiusY: 0.48, radiusZ: 0.54 },
+        { center: V(2.5, 1.7, 0), radiusY: 0.38, radiusZ: 0.42 },
+        { center: V(2.78, 1.59, 0), radiusY: 0.25, radiusZ: 0.3 },
+        { center: V(3.02, 1.5, 0), radiusY: 0.16, radiusZ: 0.22 },
       ],
-      11,
+      12,
     ),
     V(0, 0, 0),
   );
 
-  ellipsoid(cream, V(3.18, 1.58, 0), V(0.34, 0.29, 0.34), 9, 6);
-  coneBetween(cream, V(3.02, 1.82, 0), V(3.31, 2.35, 0), 0.15, 8);
+  // The beak continues the skull taper instead of terminating it with a ball.
+  cream.add(
+    loftGeometry(
+      [
+        { center: V(2.84, 1.52, 0), radiusY: 0.21, radiusZ: 0.27 },
+        { center: V(3.1, 1.48, 0), radiusY: 0.17, radiusZ: 0.21 },
+        { center: V(3.34, 1.46, 0), radiusY: 0.08, radiusZ: 0.12 },
+      ],
+      9,
+    ),
+    V(0, 0, 0),
+  );
+  coneBetween(cream, V(2.82, 1.76, 0), V(3.18, 2.28, 0), 0.13, 8);
 
   for (const side of [-1, 1]) {
-    coneBetween(cream, V(2.27, 2.14, side * 0.43), V(3.43, 2.55, side * 0.45), 0.18, 9);
-    const eyeSurface = 0.52;
+    coneBetween(cream, V(2.13, 2.08, side * 0.4), V(3.28, 2.5, side * 0.45), 0.16, 9);
+    const eyeSurface = 0.45;
     ellipsoid(
       dark,
-      V(2.4, 2.04, embeddedSideZ(side, eyeSurface, 0.055)),
-      V(0.18, 0.15, 0.055),
+      V(2.35, 1.96, embeddedSideZ(side, eyeSurface, 0.045, 0.35)),
+      V(0.16, 0.135, 0.045),
       8,
       5,
     );
     ellipsoid(
       iris,
-      V(2.43, 2.05, embeddedSideZ(side, eyeSurface + 0.014, 0.026)),
-      V(0.105, 0.105, 0.026),
+      V(2.375, 1.965, embeddedSideZ(side, eyeSurface + 0.012, 0.023, 0.45)),
+      V(0.09, 0.09, 0.023),
       8,
       5,
     );
     ellipsoid(
       dark,
-      V(2.45, 2.05, embeddedSideZ(side, eyeSurface + 0.022, 0.012)),
-      V(0.043, 0.066, 0.012),
+      V(2.39, 1.965, embeddedSideZ(side, eyeSurface + 0.022, 0.011, 0.5)),
+      V(0.038, 0.058, 0.011),
       6,
       4,
     );
     ellipsoid(
       glint,
-      V(2.41, 2.1, embeddedSideZ(side, eyeSurface + 0.028, 0.008)),
-      V(0.025, 0.028, 0.008),
+      V(2.355, 2.008, embeddedSideZ(side, eyeSurface + 0.029, 0.006, 0.55)),
+      V(0.021, 0.024, 0.006),
       5,
       4,
     );
     const mouth = [
-      V(2.88, 1.46, embeddedSideZ(side, 0.27, 0.016)),
-      V(3.12, 1.43, embeddedSideZ(side, 0.18, 0.013)),
-      V(3.38, 1.46, embeddedSideZ(side, 0.06, 0.007)),
+      V(2.76, 1.42, embeddedSideZ(side, 0.27, 0.014, 0.12)),
+      V(3.08, 1.4, embeddedSideZ(side, 0.19, 0.011, 0.12)),
+      V(3.35, 1.43, embeddedSideZ(side, 0.08, 0.006, 0.12)),
     ];
     dark.addBetween(mouth[0]!, mouth[1]!, 0.016, 0.013, 6);
     dark.addBetween(mouth[1]!, mouth[2]!, 0.013, 0.007, 6);
@@ -215,16 +226,11 @@ function buildLiving(): THREE.Group {
   for (const leg of LEGS) addLivingLeg(leg.near ? body : farBody, cream, leg);
 
   const outerFrill = new THREE.Mesh(
-    silhouetteGeometry(FRILL_OUTER, 0.74),
-    makeOrganicMaterial(TRICERATOPS_COLORS.frillMark),
-  );
-  outerFrill.name = 'triceratops-frill-rim';
-  const innerFrill = new THREE.Mesh(
-    silhouetteGeometry(FRILL_INNER, 0.77),
+    silhouetteGeometry(FRILL_OUTER, 0.52),
     makeOrganicMaterial(TRICERATOPS_COLORS.body),
   );
-  innerFrill.name = 'triceratops-frill';
-  group.add(outerFrill, innerFrill);
+  outerFrill.name = 'triceratops-frill';
+  group.add(outerFrill);
 
   addFaceDetails(group, body, cream, dark, iris, glint);
   group.add(
@@ -315,23 +321,28 @@ function buildSkeleton(): THREE.Group {
   frill.name = 'triceratops-skeleton-frill';
   group.add(frill);
 
-  ellipsoid(bone, V(2.28, 1.82, 0), V(0.86, 0.58, 0.58), 10, 7);
+  // Compact braincase/cheek mass: enough to round the skull without recreating
+  // the former oversized spherical block.
+  ellipsoid(bone, V(2.12, 1.74, 0), V(0.48, 0.4, 0.43), 10, 7);
   bone.add(
     loftGeometry(
       [
-        { center: V(2.25, 1.8, 0), radiusY: 0.45, radiusZ: 0.48 },
-        { center: V(2.72, 1.7, 0), radiusY: 0.38, radiusZ: 0.4 },
-        { center: V(3.15, 1.58, 0), radiusY: 0.25, radiusZ: 0.28 },
+        { center: V(1.62, 1.82, 0), radiusY: 0.38, radiusZ: 0.48 },
+        { center: V(1.94, 1.81, 0), radiusY: 0.46, radiusZ: 0.52 },
+        { center: V(2.25, 1.76, 0), radiusY: 0.4, radiusZ: 0.46 },
+        { center: V(2.56, 1.67, 0), radiusY: 0.32, radiusZ: 0.37 },
+        { center: V(2.84, 1.56, 0), radiusY: 0.22, radiusZ: 0.27 },
+        { center: V(3.08, 1.48, 0), radiusY: 0.13, radiusZ: 0.19 },
       ],
-      9,
+      10,
     ),
     V(0, 0, 0),
   );
-  coneBetween(bone, V(3.02, 1.82, 0), V(3.31, 2.35, 0), 0.12, 8);
+  coneBetween(bone, V(2.82, 1.76, 0), V(3.18, 2.28, 0), 0.1, 8);
   for (const side of [-1, 1]) {
-    coneBetween(bone, V(2.27, 2.14, side * 0.38), V(3.43, 2.55, side * 0.42), 0.14, 8);
-    ellipsoid(dark, V(2.42, 1.98, side * 0.49), V(0.22, 0.18, 0.05), 8, 5);
-    ellipsoid(dark, V(2.76, 1.62, side * 0.38), V(0.38, 0.11, 0.035), 8, 5);
+    coneBetween(bone, V(2.13, 2.08, side * 0.37), V(3.28, 2.5, side * 0.42), 0.12, 8);
+    ellipsoid(dark, V(2.34, 1.93, side * 0.43), V(0.19, 0.15, 0.042), 8, 5);
+    ellipsoid(dark, V(2.76, 1.53, side * 0.29), V(0.3, 0.085, 0.03), 8, 5);
   }
 
   group.add(
