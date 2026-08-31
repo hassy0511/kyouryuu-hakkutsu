@@ -8,7 +8,6 @@ import {
   makeFlatMaterial,
   makeOrganicMaterial,
   setShadowFlags,
-  silhouetteGeometry,
 } from './common';
 import type { DinoViews } from './spinosaurus';
 
@@ -84,6 +83,83 @@ const FRILL_NUBS = [
   V(1.31, 2.89, 0),
   V(1.51, 2.75, 0),
 ] as const;
+
+/**
+ * Builds a convex shield whose depth tapers from the skull attachment to the
+ * rim. A constant-depth silhouette extrusion makes the frill read as a short
+ * cylinder when rotated, so this species uses an explicit three-dimensional
+ * front surface, rear surface and thin connecting edge.
+ */
+function frillShieldGeometry(rootDepth: number, edgeDepth: number): THREE.BufferGeometry {
+  const root = new THREE.Vector2(1.54, 1.68);
+  const innerRatio = 0.55;
+  const boundaryDepths = FRILL_OUTER.map((point) => {
+    const forward = THREE.MathUtils.clamp((point.x - 1.48) / 0.48, 0, 1);
+    const low = THREE.MathUtils.clamp((1.92 - point.y) / 0.78, 0, 1);
+    return THREE.MathUtils.lerp(edgeDepth, rootDepth * 0.58, forward * low);
+  });
+
+  const positions: number[] = [];
+  const indices: number[] = [];
+  const sideStarts: Array<{ center: number; inner: number; outer: number }> = [];
+
+  for (const side of [-1, 1]) {
+    const center = positions.length / 3;
+    positions.push(root.x, root.y, side * rootDepth);
+
+    const inner = positions.length / 3;
+    FRILL_OUTER.forEach((point, index) => {
+      const rimDepth = boundaryDepths[index] ?? edgeDepth;
+      const depth = THREE.MathUtils.lerp(rootDepth, rimDepth, innerRatio);
+      positions.push(
+        THREE.MathUtils.lerp(root.x, point.x, innerRatio),
+        THREE.MathUtils.lerp(root.y, point.y, innerRatio),
+        side * depth,
+      );
+    });
+
+    const outer = positions.length / 3;
+    FRILL_OUTER.forEach((point, index) => {
+      positions.push(point.x, point.y, side * (boundaryDepths[index] ?? edgeDepth));
+    });
+    sideStarts.push({ center, inner, outer });
+  }
+
+  const count = FRILL_OUTER.length;
+  sideStarts.forEach((starts, sideIndex) => {
+    const front = sideIndex === 1;
+    for (let index = 0; index < count; index += 1) {
+      const next = (index + 1) % count;
+      const innerA = starts.inner + index;
+      const innerB = starts.inner + next;
+      const outerA = starts.outer + index;
+      const outerB = starts.outer + next;
+      if (front) {
+        indices.push(starts.center, innerA, innerB, innerA, outerA, outerB, innerA, outerB, innerB);
+      } else {
+        indices.push(starts.center, innerB, innerA, innerA, outerB, outerA, innerA, innerB, outerB);
+      }
+    }
+  });
+
+  const backOuter = sideStarts[0]!.outer;
+  const frontOuter = sideStarts[1]!.outer;
+  for (let index = 0; index < count; index += 1) {
+    const next = (index + 1) % count;
+    const backA = backOuter + index;
+    const backB = backOuter + next;
+    const frontA = frontOuter + index;
+    const frontB = frontOuter + next;
+    indices.push(backA, frontA, frontB, backA, frontB, backB);
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+  return geometry;
+}
 
 function addLivingLeg(body: GeometryBatch, claws: GeometryBatch, leg: (typeof LEGS)[number]): void {
   body.addBetween(leg.upper, leg.knee, 0.43, 0.34, 9);
@@ -250,10 +326,9 @@ function buildLiving(): THREE.Group {
 
   for (const leg of LEGS) addLivingLeg(leg.near ? body : farBody, cream, leg);
 
-  const outerFrill = new THREE.Mesh(
-    silhouetteGeometry(FRILL_OUTER, 0.52),
-    makeOrganicMaterial(TRICERATOPS_COLORS.body),
-  );
+  const livingFrillMaterial = makeOrganicMaterial(TRICERATOPS_COLORS.body);
+  livingFrillMaterial.side = THREE.DoubleSide;
+  const outerFrill = new THREE.Mesh(frillShieldGeometry(0.68, 0.3), livingFrillMaterial);
   outerFrill.name = 'triceratops-frill';
   group.add(outerFrill);
   FRILL_NUBS.forEach((nub) => ellipsoid(body, nub, V(0.085, 0.115, 0.54), 8, 6));
@@ -340,10 +415,9 @@ function buildSkeleton(): THREE.Group {
   }
   LEGS.forEach((leg) => addBoneLeg(bone, leg));
 
-  const frill = new THREE.Mesh(
-    silhouetteGeometry(FRILL_OUTER, 0.07),
-    makeFlatMaterial(TRICERATOPS_COLORS.bone),
-  );
+  const skeletonFrillMaterial = makeFlatMaterial(TRICERATOPS_COLORS.bone);
+  skeletonFrillMaterial.side = THREE.DoubleSide;
+  const frill = new THREE.Mesh(frillShieldGeometry(0.085, 0.018), skeletonFrillMaterial);
   frill.name = 'triceratops-skeleton-frill';
   group.add(frill);
 
