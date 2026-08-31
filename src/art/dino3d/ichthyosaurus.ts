@@ -224,32 +224,34 @@ function buildLiving(): THREE.Group {
   PADDLES.forEach((paddle) => addLivingPaddle(fins, paddle));
 
   for (const side of [-1, 1]) {
-    const eyeSurface = 0.275;
+    // Keep the eye seated in the side of the skull.  The older, oversized
+    // discs sat above this curved surface and looked pasted on from the front.
+    const eyeSurface = 0.25;
     ellipsoid(
       dark,
-      V(0.78, 1.04, embeddedSideZ(side, eyeSurface, 0.026)),
-      V(0.19, 0.18, 0.026),
+      V(0.78, 0.99, embeddedSideZ(side, eyeSurface, 0.025, 0.35)),
+      V(0.13, 0.115, 0.025),
       10,
       7,
     );
     ellipsoid(
       iris,
-      V(0.8, 1.045, embeddedSideZ(side, eyeSurface + 0.007, 0.014)),
-      V(0.105, 0.11, 0.014),
+      V(0.795, 0.992, embeddedSideZ(side, eyeSurface + 0.006, 0.013, 0.45)),
+      V(0.072, 0.072, 0.013),
       9,
       7,
     );
     ellipsoid(
       dark,
-      V(0.82, 1.045, embeddedSideZ(side, eyeSurface + 0.012, 0.008)),
-      V(0.042, 0.065, 0.008),
+      V(0.81, 0.992, embeddedSideZ(side, eyeSurface + 0.013, 0.007, 0.5)),
+      V(0.029, 0.041, 0.007),
       7,
       5,
     );
     ellipsoid(
       glint,
-      V(0.77, 1.095, embeddedSideZ(side, eyeSurface + 0.016, 0.004)),
-      V(0.018, 0.022, 0.004),
+      V(0.778, 1.021, embeddedSideZ(side, eyeSurface + 0.018, 0.0035, 0.55)),
+      V(0.012, 0.014, 0.0035),
       6,
       4,
     );
