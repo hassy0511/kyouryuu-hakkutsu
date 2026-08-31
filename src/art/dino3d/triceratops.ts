@@ -266,26 +266,8 @@ function addLivingLeg(body: GeometryBatch, claws: GeometryBatch, leg: (typeof LE
     ),
     V(0, 0, 0),
   );
-  body.add(
-    loftGeometry(
-      [
-        {
-          center: V(leg.ankle.x - 0.03, 0.16, leg.foot.z),
-          radiusY: 0.12,
-          radiusZ: 0.18,
-        },
-        {
-          center: V(THREE.MathUtils.lerp(leg.ankle.x, leg.foot.x, 0.55), 0.13, leg.foot.z),
-          radiusY: 0.15,
-          radiusZ: 0.26,
-        },
-        { center: V(leg.foot.x, 0.11, leg.foot.z), radiusY: 0.14, radiusZ: 0.31 },
-        { center: V(leg.foot.x + 0.29, 0.09, leg.foot.z), radiusY: 0.075, radiusZ: 0.25 },
-      ],
-      12,
-    ),
-    V(0, 0, 0),
-  );
+  body.addBetween(leg.ankle, leg.foot, 0.19, 0.15, 8);
+  ellipsoid(body, leg.foot, V(0.44, 0.17, 0.31), 9, 6);
 
   for (const zOffset of [-0.17, 0, 0.17]) {
     const toeBase = V(leg.foot.x + 0.22, 0.12, leg.foot.z + zOffset * 0.5);
@@ -346,10 +328,16 @@ function addFaceDetails(
     ),
     V(0, 0, 0),
   );
-  coneBetween(cream, V(2.55, 1.67, 0), V(2.82, 1.97, 0), 0.11, 8);
+  // Sink each horn root into the skull, then continue into the cone. The
+  // connector hides the cone's flat base from every viewing angle.
+  cream.addBetween(V(2.4, 1.52, 0), V(2.55, 1.67, 0), 0.15, 0.11, 9);
+  coneBetween(cream, V(2.55, 1.67, 0), V(2.82, 1.97, 0), 0.11, 9);
 
   for (const side of [-1, 1]) {
-    coneBetween(cream, V(1.87, 1.92, side * 0.45), V(2.9, 2.14, side * 0.48), 0.17, 9);
+    const browHornRoot = V(1.64, 1.8, side * 0.38);
+    const browHornBase = V(1.87, 1.92, side * 0.45);
+    cream.addBetween(browHornRoot, browHornBase, 0.22, 0.17, 10);
+    coneBetween(cream, browHornBase, V(2.9, 2.14, side * 0.48), 0.17, 10);
     const eyeSurface = 0.5;
     ellipsoid(
       eyeSocket,
@@ -557,9 +545,13 @@ function buildSkeleton(): THREE.Group {
     ),
     V(0, 0, 0),
   );
+  bone.addBetween(V(2.41, 1.53, 0), V(2.55, 1.67, 0), 0.12, 0.085, 8);
   coneBetween(bone, V(2.55, 1.67, 0), V(2.82, 1.97, 0), 0.085, 8);
   for (const side of [-1, 1]) {
-    coneBetween(bone, V(1.87, 1.92, side * 0.42), V(2.9, 2.14, side * 0.46), 0.115, 8);
+    const browHornRoot = V(1.65, 1.81, side * 0.36);
+    const browHornBase = V(1.87, 1.92, side * 0.42);
+    bone.addBetween(browHornRoot, browHornBase, 0.15, 0.115, 8);
+    coneBetween(bone, browHornBase, V(2.9, 2.14, side * 0.46), 0.115, 8);
     ellipsoid(dark, V(2.05, 1.7, side * 0.48), V(0.13, 0.105, 0.036), 8, 5);
     ellipsoid(dark, V(2.5, 1.29, side * 0.3), V(0.24, 0.07, 0.026), 8, 5);
   }
