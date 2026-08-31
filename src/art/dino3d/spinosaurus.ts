@@ -217,32 +217,32 @@ function buildLiving(): THREE.Group {
   ARMS.forEach((arm, index) => addLivingArm(index === 0 ? body : farBody, cream, arm));
 
   for (const side of [-1, 1]) {
-    const eyeSurface = 0.47;
+    const eyeSurface = 0.56;
     ellipsoid(
       dark,
-      V(2.38, 4.47, embeddedSideZ(side, eyeSurface, 0.085)),
-      V(0.25, 0.24, 0.085),
+      V(2.46, 4.4, embeddedSideZ(side, eyeSurface, 0.055, 0.5)),
+      V(0.18, 0.16, 0.055),
       8,
       6,
     );
     ellipsoid(
       eyeAmber,
-      V(2.4, 4.47, embeddedSideZ(side, eyeSurface + 0.02, 0.04)),
-      V(0.16, 0.17, 0.04),
+      V(2.475, 4.4, embeddedSideZ(side, eyeSurface + 0.025, 0.025, 0.65)),
+      V(0.105, 0.1, 0.025),
       10,
       7,
     );
     ellipsoid(
       dark,
-      V(2.43, 4.47, embeddedSideZ(side, eyeSurface + 0.032, 0.025)),
-      V(0.075, 0.1, 0.025),
+      V(2.49, 4.4, embeddedSideZ(side, eyeSurface + 0.043, 0.012, 0.68)),
+      V(0.04, 0.055, 0.012),
       7,
       5,
     );
     ellipsoid(
       eyeWhite,
-      V(2.38, 4.53, embeddedSideZ(side, eyeSurface + 0.042, 0.012)),
-      V(0.035, 0.04, 0.012),
+      V(2.455, 4.445, embeddedSideZ(side, eyeSurface + 0.055, 0.006, 0.72)),
+      V(0.018, 0.02, 0.006),
       6,
       4,
     );
