@@ -96,8 +96,8 @@ const FRILL_RIM_BUMPS_YZ = [
 /**
  * Builds the broad frill across the back of the skull. The previous mesh put
  * its broad surface in XY and extruded it along Z, which made the side view
- * look like a cylinder. This mesh puts the fan in YZ and gives it only a thin
- * X thickness, so the side view sees a blade-like edge.
+ * look like a cylinder. This mesh puts the fan in YZ, with a thick skull
+ * attachment that tapers into a thin upper and outer rim.
  */
 function frillCenterX(y: number): number {
   const height = THREE.MathUtils.clamp((y - 1.68) / (2.92 - 1.68), 0, 1);
@@ -107,11 +107,14 @@ function frillCenterX(y: number): number {
 function frillTransverseGeometry(rootDepth: number, edgeDepth: number): THREE.BufferGeometry {
   const root = new THREE.Vector2(0, 1.96);
   const innerRatio = 0.55;
-  const boundaryDepths = FRILL_OUTLINE_YZ.map((point) => {
-    const central = THREE.MathUtils.clamp(1 - Math.abs(point.x) / 1.08, 0, 1);
-    const low = THREE.MathUtils.clamp((1.9 - point.y) / 0.37, 0, 1);
-    return THREE.MathUtils.lerp(edgeDepth, rootDepth * 0.62, central * low);
-  });
+  const halfDepthAt = (z: number, y: number): number => {
+    const height = THREE.MathUtils.clamp((y - 1.68) / (2.92 - 1.68), 0, 1);
+    const central = THREE.MathUtils.clamp(1 - Math.abs(z) / 1.08, 0, 1);
+    const lowerWedge = Math.pow(1 - height, 1.35);
+    const lateralWeight = THREE.MathUtils.lerp(0.72, 1, central);
+    return THREE.MathUtils.lerp(edgeDepth, rootDepth, lowerWedge * lateralWeight);
+  };
+  const boundaryDepths = FRILL_OUTLINE_YZ.map((point) => halfDepthAt(point.x, point.y));
 
   const positions: number[] = [];
   const indices: number[] = [];
@@ -124,9 +127,10 @@ function frillTransverseGeometry(rootDepth: number, edgeDepth: number): THREE.Bu
     const inner = positions.length / 3;
     FRILL_OUTLINE_YZ.forEach((point, index) => {
       const rimDepth = boundaryDepths[index] ?? edgeDepth;
-      const depth = THREE.MathUtils.lerp(rootDepth, rimDepth, innerRatio);
       const z = THREE.MathUtils.lerp(root.x, point.x, innerRatio);
       const y = THREE.MathUtils.lerp(root.y, point.y, innerRatio);
+      const profileDepth = halfDepthAt(z, y);
+      const depth = THREE.MathUtils.lerp(rootDepth, Math.max(rimDepth, profileDepth), innerRatio);
       positions.push(frillCenterX(y) + side * depth, y, z);
     });
 
@@ -424,7 +428,7 @@ function buildLiving(): THREE.Group {
 
   const livingFrillMaterial = makeOrganicMaterial(TRICERATOPS_COLORS.body);
   livingFrillMaterial.side = THREE.DoubleSide;
-  const outerFrill = new THREE.Mesh(frillTransverseGeometry(0.13, 0.028), livingFrillMaterial);
+  const outerFrill = new THREE.Mesh(frillTransverseGeometry(0.26, 0.024), livingFrillMaterial);
   outerFrill.name = 'triceratops-frill';
   group.add(outerFrill);
   FRILL_RIM_BUMPS_YZ.forEach((bump) => {
@@ -523,7 +527,7 @@ function buildSkeleton(): THREE.Group {
 
   const skeletonFrillMaterial = makeFlatMaterial(TRICERATOPS_COLORS.bone);
   skeletonFrillMaterial.side = THREE.DoubleSide;
-  const frill = new THREE.Mesh(frillTransverseGeometry(0.05, 0.01), skeletonFrillMaterial);
+  const frill = new THREE.Mesh(frillTransverseGeometry(0.085, 0.01), skeletonFrillMaterial);
   frill.name = 'triceratops-skeleton-frill';
   group.add(frill);
 
