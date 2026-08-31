@@ -99,17 +99,37 @@ function addLivingArm(body: GeometryBatch, arm: (typeof ARMS)[number]): void {
   }
 }
 
-function addDomeSpikes(batch: GeometryBatch, boneView: boolean): void {
-  const scale = boneView ? 0.82 : 1;
+function domeSurfaceDepth(x: number, y: number): number {
+  const normalizedX = (x - 1.18) / 0.48;
+  const normalizedY = (y - 2.08) / 0.36;
+  return 0.42 * Math.sqrt(Math.max(0, 1 - normalizedX * normalizedX - normalizedY * normalizedY));
+}
+
+function addCranialOrnaments(batch: GeometryBatch, boneView: boolean): void {
+  const lengthScale = boneView ? 0.84 : 1;
   for (const side of SIDES) {
-    const z = side * 0.37;
-    for (const [base, tip] of [
-      [V(0.93, 1.93, z), V(0.82, 1.93, side * 0.5)],
-      [V(1.17, 1.82, z * 1.03), V(1.12, 1.75, side * 0.51)],
-      [V(1.24, 1.7, z * 0.94), V(1.28, 1.58, side * 0.48)],
+    // The two larger horns grow from the rear rim of the dome. Their roots are
+    // calculated from the curved dome surface so they cannot float at oblique angles.
+    for (const { x, y, tip, radius } of [
+      { x: 0.91, y: 1.96, tip: V(0.7, 2.06, side * 0.46), radius: 0.07 },
+      { x: 1.03, y: 1.84, tip: V(0.85, 1.87, side * 0.5), radius: 0.062 },
     ] as const) {
-      const midpoint = new THREE.Vector3().lerpVectors(base, tip, 1 - scale);
-      coneBetween(batch, midpoint, tip, boneView ? 0.045 : 0.055, 6);
+      const surface = domeSurfaceDepth(x, y);
+      const root = V(x, y, side * Math.max(0.04, surface - radius * 0.35));
+      const scaledTip = new THREE.Vector3().lerpVectors(root, tip, lengthScale);
+      coneBetween(batch, root, scaledTip, radius * (boneView ? 0.84 : 1), 7);
+    }
+
+    // Rounded bosses continue below the dome toward the cheek and snout,
+    // matching the continuous cranial ornament rather than isolated spikes.
+    for (const { x, y, surface, scale } of [
+      { x: 1.19, y: 1.74, surface: 0.35, scale: V(0.075, 0.065, 0.047) },
+      { x: 1.4, y: 1.61, surface: 0.31, scale: V(0.065, 0.055, 0.041) },
+      { x: 1.64, y: 1.58, surface: 0.25, scale: V(0.052, 0.045, 0.034) },
+      { x: 1.82, y: 1.55, surface: 0.16, scale: V(0.037, 0.033, 0.025) },
+    ] as const) {
+      const bossScale = boneView ? scale.clone().multiplyScalar(0.86) : scale;
+      ellipsoid(batch, V(x, y, embeddedSideZ(side, surface, bossScale.z, 0.62)), bossScale, 7, 5);
     }
   }
 }
@@ -228,7 +248,7 @@ function buildLiving(): THREE.Group {
     V(0, 0, 0),
   );
   ellipsoid(dome, V(1.18, 2.08, 0), V(0.48, 0.36, 0.42), 11, 8);
-  addDomeSpikes(spikes, false);
+  addCranialOrnaments(spikes, false);
   HIND_LIMBS.forEach((limb, index) => addLivingLeg(index === 0 ? body : farBody, claws, limb));
   ARMS.forEach((arm, index) => addLivingArm(index === 0 ? body : farBody, arm));
   addLivingHeadDetails(dark, iris, glint);
@@ -349,7 +369,7 @@ function buildSkeleton(): THREE.Group {
     V(0, 0, 0),
   );
   bone.addBetween(V(1.18, 1.43, 0), V(1.98, 1.4, 0), 0.043, 0.022, 6);
-  addDomeSpikes(bone, true);
+  addCranialOrnaments(bone, true);
   for (const side of SIDES) {
     ellipsoid(dark, V(1.39, 1.78, side * 0.34), V(0.15, 0.13, 0.039), 7, 5);
     ellipsoid(dark, V(1.7, 1.61, side * 0.25), V(0.13, 0.08, 0.03), 7, 5);
