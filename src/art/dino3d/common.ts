@@ -86,9 +86,9 @@ export function ellipsoid(
 }
 
 /**
- * Places a thin detail across a body's side surface while keeping most of its
- * depth inside the underlying volume. This prevents layered eyes, nostrils and
- * gum details from reading as detached stickers when viewed from above.
+ * Pushes a side detail into the underlying volume. On curved surfaces, callers
+ * must still use a rounded cap with enough depth; a wide, flat ellipsoid can
+ * touch at its centre while its perimeter remains visibly detached.
  */
 export function embeddedSideZ(
   side: number,

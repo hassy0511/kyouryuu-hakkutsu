@@ -59,36 +59,47 @@ const LEGS = [
 ] as const;
 
 const FRILL = [
-  new THREE.Vector2(0.72, 1.12),
-  new THREE.Vector2(0.7, 1.7),
-  new THREE.Vector2(0.86, 2.08),
-  new THREE.Vector2(1.12, 2.34),
-  new THREE.Vector2(1.47, 2.45),
-  new THREE.Vector2(1.78, 2.34),
-  new THREE.Vector2(1.96, 2.02),
-  new THREE.Vector2(1.93, 1.32),
-  new THREE.Vector2(1.47, 1.02),
+  new THREE.Vector2(0.66, 1.15),
+  new THREE.Vector2(0.62, 1.43),
+  new THREE.Vector2(0.64, 1.73),
+  new THREE.Vector2(0.72, 2.01),
+  new THREE.Vector2(0.85, 2.24),
+  new THREE.Vector2(1.03, 2.43),
+  new THREE.Vector2(1.26, 2.55),
+  new THREE.Vector2(1.5, 2.59),
+  new THREE.Vector2(1.71, 2.53),
+  new THREE.Vector2(1.88, 2.39),
+  new THREE.Vector2(2, 2.18),
+  new THREE.Vector2(2.06, 1.93),
+  new THREE.Vector2(2.05, 1.66),
+  new THREE.Vector2(1.98, 1.4),
+  new THREE.Vector2(1.82, 1.19),
+  new THREE.Vector2(1.57, 1.05),
+  new THREE.Vector2(1.25, 1.03),
+  new THREE.Vector2(0.91, 1.07),
 ] as const;
 
 const FRILL_SPIKES = [
-  { base: V(0.76, 1.43, 0), tip: V(0.05, 1.45, 0) },
-  { base: V(0.73, 1.73, 0), tip: V(0.03, 1.86, 0) },
-  { base: V(0.87, 2.06, 0), tip: V(0.24, 2.38, 0) },
-  { base: V(1.08, 2.3, 0), tip: V(0.55, 2.82, 0) },
-  { base: V(1.36, 2.43, 0), tip: V(1, 3.05, 0) },
-  { base: V(1.66, 2.38, 0), tip: V(1.55, 3.1, 0) },
+  { base: V(0.68, 1.4, 0), tip: V(0.04, 1.42, 0) },
+  { base: V(0.66, 1.7, 0), tip: V(0.01, 1.85, 0) },
+  { base: V(0.75, 1.98, 0), tip: V(0.17, 2.31, 0) },
+  { base: V(0.9, 2.23, 0), tip: V(0.42, 2.72, 0) },
+  { base: V(1.1, 2.42, 0), tip: V(0.8, 3, 0) },
+  { base: V(1.34, 2.53, 0), tip: V(1.26, 3.16, 0) },
 ] as const;
 
-function addFrillSpikes(batch: GeometryBatch, halfDepth: number): void {
-  FRILL_SPIKES.forEach((spike, index) => {
-    const z = (index % 2 === 0 ? -1 : 1) * halfDepth;
-    coneBetween(
-      batch,
-      V(spike.base.x, spike.base.y, z),
-      V(spike.tip.x, spike.tip.y, z * 1.06),
-      0.095,
-      7,
-    );
+function addFrillSpikes(batch: GeometryBatch, halfDepth: number, radius = 0.08): void {
+  FRILL_SPIKES.forEach((spike) => {
+    for (const side of SIDES) {
+      const z = side * halfDepth;
+      coneBetween(
+        batch,
+        V(spike.base.x, spike.base.y, z * 0.94),
+        V(spike.tip.x, spike.tip.y, z * 1.08),
+        radius,
+        7,
+      );
+    }
   });
 }
 
@@ -116,51 +127,69 @@ function addLivingHead(
   body.add(
     loftGeometry(
       [
-        { center: V(1.48, 1.5, 0), radiusY: 0.5, radiusZ: 0.58 },
-        { center: V(1.84, 1.49, 0), radiusY: 0.48, radiusZ: 0.54 },
-        { center: V(2.2, 1.43, 0), radiusY: 0.4, radiusZ: 0.45 },
-        { center: V(2.53, 1.33, 0), radiusY: 0.29, radiusZ: 0.34 },
+        { center: V(1.36, 1.48, 0), radiusY: 0.42, radiusZ: 0.5 },
+        { center: V(1.62, 1.5, 0), radiusY: 0.48, radiusZ: 0.54 },
+        { center: V(1.9, 1.48, 0), radiusY: 0.44, radiusZ: 0.49 },
+        { center: V(2.17, 1.42, 0), radiusY: 0.36, radiusZ: 0.4 },
+        { center: V(2.42, 1.34, 0), radiusY: 0.27, radiusZ: 0.31 },
+        { center: V(2.62, 1.27, 0), radiusY: 0.17, radiusZ: 0.22 },
       ],
-      10,
+      11,
     ),
     V(0, 0, 0),
   );
-  ellipsoid(cream, V(2.66, 1.28, 0), V(0.27, 0.23, 0.28), 8, 6);
-  coneBetween(cream, V(2.48, 1.51, 0), V(2.92, 2.06, 0), 0.13, 8);
+  cream.add(
+    loftGeometry(
+      [
+        { center: V(2.5, 1.29, 0), radiusY: 0.2, radiusZ: 0.25 },
+        { center: V(2.72, 1.24, 0), radiusY: 0.15, radiusZ: 0.19 },
+        { center: V(2.92, 1.22, 0), radiusY: 0.07, radiusZ: 0.1 },
+      ],
+      8,
+    ),
+    V(0, 0, 0),
+  );
+  coneBetween(cream, V(2.44, 1.51, 0), V(2.92, 2.08, 0), 0.115, 8);
   for (const side of SIDES) {
-    const eyeSurface = 0.44;
+    const eyeSurface = 0.4;
     ellipsoid(
       dark,
-      V(2.05, 1.68, embeddedSideZ(side, eyeSurface, 0.045)),
-      V(0.145, 0.12, 0.045),
+      V(2.06, 1.66, embeddedSideZ(side, eyeSurface, 0.04, 0.35)),
+      V(0.14, 0.115, 0.04),
       8,
       5,
     );
     ellipsoid(
       iris,
-      V(2.07, 1.685, embeddedSideZ(side, eyeSurface + 0.011, 0.021)),
-      V(0.083, 0.083, 0.021),
+      V(2.08, 1.665, embeddedSideZ(side, eyeSurface + 0.01, 0.02, 0.45)),
+      V(0.08, 0.08, 0.02),
       7,
       5,
     );
     ellipsoid(
       dark,
-      V(2.085, 1.685, embeddedSideZ(side, eyeSurface + 0.017, 0.01)),
-      V(0.033, 0.052, 0.01),
+      V(2.095, 1.665, embeddedSideZ(side, eyeSurface + 0.018, 0.009, 0.5)),
+      V(0.032, 0.05, 0.009),
       6,
       4,
     );
     ellipsoid(
       glint,
-      V(2.05, 1.725, embeddedSideZ(side, eyeSurface + 0.021, 0.006)),
-      V(0.02, 0.022, 0.006),
+      V(2.06, 1.704, embeddedSideZ(side, eyeSurface + 0.024, 0.005, 0.55)),
+      V(0.018, 0.02, 0.005),
       5,
       4,
     );
-    ellipsoid(dark, V(2.48, 1.47, embeddedSideZ(side, 0.31, 0.013)), V(0.05, 0.031, 0.013), 6, 4);
+    ellipsoid(
+      dark,
+      V(2.45, 1.43, embeddedSideZ(side, 0.29, 0.011, 0.15)),
+      V(0.045, 0.028, 0.011),
+      6,
+      4,
+    );
     dark.addBetween(
-      V(2.39, 1.18, embeddedSideZ(side, 0.3, 0.012, 0.08)),
-      V(2.79, 1.18, embeddedSideZ(side, 0.12, 0.006, 0.08)),
+      V(2.38, 1.17, embeddedSideZ(side, 0.27, 0.011, 0.08)),
+      V(2.91, 1.18, embeddedSideZ(side, 0.09, 0.005, 0.08)),
       0.012,
       0.006,
       5,
@@ -213,12 +242,12 @@ function buildLiving(): THREE.Group {
   LEGS.forEach((leg) => addLivingLeg(leg.near ? body : farBody, cream, leg));
 
   const frill = new THREE.Mesh(
-    silhouetteGeometry(FRILL, 0.59),
-    makeOrganicMaterial(STYRACOSAURUS_COLORS.frill),
+    silhouetteGeometry(FRILL, 0.46),
+    makeOrganicMaterial(STYRACOSAURUS_COLORS.body),
   );
-  frill.name = 'styracosaurus-red-frill';
+  frill.name = 'styracosaurus-frill';
   group.add(frill);
-  addFrillSpikes(cream, 0.6);
+  addFrillSpikes(cream, 0.46);
   addLivingHead(body, cream, dark, iris, glint);
   group.add(
     farBody.toMesh(makeOrganicMaterial(STYRACOSAURUS_COLORS.bodyShade), 'styracosaurus-far-legs'),
@@ -303,24 +332,25 @@ function buildSkeleton(): THREE.Group {
   );
   frill.name = 'styracosaurus-skeleton-frill';
   group.add(frill);
-  addFrillSpikes(bone, 0.07);
+  addFrillSpikes(bone, 0.07, 0.06);
   bone.add(
     loftGeometry(
       [
-        { center: V(1.45, 1.5, 0), radiusY: 0.4, radiusZ: 0.46 },
-        { center: V(1.82, 1.49, 0), radiusY: 0.39, radiusZ: 0.44 },
-        { center: V(2.2, 1.42, 0), radiusY: 0.33, radiusZ: 0.37 },
-        { center: V(2.55, 1.32, 0), radiusY: 0.22, radiusZ: 0.27 },
+        { center: V(1.38, 1.48, 0), radiusY: 0.34, radiusZ: 0.42 },
+        { center: V(1.66, 1.49, 0), radiusY: 0.4, radiusZ: 0.46 },
+        { center: V(1.94, 1.46, 0), radiusY: 0.37, radiusZ: 0.42 },
+        { center: V(2.2, 1.4, 0), radiusY: 0.3, radiusZ: 0.35 },
+        { center: V(2.44, 1.32, 0), radiusY: 0.22, radiusZ: 0.27 },
+        { center: V(2.66, 1.25, 0), radiusY: 0.13, radiusZ: 0.18 },
       ],
-      9,
+      10,
     ),
     V(0, 0, 0),
   );
-  coneBetween(bone, V(2.47, 1.5, 0), V(2.91, 2.05, 0), 0.105, 8);
-  ellipsoid(bone, V(2.66, 1.27, 0), V(0.26, 0.21, 0.27), 8, 6);
+  coneBetween(bone, V(2.44, 1.51, 0), V(2.92, 2.08, 0), 0.095, 8);
   for (const side of SIDES) {
-    ellipsoid(dark, V(2.05, 1.65, side * 0.4), V(0.18, 0.15, 0.045), 7, 5);
-    ellipsoid(dark, V(2.35, 1.39, side * 0.3), V(0.18, 0.085, 0.03), 7, 5);
+    ellipsoid(dark, V(2.05, 1.64, side * 0.38), V(0.17, 0.14, 0.04), 7, 5);
+    ellipsoid(dark, V(2.38, 1.36, side * 0.27), V(0.17, 0.078, 0.028), 7, 5);
   }
   group.add(
     shade.toMesh(makeFlatMaterial(STYRACOSAURUS_COLORS.boneShade), 'styracosaurus-girdles'),

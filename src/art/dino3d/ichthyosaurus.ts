@@ -175,6 +175,7 @@ function buildLiving(): THREE.Group {
   const body = new GeometryBatch();
   const belly = new GeometryBatch();
   const fins = new GeometryBatch();
+  const eyeSocket = new GeometryBatch();
   const iris = new GeometryBatch();
   const dark = new GeometryBatch();
   const glint = new GeometryBatch();
@@ -224,32 +225,34 @@ function buildLiving(): THREE.Group {
   PADDLES.forEach((paddle) => addLivingPaddle(fins, paddle));
 
   for (const side of [-1, 1]) {
-    const eyeSurface = 0.275;
+    // Build nested spherical caps, not thin discs. Their rear halves intersect
+    // the skull, so the contact edge follows the head's curve from every angle.
+    const eyeSurface = 0.25;
     ellipsoid(
-      dark,
-      V(0.78, 1.04, embeddedSideZ(side, eyeSurface, 0.026)),
-      V(0.19, 0.18, 0.026),
+      eyeSocket,
+      V(0.78, 0.99, embeddedSideZ(side, eyeSurface, 0.1, 0.15)),
+      V(0.12, 0.105, 0.1),
       10,
       7,
     );
     ellipsoid(
       iris,
-      V(0.8, 1.045, embeddedSideZ(side, eyeSurface + 0.007, 0.014)),
-      V(0.105, 0.11, 0.014),
+      V(0.795, 0.992, embeddedSideZ(side, eyeSurface + 0.017, 0.065, 0.17)),
+      V(0.065, 0.065, 0.065),
       9,
       7,
     );
     ellipsoid(
       dark,
-      V(0.82, 1.045, embeddedSideZ(side, eyeSurface + 0.012, 0.008)),
-      V(0.042, 0.065, 0.008),
+      V(0.807, 0.992, embeddedSideZ(side, eyeSurface + 0.029, 0.04, 0.18)),
+      V(0.027, 0.038, 0.04),
       7,
       5,
     );
     ellipsoid(
       glint,
-      V(0.77, 1.095, embeddedSideZ(side, eyeSurface + 0.016, 0.004)),
-      V(0.018, 0.022, 0.004),
+      V(0.778, 1.018, embeddedSideZ(side, eyeSurface + 0.041, 0.014, 0.08)),
+      V(0.012, 0.014, 0.014),
       6,
       4,
     );
@@ -261,6 +264,7 @@ function buildLiving(): THREE.Group {
     body.toMesh(makeOrganicMaterial(ICHTHYOSAURUS_COLORS.back), 'ichthyosaurus-body-head'),
     belly.toMesh(makeOrganicMaterial(ICHTHYOSAURUS_COLORS.belly), 'ichthyosaurus-belly'),
     fins.toMesh(finMaterial, 'ichthyosaurus-fins'),
+    eyeSocket.toMesh(makeOrganicMaterial(ICHTHYOSAURUS_COLORS.back), 'ichthyosaurus-eye-sockets'),
     iris.toMesh(makeOrganicMaterial(ICHTHYOSAURUS_COLORS.iris), 'ichthyosaurus-irises'),
     dark.toMesh(makeOrganicMaterial(ICHTHYOSAURUS_COLORS.dark), 'ichthyosaurus-eye-details'),
     glint.toMesh(makeOrganicMaterial('#FFFDF4'), 'ichthyosaurus-eye-glints'),
