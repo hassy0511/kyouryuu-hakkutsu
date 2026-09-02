@@ -1747,7 +1747,9 @@ export class FieldMode {
 
   private updateAlerts(): void {
     for (const pit of this.state.island.pits) {
-      const alert = this.alertEls.get(pit.id)!;
+      // 目印が まだ作られていない現場は とばす(1つの取りこぼしで 画面が止まらないように)
+      const alert = this.alertEls.get(pit.id);
+      if (!alert) continue;
       const state = this.siteState(pit.id);
       const [x, z] = pit.pos;
       const dist = Math.hypot(this.player.position.x - x, this.player.position.z - z);

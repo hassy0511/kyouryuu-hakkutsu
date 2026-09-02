@@ -199,6 +199,15 @@ function rebuildField(): FieldMode {
 }
 let field = rebuildField();
 
+// セーブを読んだあとは かならず フィールドを作り直す。
+// (起動時のフィールドは 既定の島=k1 で組み立て済み。ロードで島が変わると
+//  現場の目印などが 島とかみ合わず、毎フレームの更新で落ちてしまう)
+function refreshFieldForCurrentIsland(): void {
+  field.deactivate();
+  field.dispose();
+  field = rebuildField();
+}
+
 function enterPit(def: PitDef): void {
   field.deactivate();
   pit = new PitMode(renderer, sfx, def, state, {
@@ -499,6 +508,7 @@ function startGame(): void {
 el('title-continue').addEventListener('click', () => {
   sfx.unlock();
   state.load();
+  refreshFieldForCurrentIsland();
   updateHud();
   startGame();
 });
@@ -594,6 +604,7 @@ function applyAdminUnlock(): void {
   if (ADMIN) {
     state.load();
     applyAdminUnlock();
+    refreshFieldForCurrentIsland();
     updateHud();
     el('ov-title').classList.remove('show');
     el('ov-letter').classList.remove('show');
@@ -667,18 +678,37 @@ const clock = new THREE.Clock();
 updateHud();
 fitViewport();
 
+// three.js は「中身を実行 → 次のコマを予約」の順なので、例外が1回でも出ると
+// ループが二度と回らない(画面が固まる)。必ず受け止めて、遊びを止めない
+let loopErrorShown = false;
 renderer.setAnimationLoop(() => {
-  const dt = Math.min(clock.getDelta(), 0.05);
-  const time = clock.elapsedTime;
-  if (exhibit) {
-    exhibit.update();
-    renderer.render(exhibit.scene, exhibit.camera);
-  } else if (pit) {
-    pit.update(dt, time);
-    renderer.render(pit.scene, pit.camera);
-  } else {
-    field.update(dt);
-    renderer.render(field.scene, field.camera);
+  try {
+    const dt = Math.min(clock.getDelta(), 0.05);
+    const time = clock.elapsedTime;
+    if (exhibit) {
+      exhibit.update();
+      renderer.render(exhibit.scene, exhibit.camera);
+    } else if (pit) {
+      pit.update(dt, time);
+      renderer.render(pit.scene, pit.camera);
+    } else {
+      field.update(dt);
+      renderer.render(field.scene, field.camera);
+    }
+    meter?.tick();
+  } catch (err) {
+    console.error(err);
+    if (!loopErrorShown) {
+      loopErrorShown = true;
+      showMsg('⚠️ ちょっと つまずいたよ。うまく うごかないときは よみこみ なおしてね');
+    }
   }
-  meter?.tick();
+});
+
+// iPad などで えがく力が たりなくなると WebGL が止まることがある。
+// 気づかず固まったままにせず、こえをかけて 自動で よみこみ なおす
+renderer.domElement.addEventListener('webglcontextlost', (event) => {
+  event.preventDefault();
+  showMsg('⚠️ えが とまっちゃった… いま よみこみ なおすね');
+  setTimeout(() => location.reload(), 1800);
 });
