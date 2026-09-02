@@ -11,6 +11,7 @@ import {
   speciesById,
   type PitDef,
 } from './core/state';
+import { hasDinoModel } from './art/dino3d';
 import { ExhibitMode } from './game/exhibit';
 import { FpsMeter } from './ui/fps';
 import { FieldMode, type FieldCallbacks } from './game/field';
@@ -212,7 +213,17 @@ function enterPit(def: PitDef): void {
   field.deactivate();
   pit = new PitMode(renderer, sfx, def, state, {
     showMsg,
+    queueMsgs,
     onExit: exitPit,
+    onBoneBroken(speciesId, boneId) {
+      const sp = speciesById(speciesId);
+      const bone = sp.bones.find((b) => b.id === boneId);
+      queueMsgs([
+        `💔 ${sp.nameJa}の 「${bone?.nameJa}」が こなごなに こわれた…`,
+        '🎩 はかせ「たたきすぎじゃ! ホネの ちかくは 🖌️ブラシで そーっと」',
+        '🔁 そとに でて もういちど はいれば、この げんばは もとに もどるぞ',
+      ]);
+    },
     onGateBlocked(look) {
       if (look === 'slabrock') {
         if (!state.flag('slabrockSeen')) {
@@ -286,6 +297,9 @@ function enterPit(def: PitDef): void {
         const lines = [`🔁 ${sp.nameJa}の 「${bone?.nameJa}」を ほりなおした! ${starsText}`];
         if (boneStars > prevStars) lines.push('✨ ★が あがった! ノートに きろくしたぞ');
         else if (boneStars < prevStars) lines.push(`だいじょうぶ、きろくは ★${prevStars}の まま`);
+        if (boneStars > prevStars && hasDinoModel(speciesId) && state.livingUnlocked(speciesId)) {
+          lines.push('🦖 ヒビが ぜんぶ なおった! はくぶつかんで いきていたすがたが みられるぞ!');
+        }
         queueMsgs(lines);
         updateHud();
         return;
@@ -294,6 +308,9 @@ function enterPit(def: PitDef): void {
         `${sp.id === 'ammonite' ? '🐚' : '🦴'} これは… ${sp.nameJa}の 「${bone?.nameJa}」だ! ${starsText}`,
       ];
       if (bone?.feature) lines.push(`🔍 ${bone.feature}`);
+      if (boneStars < 3 && hasDinoModel(speciesId)) {
+        lines.push('🔒 ヒビあり… いきていたすがたは、ほりなおして ★3に すると みられる');
+      }
       if (!state.flag(`learn:${speciesId}`)) {
         state.setFlag(`learn:${speciesId}`);
         lines.push(`📝 ${sp.learn}`);
@@ -332,7 +349,9 @@ function enterPit(def: PitDef): void {
 
 function exitPit(): void {
   if (!pit) return;
-  state.storePit(pit.def.id, pit.serialize());
+  const save = pit.serialize(); // 浮いている出土品の回収も この中で行う
+  if (pit.hadBreak) state.clearPit(pit.def.id);
+  else state.storePit(pit.def.id, save);
   const done = pit.isFinished();
   const pitName = pit.def.nameJa;
   pit.dispose();
@@ -376,6 +395,7 @@ function enterExhibit(speciesId: string): void {
     `🔍 ${sp.bones.find((b) => b.id === sp.featureBone)?.feature ?? ''}`;
   el('exhibit-skel').classList.add('active');
   el('exhibit-living').classList.remove('active');
+  refreshExhibitLock(speciesId);
   el('exhibit-ui').classList.remove('hidden');
   el('hud').classList.add('hidden');
   sfx.grandFanfare();
@@ -392,8 +412,30 @@ function exitExhibit(): void {
   overlays.openMuseum();
 }
 
+// いきていたすがたは「ヒビの ない ホネ(全部★3)で ふくげん」したときだけ。
+// ほりなおして ★3に すれば あとから 開く
+function refreshExhibitLock(speciesId: string): void {
+  const cracked = state.crackedBones(speciesId);
+  const locked = cracked.length > 0;
+  const btn = el('exhibit-living');
+  btn.classList.toggle('locked', locked);
+  btn.textContent = locked ? '🔒 いきていたすがた' : '🦖 いきていたすがた';
+  const note = el('exhibit-lock');
+  note.classList.toggle('hidden', !locked);
+  note.textContent = locked
+    ? `🔒 ヒビの ある ホネ: ${cracked.map((b) => b.nameJa).join('・')} — ほりなおして ★3に すると いきていたすがたが みられる!`
+    : '';
+}
 function setExhibitView(view: 'skeleton' | 'living'): void {
   if (!exhibit) return;
+  if (view === 'living' && !state.livingUnlocked(exhibit.speciesId)) {
+    sfx.fail();
+    // 自分で押した結果なので、ながれている案内に割り込んで すぐ見せる
+    queueMsgs([
+      '🔒 ヒビの ある ホネが あると いきていたすがたは みられない。ほりなおして ★3に しよう!',
+    ]);
+    return;
+  }
   exhibit.setView(view);
   el('exhibit-skel').classList.toggle('active', view === 'skeleton');
   el('exhibit-living').classList.toggle('active', view === 'living');
@@ -651,6 +693,14 @@ const meter = location.search.includes('debug')
     });
   },
   give: (kind: 'wood' | 'stone' | 'crystal' | 'iron', n: number) => state.addMaterial(kind, n),
+  giveBone: (speciesId: string, boneId: string, stars: number) => {
+    state.collectBone(speciesId, boneId, stars);
+    updateHud();
+  },
+  restoreNow: (speciesId: string) => {
+    state.restore(speciesId);
+    updateHud();
+  },
   pickLevel: (n: number) => state.setPickLevel(n),
   travel: (id: string) => travelTo(id),
   startNew: () => {

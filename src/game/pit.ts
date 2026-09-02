@@ -26,6 +26,9 @@ const gateColor = (look: string): number => parseInt(GATE_LOOKS[look]?.color ?? 
 
 const ACTION_COOLDOWN_MS = 140;
 const DAMAGE_CAP_PER_ACTION = 2;
+// ヒビが これ以上 たまると ホネは こなごなに こわれる(もろい化石は はやい)
+const BREAK_DAMAGE = 5;
+const BREAK_DAMAGE_FRAGILE = 3;
 const RUB_PROGRESS_PER_PX = 1 / 300;
 const TAP_POLISH_AMOUNT = 0.25;
 const HARD_LAYER_FROM = 4;
@@ -60,6 +63,8 @@ class FossilPiece {
   readonly group = new THREE.Group();
   damage = 0;
   collected = false;
+  /** ヒビが たまりすぎて こわれた(回収ではない。帰りに現場ごと やりなおしになる) */
+  broken = false;
   ready = false;
   readyBaseY = 0;
   supportStage = 0;
@@ -142,9 +147,11 @@ interface Pickup {
 
 export interface PitCallbacks {
   showMsg(text: string): void;
+  queueMsgs(lines: string[]): void;
   onExit(): void;
   onGateBlocked(look: string): void;
   onBoneCollected(speciesId: string, boneId: string, stars: number): void;
+  onBoneBroken(speciesId: string, boneId: string): void;
   onFirstReveal(): void;
 }
 
@@ -163,6 +170,8 @@ export class PitMode {
   private readonly hardHp: number[] = [];
   private readonly baseColors: THREE.Color[] = [];
   private readonly gateAt = new Map<number, GateDef>();
+  /** この訪問で ホネが こわれた。帰りに 掘り状態を捨て、次に入ると 現場ごと まっさらに戻す */
+  hadBreak = false;
   private readonly branchSet = new Set<number>();
   private readonly fossils: FossilPiece[] = [];
   private readonly cellOwner = new Map<number, FossilPiece>();
@@ -746,7 +755,7 @@ export class PitMode {
               fossil.wobbleT = 1.2;
               this.sfx.crack();
               this.shake = 1;
-              this.cb.showMsg('💥 いわが おちて ホネに ヒビが!');
+              if (!this.checkBreak(fossil)) this.cb.showMsg('💥 いわが おちて ホネに ヒビが!');
             }
           }
           this.exposeNeighbors(dest);
@@ -779,7 +788,7 @@ export class PitMode {
           fossil.group.position.y -= 0.09;
           this.sfx.crack();
           this.shake = 1;
-          this.cb.showMsg('💥 ホネが かたむいて ヒビが はいった!');
+          if (!this.checkBreak(fossil)) this.cb.showMsg('💥 ホネが かたむいて ヒビが はいった!');
         }
       }
     }
@@ -803,13 +812,14 @@ export class PitMode {
     this.afterRemoval(i);
   }
 
-  private hitCell(i: number): { damaged: boolean; fragile?: boolean } {
+  private hitCell(i: number): { damaged: boolean; fragile?: boolean; broke?: boolean } {
     const fossil = this.cellOwner.get(i);
     if (fossil && !fossil.collected) {
       const cell = fossil.cells.get(i)!;
       if (cell.status === 'hidden') this.reveal(i);
       fossil.damage++;
       fossil.tint();
+      if (this.checkBreak(fossil)) return { damaged: true, broke: true };
       return { damaged: true, fragile: fossil.def.fragile === true };
     }
     const rock = this.rocks.get(i);
@@ -914,6 +924,7 @@ export class PitMode {
 
     let damaged = 0;
     let fragileHit = false;
+    let broke = false;
     for (const [ax, az] of area) {
       if (!inBounds(ax, az, layer)) continue;
       const i = idx(ax, az, layer);
@@ -922,8 +933,9 @@ export class PitMode {
       if (r.damaged) {
         damaged++;
         if (r.fragile) fragileHit = true;
+        if (r.broke) broke = true;
       }
-      if (damaged >= DAMAGE_CAP_PER_ACTION) break;
+      if (damaged >= DAMAGE_CAP_PER_ACTION || broke) break;
     }
     this.sfx.pick();
     const wasBroken = this.state.tool.broken;
@@ -932,15 +944,46 @@ export class PitMode {
       this.sfx.fail();
       this.cb.showMsg('💔 ピッケルが こわれた! ✋でも ほれるが、⛺で なおすと はやいぞ');
     }
-    if (damaged > 0) {
+    if (damaged > 0 && !broke) {
       this.sfx.crack();
       this.shake = 1;
-      this.cb.showMsg(
-        fragileHit
-          ? '💥 もろい かせきに あたった! ヒビだらけに なってしまう…'
-          : '💥 かせきに ピッケルが あたった…!',
-      );
+      const hit = fragileHit
+        ? '💥 もろい かせきに あたった! ヒビだらけに なってしまう…'
+        : '💥 かせきに ピッケルが あたった…!';
+      // はじめてのヒビ: 展示への影響と こわれるまでの目安を はかせが 1回だけ説明する
+      if (!this.state.flag('crackRuleSeen')) {
+        this.state.setFlag('crackRuleSeen');
+        this.cb.queueMsgs([
+          hit,
+          '🎩 はかせ「ヒビの はいった ホネでは、はくぶつかんで いきていたすがたが みられんぞ」',
+          '🎩 はかせ「たたきつづけると こなごなに こわれる。ホネの ちかくは 🖌️ブラシで そーっとじゃ」',
+        ]);
+      } else {
+        this.cb.showMsg(hit);
+      }
     }
+  }
+
+  // ヒビが たまりすぎた ホネは こなごなに こわれる。このホネは 回収できず、
+  // 帰りに現場の掘り状態を捨てるので、次に入ると 現場ごと まっさらに戻る(やりなおし)
+  private checkBreak(fossil: FossilPiece): boolean {
+    const limit = fossil.def.fragile ? BREAK_DAMAGE_FRAGILE : BREAK_DAMAGE;
+    if (fossil.broken || fossil.damage < limit) return false;
+    fossil.broken = true;
+    fossil.collected = true; // 以後の当たり判定・支え判定から外す(回収あつかいではない)
+    fossil.ready = false;
+    for (const [i, cell] of fossil.cells) {
+      cell.crust.visible = false;
+      this.particles.burst(this.worldOf(i), new THREE.Color(0x8f7d66), 12);
+    }
+    fossil.group.visible = false;
+    for (const i of fossil.cells.keys()) this.settleColumn(i);
+    this.updateSupports();
+    this.hadBreak = true;
+    this.sfx.fail();
+    this.shake = 1.4;
+    this.cb.onBoneBroken(fossil.def.speciesId, fossil.def.boneId);
+    return true;
   }
 
   polish(i: number, amount: number): void {
@@ -1221,7 +1264,7 @@ export class PitMode {
   }
 
   isFinished(): boolean {
-    return this.fossils.every((f) => f.collected);
+    return this.fossils.every((f) => f.collected && !f.broken);
   }
 
   cellScreen(gx: number, gz: number, layer: number): { x: number; y: number } {
@@ -1240,6 +1283,8 @@ export class PitMode {
     return this.fossils.map((f) => ({
       bone: f.def.boneId,
       collected: f.collected,
+      broken: f.broken,
+      damage: f.damage,
       ready: f.ready,
       cells: [...f.cells.entries()].map(([i, c]) => ({ i, ...coords(i), status: c.status })),
     }));

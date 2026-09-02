@@ -251,7 +251,19 @@ export class GameState {
   collectBone(speciesId: string, boneId: string, stars: number): void {
     const key = boneKey(speciesId, boneId);
     this.data.fossilStars[key] = Math.max(this.data.fossilStars[key] ?? 0, stars);
+    // 復元ずみの種を ほりなおして ★が上がったら、展示の★も追いつかせる
+    if (this.isRestored(speciesId)) this.data.restored[speciesId] = this.minBoneStars(speciesId);
     this.changed();
+  }
+  private minBoneStars(speciesId: string): number {
+    return Math.min(...speciesById(speciesId).bones.map((b) => this.boneStars(speciesId, b.id)));
+  }
+  /** ヒビ(★3未満)の ある ホネ。展示の「いきていたすがた」は これが 0本のときだけ */
+  crackedBones(speciesId: string): BoneDef[] {
+    return speciesById(speciesId).bones.filter((b) => this.boneStars(speciesId, b.id) < 3);
+  }
+  livingUnlocked(speciesId: string): boolean {
+    return this.isRestored(speciesId) && this.crackedBones(speciesId).length === 0;
   }
   hasBone(speciesId: string, boneId: string): boolean {
     return boneKey(speciesId, boneId) in this.data.fossilStars;
@@ -269,8 +281,7 @@ export class GameState {
     return speciesId in this.data.restored;
   }
   restore(speciesId: string): number {
-    const species = speciesById(speciesId);
-    const stars = Math.min(...species.bones.map((b) => this.boneStars(speciesId, b.id)));
+    const stars = this.minBoneStars(speciesId);
     this.data.restored[speciesId] = stars;
     this.changed();
     return stars;
@@ -372,6 +383,11 @@ export class GameState {
   }
   storePit(pitId: string, save: PitSave): void {
     this.islandSave().pits[pitId] = save;
+    this.changed();
+  }
+  /** 現場の掘り状態を捨てる(ホネが こわれたときの やりなおし用。次に入ると まっさら) */
+  clearPit(pitId: string): void {
+    delete this.islandSave().pits[pitId];
     this.changed();
   }
   pitDone(pitId: string): boolean {

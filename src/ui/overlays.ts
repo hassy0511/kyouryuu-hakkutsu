@@ -44,6 +44,18 @@ export class Overlays {
     private readonly hooks: OverlayHooks,
   ) {
     el('nb-close').addEventListener('click', () => this.hide('ov-notebook'));
+    // 長いリストでも すぐ とじられるように: 上の ✕ と、カードの外(うす暗いところ)のタップ
+    for (const [ovId, xId] of [
+      ['ov-notebook', 'nb-x'],
+      ['ov-museum', 'museum-x'],
+      ['ov-craft', 'craft-x'],
+      ['ov-boat', 'boat-x'],
+    ] as const) {
+      el(xId).addEventListener('click', () => this.hide(ovId));
+      el(ovId).addEventListener('click', (e) => {
+        if (e.target === el(ovId)) this.hide(ovId);
+      });
+    }
     for (const t of ['dino', 'era', 'know'] as const) {
       el(`nb-tab-${t}`).addEventListener('click', () => this.openNotebook(t));
     }
@@ -131,6 +143,11 @@ export class Overlays {
           <div class="nb-row">おおきさ: やく${sp.lengthM}m（${sp.lengthNote}）</div>
           <div class="nb-fact">💡 ${sp.funFact}</div>
           <div class="nb-fact">📝 ${sp.learn}</div>
+          ${
+            hasDinoModel(sp.id) && !this.state.livingUnlocked(sp.id)
+              ? '<div class="nb-row lock-line">🔒 ヒビの ある ホネを ほりなおして ★3に すると「いきていたすがた」が みられる</div>'
+              : ''
+          }
           <ul class="nb-bones">${boneRows}</ul>
         </div>`;
       }
@@ -469,6 +486,13 @@ export class Overlays {
           <div class="mu-emoji">${sp.emoji}</div>
           <b>${sp.nameJa}</b>
           <div class="gold">${stars(s)}</div>
+          ${
+            hasDinoModel(sp.id)
+              ? this.state.livingUnlocked(sp.id)
+                ? '<div class="ok-line">🦖 いきていたすがた OK</div>'
+                : '<div class="lock-line">🔒 ヒビあり: いきていたすがたは まだ</div>'
+              : ''
+          }
           ${hasDinoModel(sp.id) ? `<button data-exhibit="${sp.id}" type="button">🏛️ てんじを みる</button>` : ''}
           <button data-note="${sp.id}" type="button">📖 ノートでみる</button>
         </div>`;
@@ -582,6 +606,11 @@ export class Overlays {
     el('cel-emoji').textContent = sp.emoji;
     el('cel-name').textContent = sp.nameJa;
     el('cel-stars').textContent = stars(s);
+    el('cel-lock').textContent = !hasDinoModel(sp.id)
+      ? ''
+      : s === 3
+        ? '✨ ヒビなし! いきていたすがたも みられる!'
+        : '🔒 ヒビの ある ホネが あるので、いきていたすがたは まだ。ほりなおして ★3に しよう!';
     el('cel-fact').textContent = `💡 ${sp.funFact}`;
     el('cel-learn').textContent = `📝 ${sp.learn}`;
     const confetti = el('cel-confetti');

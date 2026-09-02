@@ -318,6 +318,57 @@
         border: none;
         margin-top: 10px;
       }
+      /* スクロールしても 上に のこる ✕ */
+      .x-bar {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+        height: 0;
+        display: flex;
+        justify-content: flex-end;
+      }
+      .x-close {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        border: 2px solid #c9b48a;
+        background: #fff3d6;
+        color: #5a4a33;
+        font-size: 20px;
+        font-weight: 700;
+        transform: translate(8px, -8px);
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.18);
+      }
+      .lock-line {
+        color: #a5633a;
+        font-size: 12px;
+        margin: 4px 0;
+      }
+      .ok-line {
+        color: #3f8a4c;
+        font-size: 12px;
+        margin: 4px 0;
+      }
+      #cel-lock {
+        text-align: center;
+        font-size: 14px;
+        margin: 6px 0 10px;
+        color: #7a5a3a;
+      }
+      #exhibit-lock {
+        position: absolute;
+        bottom: calc(78px + env(safe-area-inset-bottom));
+        left: 50%;
+        transform: translateX(-50%);
+        max-width: 88vw;
+        font-size: 13px;
+        text-align: center;
+        pointer-events: none;
+      }
+      #exhibit-toggles button.locked {
+        opacity: 0.55;
+        border-style: dashed;
+      }
       .dim {
         color: #9a8f7a;
       }
@@ -679,6 +730,7 @@
         <button id="exhibit-skel" type="button" class="active">🦴 ホネのすがた</button>
         <button id="exhibit-living" type="button">🦖 いきていたすがた</button>
       </div>
+      <div id="exhibit-lock" class="panel hidden"></div>
       <button id="exhibit-back" type="button">🏛️ もどる</button>
     </div>
 
@@ -729,6 +781,9 @@
     <!-- はかせのノート -->
     <div id="ov-notebook" class="overlay">
       <div class="card">
+        <div class="x-bar">
+          <button id="nb-x" class="x-close" type="button" aria-label="とじる">✕</button>
+        </div>
         <h1>📖 はかせの たんけんノート</h1>
         <div id="nb-tabs">
           <button id="nb-tab-dino" type="button">きょうりゅう</button>
@@ -743,6 +798,9 @@
     <!-- 博物館 -->
     <div id="ov-museum" class="overlay">
       <div class="card">
+        <div class="x-bar">
+          <button id="museum-x" class="x-close" type="button" aria-label="とじる">✕</button>
+        </div>
         <h1>🏛️ ゆめの はくぶつかん</h1>
         <div id="museum-cards"></div>
         <button id="museum-close" class="closer" type="button">そとに でる</button>
@@ -765,6 +823,7 @@
         <div id="cel-emoji">🦖</div>
         <div id="cel-name"></div>
         <div id="cel-stars"></div>
+        <div id="cel-lock"></div>
         <div id="cel-fact"></div>
         <div id="cel-learn"></div>
         <button id="celebrate-close" class="closer primary" type="button">🏛️ てんじを みる</button>
@@ -782,6 +841,9 @@
     <!-- クラフト -->
     <div id="ov-boat" class="overlay">
       <div class="card">
+        <div class="x-bar">
+          <button id="boat-x" class="x-close" type="button" aria-label="とじる">✕</button>
+        </div>
         <h1>⛵ しまを えらぶ</h1>
         <div id="boat-list"></div>
         <button id="boat-close" class="closer" type="button">とじる</button>
@@ -790,6 +852,9 @@
 
     <div id="ov-craft" class="overlay">
       <div class="card">
+        <div class="x-bar">
+          <button id="craft-x" class="x-close" type="button" aria-label="とじる">✕</button>
+        </div>
         <h1>🛠️ どうぐづくり</h1>
         <div id="craft-pick-status"></div>
         <div class="recipe">
