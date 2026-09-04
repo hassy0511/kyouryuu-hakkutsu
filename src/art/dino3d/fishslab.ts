@@ -80,6 +80,7 @@ function buildSlab(): THREE.Group {
 function buildLiving(): THREE.Group {
   const group = new THREE.Group();
   group.name = 'fishslab-living-fish';
+  group.position.z = -0.12;
   const body = new GeometryBatch();
   const belly = new GeometryBatch();
   const fins = new GeometryBatch();
