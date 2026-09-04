@@ -356,9 +356,12 @@ function forEachMaterial(root: THREE.Object3D, callback: (material: THREE.Materi
 function setOpacity(root: THREE.Object3D, opacity: number): void {
   root.visible = opacity > 0.002;
   forEachMaterial(root, (material) => {
+    const storedOpacity = material.userData.baseOpacity;
+    const baseOpacity = typeof storedOpacity === 'number' ? storedOpacity : material.opacity;
+    material.userData.baseOpacity = baseOpacity;
     material.transparent = true;
-    material.opacity = opacity;
-    material.depthWrite = opacity > 0.42;
+    material.opacity = opacity * baseOpacity;
+    material.depthWrite = material.opacity > 0.42;
   });
 }
 
@@ -398,47 +401,53 @@ function fitCameraToModel(): void {
   const projectedWidth = isFlyingPterosaur ? Math.max(size.x, size.z) : size.x;
   const distanceForWidth = projectedWidth / (2 * Math.tan(verticalFov / 2) * camera.aspect);
   const cameraPadding =
-    speciesId === 'anomalocaris'
-      ? 1.35
-      : speciesId === 'dimetrodon'
-        ? 1.55
-        : speciesId === 'dunkleosteus'
-          ? 1.3
-          : speciesId === 'eurypterus'
-            ? 1.4
-            : speciesId === 'opabinia'
-              ? 1.5
-              : speciesId === 'mammoth'
-                ? 1.42
-                : speciesId === 'smilodon'
-                  ? 1.34
-                  : speciesId === 'woollyrhino'
-                    ? 1.38
-                    : speciesId === 'glyptodon'
-                      ? 1.28
-                      : speciesId === 'megatherium'
-                        ? 1.4
-                        : speciesId === 'plateosaurus'
-                          ? 1.35
-                          : speciesId === 'futabasuzukiryu'
-                            ? 1.42
-                            : speciesId === 'ammonite' || speciesId === 'belemnite'
+    speciesId === 'archaeopteryx' ||
+    speciesId === 'fishslab' ||
+    speciesId === 'footprint' ||
+    speciesId === 'armorscutes' ||
+    speciesId === 'eggnest'
+      ? 1.38
+      : speciesId === 'anomalocaris'
+        ? 1.35
+        : speciesId === 'dimetrodon'
+          ? 1.55
+          : speciesId === 'dunkleosteus'
+            ? 1.3
+            : speciesId === 'eurypterus'
+              ? 1.4
+              : speciesId === 'opabinia'
+                ? 1.5
+                : speciesId === 'mammoth'
+                  ? 1.42
+                  : speciesId === 'smilodon'
+                    ? 1.34
+                    : speciesId === 'woollyrhino'
+                      ? 1.38
+                      : speciesId === 'glyptodon'
+                        ? 1.28
+                        : speciesId === 'megatherium'
+                          ? 1.4
+                          : speciesId === 'plateosaurus'
+                            ? 1.35
+                            : speciesId === 'futabasuzukiryu'
                               ? 1.42
-                              : speciesId === 'brachiosaurus'
-                                ? 1.6
-                                : speciesId === 'archelon'
-                                  ? 2.25
-                                  : speciesId === 'plesiosaurus'
-                                    ? 1.5
-                                    : speciesId === 'ichthyosaurus'
-                                      ? 1.4
-                                      : speciesId === 'pteranodon'
-                                        ? 1.08
-                                        : speciesId === 'rhamphorhynchus'
-                                          ? 1.12
-                                          : speciesId === 'quetzalcoatlus'
-                                            ? 2
-                                            : 1.15;
+                              : speciesId === 'ammonite' || speciesId === 'belemnite'
+                                ? 1.42
+                                : speciesId === 'brachiosaurus'
+                                  ? 1.6
+                                  : speciesId === 'archelon'
+                                    ? 2.25
+                                    : speciesId === 'plesiosaurus'
+                                      ? 1.5
+                                      : speciesId === 'ichthyosaurus'
+                                        ? 1.4
+                                        : speciesId === 'pteranodon'
+                                          ? 1.08
+                                          : speciesId === 'rhamphorhynchus'
+                                            ? 1.12
+                                            : speciesId === 'quetzalcoatlus'
+                                              ? 2
+                                              : 1.15;
   const distance = Math.max(distanceForHeight, distanceForWidth) * cameraPadding;
   camera.near = Math.max(0.001, distance * 0.02);
   camera.far = Math.max(80, distance * 10);
