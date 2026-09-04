@@ -105,20 +105,20 @@ function buildFootprintSlab(includeFoot: boolean): THREE.Group {
     const foot = new GeometryBatch();
     const claws = new GeometryBatch();
     const faceZ = THICKNESS * 0.5;
-    const pad = V(0, 0.225, faceZ + 0.025);
-    ellipsoid(foot, pad, V(0.115, 0.13, 0.055), 9, 6);
+    const pad = V(0, 0.225, faceZ + 0.018);
+    ellipsoid(foot, pad, V(0.1, 0.115, 0.04), 9, 6);
     const toes = [
-      V(-0.185, 0.435, faceZ + 0.025),
-      V(0, 0.61, faceZ + 0.025),
-      V(0.185, 0.435, faceZ + 0.025),
+      V(-0.185, 0.435, faceZ + 0.018),
+      V(0, 0.61, faceZ + 0.018),
+      V(0.185, 0.435, faceZ + 0.018),
     ];
     toes.forEach((tip, index) => {
-      const toeBase = V((index - 1) * 0.045, 0.29, faceZ + 0.025);
-      foot.addBetween(toeBase, tip, 0.055, 0.027, 7);
+      const toeBase = V((index - 1) * 0.045, 0.29, faceZ + 0.018);
+      foot.addBetween(toeBase, tip, 0.045, 0.023, 7);
       const direction = tip.clone().sub(toeBase).normalize();
       coneBetween(claws, tip, tip.clone().addScaledVector(direction, 0.06), 0.027, 6);
     });
-    foot.addBetween(V(0, 0.18, faceZ + 0.035), V(0, 0.145, faceZ + 0.21), 0.1, 0.07, 8);
+    foot.addBetween(V(0, 0.18, faceZ + 0.025), V(0, 0.155, faceZ + 0.115), 0.085, 0.06, 8);
 
     const footMaterial = makeOrganicMaterial('#A77A4C');
     footMaterial.transparent = true;
