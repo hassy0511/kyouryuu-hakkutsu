@@ -65,6 +65,7 @@ function addWholeEgg(batch: GeometryBatch, position: THREE.Vector3, rotation: nu
 function buildLiving(): THREE.Group {
   const group = new THREE.Group();
   group.name = 'eggnest-living-nest';
+  group.position.z = -0.175;
 
   const sand = new THREE.Mesh(
     new THREE.CylinderGeometry(0.235, 0.27, 0.055, 20, 1, false),
@@ -120,31 +121,31 @@ function buildLiving(): THREE.Group {
     coneBetween(shell, base, tip, 0.012, 5);
   }
 
-  const head = V(hatchPosition.x + 0.004, hatchPosition.y + 0.072, hatchPosition.z);
-  ellipsoid(baby, head, V(0.041, 0.046, 0.04), 8, 6);
-  baby.addBetween(head, V(head.x - 0.01, head.y - 0.04, head.z), 0.026, 0.021, 6);
+  const head = V(hatchPosition.x + 0.004, hatchPosition.y + 0.058, hatchPosition.z);
+  ellipsoid(baby, head, V(0.031, 0.036, 0.03), 8, 6);
+  baby.addBetween(head, V(head.x - 0.008, head.y - 0.034, head.z), 0.02, 0.016, 6);
   coneBetween(
     beak,
-    V(head.x + 0.032, head.y + 0.002, head.z),
-    V(head.x + 0.066, head.y, head.z),
-    0.017,
+    V(head.x + 0.024, head.y + 0.001, head.z),
+    V(head.x + 0.05, head.y, head.z),
+    0.012,
     5,
   );
 
   for (const side of [-1, 1]) {
     const eyeZ = hatchPosition.z + embeddedSideZ(side, 0.04, 0.011, 0.22);
-    ellipsoid(dark, V(head.x + 0.013, head.y + 0.012, eyeZ), V(0.014, 0.015, 0.011), 7, 5);
+    ellipsoid(dark, V(head.x + 0.01, head.y + 0.01, eyeZ), V(0.01, 0.011, 0.008), 7, 5);
     ellipsoid(
       iris,
       V(head.x + 0.015, head.y + 0.013, eyeZ + side * 0.004),
-      V(0.007, 0.008, 0.006),
+      V(0.0055, 0.006, 0.0045),
       6,
       4,
     );
     ellipsoid(
       glint,
       V(head.x + 0.018, head.y + 0.018, eyeZ + side * 0.008),
-      V(0.0025, 0.003, 0.002),
+      V(0.002, 0.0022, 0.0015),
       5,
       4,
     );
