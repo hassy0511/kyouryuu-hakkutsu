@@ -5,6 +5,11 @@ import { buildDinoModel } from '../../src/art/dino3d';
 type ViewMode = 'skeleton' | 'living';
 
 const SPECIES = {
+  archaeopteryx: {
+    name: 'しそちょう',
+    feature: '🔍 ひろがる はねのあとと ながい しっぽに ちゅうもく!',
+    skeletonTip: 'ハ・つめ・ほうしゃじょうに のこった はねを みてみよう!',
+  },
   allosaurus: {
     name: 'アロサウルス',
     feature: '🔍 3ぼんの ゆびと めのうえの つのに ちゅうもく!',

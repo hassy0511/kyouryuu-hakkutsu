@@ -3,6 +3,7 @@ import { buildAllosaurus } from './allosaurus';
 import { buildAnomalocaris } from './anomalocaris';
 import { buildAnkylosaurus } from './ankylosaurus';
 import { buildArchelon } from './archelon';
+import { buildArchaeopteryx } from './archaeopteryx';
 import { buildBelemnite } from './belemnite';
 import { buildBrachiosaurus } from './brachiosaurus';
 import { buildCarnotaurus } from './carnotaurus';
@@ -49,6 +50,7 @@ const BUILDERS: Record<string, () => DinoViews> = {
   anomalocaris: buildAnomalocaris,
   ankylosaurus: buildAnkylosaurus,
   archelon: buildArchelon,
+  archaeopteryx: buildArchaeopteryx,
   belemnite: buildBelemnite,
   ammonite: buildAmmonite,
   brachiosaurus: buildBrachiosaurus,
