@@ -10,6 +10,11 @@ const SPECIES = {
     feature: '🔍 ひろがる はねのあとと ながい しっぽに ちゅうもく!',
     skeletonTip: 'ハ・つめ・ほうしゃじょうに のこった はねを みてみよう!',
   },
+  armorscutes: {
+    name: 'よろいの こばん',
+    feature: '🔍 ちらばった こばんが よろいに くみあがる!',
+    skeletonTip: 'いわに うまった だいしょうの こばんを みてみよう!',
+  },
   allosaurus: {
     name: 'アロサウルス',
     feature: '🔍 3ぼんの ゆびと めのうえの つのに ちゅうもく!',
