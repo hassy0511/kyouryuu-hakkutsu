@@ -128,6 +128,7 @@ function addWing(feathers: GeometryBatch, edge: GeometryBatch, side: number): vo
 function buildLiving(): THREE.Group {
   const group = new THREE.Group();
   group.name = 'archaeopteryx-living';
+  group.position.z = -0.16;
   const body = new GeometryBatch();
   const feathers = new GeometryBatch();
   const edge = new GeometryBatch();
