@@ -116,6 +116,23 @@ export const islandById = (id: string): IslandDef => ISLANDS.find((i) => i.id ==
 export const pitById = (id: string): PitDef => ALL_PITS.find((p) => p.id === id)!;
 
 export const boneKey = (speciesId: string, boneId: string): string => `${speciesId}:${boneId}`;
+
+// ホネがどの島・どの現場に埋まっているか(島データからの逆引き。1本のホネは1か所)
+const BONE_SITES = new Map<string, { island: IslandDef; pit: PitDef }>();
+for (const island of ISLANDS) {
+  for (const pit of island.pits) {
+    for (const f of pit.fossils) BONE_SITES.set(boneKey(f.speciesId, f.boneId), { island, pit });
+  }
+}
+export const boneSite = (
+  speciesId: string,
+  boneId: string,
+): { island: IslandDef; pit: PitDef } | undefined => BONE_SITES.get(boneKey(speciesId, boneId));
+/** 「📍 しま・げんば」の表示用。ノートと展示で共通 */
+export const boneSiteLabel = (speciesId: string, boneId: string): string => {
+  const site = boneSite(speciesId, boneId);
+  return site ? `${site.island.nameJa}・${site.pit.nameJa}` : '';
+};
 export const speciesById = (id: string): SpeciesDef => SPECIES.find((s) => s.id === id)!;
 
 // ---- セーブ(localStorage・バージョン付き) ------------------------------------

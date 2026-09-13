@@ -11,6 +11,7 @@ import {
   RECIPES,
   SPECIES,
   STORY,
+  boneSiteLabel,
   islandById,
   pitById,
   speciesById,
@@ -130,10 +131,11 @@ export class Overlays {
       const restored = this.state.isRestored(sp.id);
       if (restored) {
         const s = this.state.data.restored[sp.id] ?? 1;
+        // 一度見つけたホネは 場所を出す(ほりなおしで ★3を ねらうとき の道しるべ)
         const boneRows = sp.bones
           .map(
             (b) =>
-              `<li>${b.nameJa}${b.id === sp.featureBone ? ' ⭐とくちょう' : ''} <span class="gold">${stars(this.state.boneStars(sp.id, b.id))}</span></li>`,
+              `<li>${b.nameJa}${b.id === sp.featureBone ? ' ⭐とくちょう' : ''} <span class="gold">${stars(this.state.boneStars(sp.id, b.id))}</span><div class="dim">📍 ${boneSiteLabel(sp.id, b.id)}</div></li>`,
           )
           .join('');
         return `<div class="nb-page">
@@ -155,7 +157,7 @@ export class Overlays {
         const boneRows = sp.bones
           .map((b) =>
             this.state.hasBone(sp.id, b.id)
-              ? `<li>✅ ${b.nameJa}<div class="dim">🔍 ${b.feature}</div></li>`
+              ? `<li>✅ ${b.nameJa} <span class="gold">${stars(this.state.boneStars(sp.id, b.id))}</span><div class="dim">🔍 ${b.feature}</div><div class="dim">📍 ${boneSiteLabel(sp.id, b.id)}</div></li>`
               : `<li class="dim">❓ まだ みつけていない</li>`,
           )
           .join('');

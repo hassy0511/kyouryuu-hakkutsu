@@ -7,6 +7,7 @@ import {
   RECIPES,
   SPECIES,
   STORY,
+  boneSiteLabel,
   islandById,
   speciesById,
   type PitDef,
@@ -422,8 +423,9 @@ function refreshExhibitLock(speciesId: string): void {
   btn.textContent = locked ? '🔒 いきていたすがた' : '🦖 いきていたすがた';
   const note = el('exhibit-lock');
   note.classList.toggle('hidden', !locked);
+  // ほりなおす場所まで 書く(どの島の どの現場か)
   note.textContent = locked
-    ? `🔒 ヒビの ある ホネ: ${cracked.map((b) => b.nameJa).join('・')} — ほりなおして ★3に すると いきていたすがたが みられる!`
+    ? `🔒 ヒビの ある ホネ: ${cracked.map((b) => `${b.nameJa}（📍${boneSiteLabel(speciesId, b.id)}）`).join(' ')} — ほりなおして ★3に すると いきていたすがたが みられる!`
     : '';
 }
 function setExhibitView(view: 'skeleton' | 'living'): void {
@@ -431,8 +433,14 @@ function setExhibitView(view: 'skeleton' | 'living'): void {
   if (view === 'living' && !state.livingUnlocked(exhibit.speciesId)) {
     sfx.fail();
     // 自分で押した結果なので、ながれている案内に割り込んで すぐ見せる
+    // どこへ ほりに いけば いいかまで 伝える
+    const where = state
+      .crackedBones(exhibit.speciesId)
+      .map((b) => `${b.nameJa}（📍${boneSiteLabel(exhibit!.speciesId, b.id)}）`)
+      .join(' ');
     queueMsgs([
       '🔒 ヒビの ある ホネが あると いきていたすがたは みられない。ほりなおして ★3に しよう!',
+      `🗺️ ほりなおす ホネ: ${where}`,
     ]);
     return;
   }
