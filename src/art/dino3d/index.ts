@@ -3,6 +3,8 @@ import { buildAllosaurus } from './allosaurus';
 import { buildAnomalocaris } from './anomalocaris';
 import { buildAnkylosaurus } from './ankylosaurus';
 import { buildArchelon } from './archelon';
+import { buildArchaeopteryx } from './archaeopteryx';
+import { buildArmorScutes } from './armorscutes';
 import { buildBelemnite } from './belemnite';
 import { buildBrachiosaurus } from './brachiosaurus';
 import { buildCarnotaurus } from './carnotaurus';
@@ -11,9 +13,12 @@ import { buildDimetrodon } from './dimetrodon';
 import { buildDunkleosteus } from './dunkleosteus';
 import { buildEoraptor } from './eoraptor';
 import { buildEurypterus } from './eurypterus';
+import { buildEggNest } from './eggnest';
 import { buildFutabasuzukiryu } from './futabasuzukiryu';
 import { buildFukuiraptor } from './fukuiraptor';
 import { buildFukuisaurus } from './fukuisaurus';
+import { buildFishSlab } from './fishslab';
+import { buildFootprint } from './footprint';
 import { buildGlyptodon } from './glyptodon';
 import { buildHerrerasaurus } from './herrerasaurus';
 import { buildIguanodon } from './iguanodon';
@@ -49,6 +54,8 @@ const BUILDERS: Record<string, () => DinoViews> = {
   anomalocaris: buildAnomalocaris,
   ankylosaurus: buildAnkylosaurus,
   archelon: buildArchelon,
+  archaeopteryx: buildArchaeopteryx,
+  armorscutes: buildArmorScutes,
   belemnite: buildBelemnite,
   ammonite: buildAmmonite,
   brachiosaurus: buildBrachiosaurus,
@@ -58,9 +65,12 @@ const BUILDERS: Record<string, () => DinoViews> = {
   dunkleosteus: buildDunkleosteus,
   eoraptor: buildEoraptor,
   eurypterus: buildEurypterus,
+  eggnest: buildEggNest,
   futabasuzukiryu: buildFutabasuzukiryu,
   fukuiraptor: buildFukuiraptor,
   fukuisaurus: buildFukuisaurus,
+  fishslab: buildFishSlab,
+  footprint: buildFootprint,
   glyptodon: buildGlyptodon,
   herrerasaurus: buildHerrerasaurus,
   iguanodon: buildIguanodon,
