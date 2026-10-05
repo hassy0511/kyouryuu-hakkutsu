@@ -757,3 +757,22 @@
 - 「📝 きになるリストに かきとめた」が 封印メッセージを 上書きしていた 不具合も 直した(あとに 流す)
 - 新スモーク smoke51(27項目)。回帰 smoke27/48/49/52 通過(コンテナ再作成で 失われた スモークは
   lib.mjs に 共通化して 書き直し)
+
+## 2026-10-05 iPad対策: 島移動の GPUリークを止める・描画を軽くする
+
+- 原因: `FieldMode.dispose()` が OrbitControls と DOM しか 捨てていなかった(島を わたるたびに
+  島1つぶんの ジオメトリ・マテリアル・2048²の 影マップが GPUに 残る)。現場の `dispose()` も
+  InstancedMesh の instance バッファと 影マップを 残していた
+- 対策: `core/gfx.ts disposeObject3D()` に 後始末を まとめ、フィールド・現場・展示の 3モードで 共通に使う
+  (ジオメトリ／マテリアル＋テクスチャ／InstancedMesh／ライトの 影マップ、最後に `scene.clear()`)
+- 計測(かんりしゃモードで 全10島を 2周 → 現場 5回 → 展示 3回。WebGL の buffer/texture 生存数):
+  島2周 **+9,764バッファ・+20テクスチャ・+2,522ジオメトリ → +16・0・+4**。現場5回 +385 → 0。展示 0 → 0
+- 現場の「1回あたり ≈77バッファ」は 本体の リークではなく、`enterPit` に 二重入場の ガードが なく
+  スモークの interact 連打で 2つ目の PitMode が 1つ目を 捨てずに 作られていたのが 原因。
+  `if (pit || exhibit) return` を 足した(実機でも 連打で 起こりうる)
+- 軽量化: `setPixelRatio` の 上限 2 → **1.5**(iPad の dpr=2 で 描画ピクセル 44%減)。フィールドの 影マップ
+  **2048² → 1024²**(60m四方で 1テクセル≈6cm。k2・k5 の スクショで 影の 見た目は ほぼ 変わらず)。
+  遠景の castShadow 切りは draw call が 70〜120 と もともと 軽いので 見送り
+- 計測スクリプト dbg-leak.mjs(createBuffer/deleteBuffer を 数える)・dbg-leak-reg.mjs(レンダラーに 登録ずみの
+  geometry を 列挙)を scratchpad に。デバッグフック `gfxInfo` `pitObj` `fieldObj` を 追加
+- 実機の体感(FPS・発熱)は オーナーの iPad 確認待ち

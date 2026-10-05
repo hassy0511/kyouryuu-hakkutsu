@@ -34,7 +34,7 @@ const TAP_DEFER_MS = 70;
 // ---- 基盤 -------------------------------------------------------------------
 
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 renderer.shadowMap.enabled = true;
 el('app').appendChild(renderer.domElement);
 
@@ -299,6 +299,8 @@ function refreshFieldForCurrentIsland(): void {
 }
 
 function enterPit(def: PitDef): void {
+  // 二重に入ると 前の現場が 捨てられずに GPUに 残る(スモークの interact 連打で 再現)
+  if (pit || exhibit) return;
   field.deactivate();
   pit = new PitMode(renderer, sfx, def, state, {
     showMsg,
@@ -756,6 +758,8 @@ const meter = location.search.includes('debug')
   },
   pickLevel: (n: number) => state.setPickLevel(n),
   setFlag: (name: string) => state.setFlag(name),
+  pitObj: () => pit,
+  fieldObj: () => field,
   openBoat: () => overlays.openBoat(),
   gfxInfo: () => ({
     geometries: renderer.info.memory.geometries,

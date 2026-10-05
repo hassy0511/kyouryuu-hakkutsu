@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { disposeObject3D } from '../core/gfx';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Sfx } from '../core/audio';
 import { buildCharacter, type CharacterRig } from '../art/chars';
@@ -260,7 +261,7 @@ export class FieldMode {
     const sun = new THREE.DirectionalLight(0xfff2d8, 2.0);
     sun.position.set(24, 30, 14);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.mapSize.set(1024, 1024);
     sun.shadow.camera.left = -30;
     sun.shadow.camera.right = 30;
     sun.shadow.camera.top = 30;
@@ -1605,6 +1606,7 @@ export class FieldMode {
     this.alertEls.clear();
     this.boatAlert?.remove();
     this.boatAlert = null;
+    disposeObject3D(this.scene);
   }
 
   deactivate(): void {
@@ -1646,7 +1648,9 @@ export class FieldMode {
   }
 
   private interact(id: string): void {
-    const target = this.interactables.find((i) => i.id === id)!;
+    // この島に ない id(スモークの 打ちまちがい等)で 止まらないように
+    const target = this.interactables.find((i) => i.id === id);
+    if (!target) return;
     if (target.kind === 'boat') {
       this.cb.onOpenBoat();
       return;

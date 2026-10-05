@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { disposeObject3D } from '../core/gfx';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { buildDinoModel } from '../art/dino3d';
 
@@ -166,13 +167,6 @@ export class ExhibitMode {
     this.controls.dispose();
     this.renderer.toneMapping = this.prevToneMapping;
     this.renderer.toneMappingExposure = this.prevExposure;
-    this.scene.traverse((object) => {
-      const mesh = object as THREE.Mesh;
-      if (mesh.isMesh) {
-        mesh.geometry.dispose();
-        const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        for (const material of materials) material.dispose();
-      }
-    });
+    disposeObject3D(this.scene);
   }
 }

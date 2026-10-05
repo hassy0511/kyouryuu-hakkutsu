@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { disposeObject3D } from '../core/gfx';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Sfx } from '../core/audio';
 import { buildBoneShape } from './boneShapes';
@@ -614,14 +615,7 @@ export class PitMode {
     for (const label of this.labels.values()) label.remove();
     this.labels.clear();
     this.controls.dispose();
-    this.scene.traverse((obj) => {
-      const mesh = obj as THREE.Mesh;
-      if (mesh.isMesh) {
-        mesh.geometry?.dispose();
-        const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-        mats.forEach((m) => m?.dispose());
-      }
-    });
+    disposeObject3D(this.scene);
   }
 
   // ---- 共通処理 ----------------------------------------------------------------
