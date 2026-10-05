@@ -6,12 +6,16 @@ import {
   PICK_MAX_HP,
   RECIPES,
   SPECIES,
+  NEED_LABELS,
   STORY,
+  TOOL_ISLANDS,
+  TOOL_KINDS,
   boneSiteLabel,
   islandById,
   speciesById,
   type PitDef,
 } from './core/state';
+import { chapterGuide, needSourceLine, pitIsBonus } from './ui/guide';
 import { hasDinoModel } from './art/dino3d';
 import { ExhibitMode } from './game/exhibit';
 import { FpsMeter } from './ui/fps';
@@ -88,6 +92,53 @@ function queueMsgs(lines: string[]): void {
   displayMsg(first);
 }
 
+// 封印に はじめて ぶつかったときの ぜりふ(効果音ぜりふ + story.json の はかせ)
+const GATE_INTROS: Record<string, { emoji: string; flag: string; first: string; story: string[] }> =
+  {
+    bluerock: {
+      emoji: '🧱',
+      flag: 'bedrockSeen',
+      first: '🧱 カキン! かたすぎる…',
+      story: STORY.hakase.bedrockBlocked,
+    },
+    redrock: {
+      emoji: '🟥',
+      flag: 'redrockSeen',
+      first: '🟥 ガキイイン!! びくとも しない…',
+      story: STORY.hakase.redrockBlocked,
+    },
+    wetrock: {
+      emoji: '💧',
+      flag: 'wetrockSeen',
+      first: '💧 ジュワ… みずが しみだしてきた!',
+      story: STORY.hakase.wetrockBlocked,
+    },
+    darkrock: {
+      emoji: '🕳️',
+      flag: 'darkrockSeen',
+      first: '🕳️ ここから さきは まっくら…!',
+      story: STORY.hakase.darkrockBlocked,
+    },
+    slabrock: {
+      emoji: '🪨',
+      flag: 'slabrockSeen',
+      first: '🪨 カツン… いしの いたが かさなってる!',
+      story: STORY.hakase.slabrockBlocked,
+    },
+    sandrock: {
+      emoji: '🫙',
+      flag: 'sandrockSeen',
+      first: '🫙 サラサラ… すなが かたく つまってる!',
+      story: STORY.hakase.sandrockBlocked,
+    },
+    frostrock: {
+      emoji: '❄️',
+      flag: 'frostrockSeen',
+      first: '❄️ カチン! つちが こおって カチカチだ!',
+      story: STORY.hakase.frostrockBlocked,
+    },
+  };
+
 // ---- HUD --------------------------------------------------------------------
 
 function updateHud(): void {
@@ -105,8 +156,37 @@ function updateHud(): void {
     : tool.hp > PICK_MAX_HP * 0.3
       ? '#6adf6a'
       : '#ffd75e';
+  checkCraftReady();
 }
 state.onChange = updateHud;
+
+// どうぐの ざいりょうが そろった しゅんかんに 1回だけ しらせる(テントに もどる きっかけ)
+let craftCheckBusy = false;
+function checkCraftReady(): void {
+  if (craftCheckBusy) return;
+  craftCheckBusy = true;
+  try {
+    const ready: string[] = [];
+    const note = (key: string, label: string): void => {
+      if (state.flag(`craftReady:${key}`)) return;
+      state.setFlag(`craftReady:${key}`);
+      ready.push(label);
+    };
+    const level = state.tool.level;
+    if (level === 1 && state.canAfford(RECIPES.upgrade)) note('pick2', NEED_LABELS['pick2'] ?? '');
+    if (level === 2 && state.flag('visited:k2') && state.canAfford(RECIPES.upgrade2)) {
+      note('pick3', NEED_LABELS['pick3'] ?? '');
+    }
+    for (const kind of TOOL_KINDS) {
+      if (!state.flag(`visited:${TOOL_ISLANDS[kind]}`) || state.flag(`item:${kind}`)) continue;
+      if (state.canAfford(RECIPES[kind])) note(kind, NEED_LABELS[kind] ?? kind);
+    }
+    if (ready.length > 0)
+      showMsg(`✨ ${ready.join('・')}の ざいりょうが そろった! ⛺テントで つくろう`);
+  } finally {
+    craftCheckBusy = false;
+  }
+}
 
 const overlays = new Overlays(state, sfx, {
   showMsg,
@@ -188,7 +268,15 @@ const FIELD_CALLBACKS: FieldCallbacks = {
       ]);
       return;
     }
-    showMsg(`🎩 はかせ「${state.nextHint(STORY.hakase.hints)}」`);
+    // 手づまりに なりそうなとき(のこりの ホネが べつの島・封印の おく)は 道しるべを さきに
+    const hint = `🎩 はかせ「${state.nextHint(STORY.hakase.hints)}」`;
+    const guide = chapterGuide(state);
+    if (guide) {
+      const [first, ...rest] = guide;
+      queueMsgs([`🎩 はかせ「${first}」`, ...rest.map((l) => `👉 ${l}`), hint]);
+      return;
+    }
+    showMsg(hint);
   },
   onDiscover(def) {
     showMsg(`🔍 ${def.discoverText}`);
@@ -225,67 +313,24 @@ function enterPit(def: PitDef): void {
         '🔁 そとに でて もういちど はいれば、この げんばは もとに もどるぞ',
       ]);
     },
-    onGateBlocked(look) {
-      if (look === 'slabrock') {
-        if (!state.flag('slabrockSeen')) {
-          state.setFlag('slabrockSeen');
-          queueMsgs(['🪨 カツン… いしの いたが かさなってる!', ...STORY.hakase.slabrockBlocked]);
-        } else {
-          showMsg('🪨 いしばんの かたまりは のみ（チゼル）が ないと ほれない…');
+    onGateBlocked(gate, pitDef, newMark) {
+      // 1回目: 効果音ぜりふ + はかせの説明 + どうぐの出どころ。2回目以降: 出どころだけ
+      const intro = GATE_INTROS[gate.look] ?? GATE_INTROS['bluerock']!;
+      const source = needSourceLine(state, gate.needs);
+      const markLine = newMark ? ['📝 ノートの「きになるリスト」に かきとめた'] : [];
+      if (!state.flag(intro.flag)) {
+        state.setFlag(intro.flag);
+        const lines = [intro.first, ...intro.story, `👉 ${source}`];
+        if (pitIsBonus(pitDef)) {
+          lines.push(
+            '🎁 ここは おまけの げんば。さきに ほかの げんばを すすめても だいじょうぶじゃ',
+          );
         }
+        queueMsgs([...lines, ...markLine]);
         return;
       }
-      if (look === 'sandrock') {
-        if (!state.flag('sandrockSeen')) {
-          state.setFlag('sandrockSeen');
-          queueMsgs(['🫙 サラサラ… すなが かたく つまってる!', ...STORY.hakase.sandrockBlocked]);
-        } else {
-          showMsg('🫙 かたい すなの そうは ふるいの ような どうぐが いる…');
-        }
-        return;
-      }
-      if (look === 'frostrock') {
-        if (!state.flag('frostrockSeen')) {
-          state.setFlag('frostrockSeen');
-          queueMsgs(['❄️ カチン! つちが こおって カチカチだ!', ...STORY.hakase.frostrockBlocked]);
-        } else {
-          showMsg('❄️ こおった つちは、ひを おこす どうぐが ないと ほれない…');
-        }
-        return;
-      }
-      if (look === 'darkrock') {
-        if (!state.flag('darkrockSeen')) {
-          state.setFlag('darkrockSeen');
-          queueMsgs(['🕳️ ここから さきは まっくら…!', ...STORY.hakase.darkrockBlocked]);
-        } else {
-          showMsg('🕳️ まっくらで ほれない… あかりに なる どうぐが いる');
-        }
-        return;
-      }
-      if (look === 'wetrock') {
-        if (!state.flag('wetrockSeen')) {
-          state.setFlag('wetrockSeen');
-          queueMsgs(['💧 ジュワ… みずが しみだしてきた!', ...STORY.hakase.wetrockBlocked]);
-        } else {
-          showMsg('💧 みずが しみだして ほれない… ポンプのような どうぐが いる');
-        }
-        return;
-      }
-      if (look === 'redrock') {
-        if (!state.flag('redrockSeen')) {
-          state.setFlag('redrockSeen');
-          queueMsgs(['🟥 ガキイイン!! びくとも しない…', ...STORY.hakase.redrockBlocked]);
-        } else {
-          showMsg('🟥 ガキイイン! あかい がんばんは いまの どうぐでは ほれない…');
-        }
-        return;
-      }
-      if (!state.flag('bedrockSeen')) {
-        state.setFlag('bedrockSeen');
-        queueMsgs(['🧱 カキン! かたすぎる…', ...STORY.hakase.bedrockBlocked]);
-      } else {
-        showMsg('🧱 カキン! かたすぎる… がんじょうピッケルが いる!');
-      }
+      showMsg(`${intro.emoji} ${source}`);
+      msgQueue.push(...markLine); // 出どころを 見せてから「かきとめた」
     },
     onBoneCollected(speciesId, boneId, boneStars) {
       const prevStars = state.hasBone(speciesId, boneId) ? state.boneStars(speciesId, boneId) : -1;
@@ -688,7 +733,7 @@ const meter = location.search.includes('debug')
   openMuseum: () => overlays.openMuseum(),
   openExhibit: (id: string) => enterExhibit(id),
   exitExhibit: () => exitExhibit(),
-  openNotebook: () => overlays.openNotebook(),
+  openNotebook: (tab?: 'dino' | 'era' | 'know') => overlays.openNotebook(tab),
   debugFinish: (islandId = 'k1') => {
     // スモークテスト用: 指定した章のホネ回収+復元(開館式/ウィング開館の直前状態を作る)
     import('./core/state').then(({ SPECIES }) => {
@@ -710,6 +755,15 @@ const meter = location.search.includes('debug')
     updateHud();
   },
   pickLevel: (n: number) => state.setPickLevel(n),
+  setFlag: (name: string) => state.setFlag(name),
+  openBoat: () => overlays.openBoat(),
+  gfxInfo: () => ({
+    geometries: renderer.info.memory.geometries,
+    textures: renderer.info.memory.textures,
+    programs: renderer.info.programs?.length ?? 0,
+    calls: renderer.info.render.calls,
+    triangles: renderer.info.render.triangles,
+  }),
   travel: (id: string) => travelTo(id),
   startNew: () => {
     state.reset();

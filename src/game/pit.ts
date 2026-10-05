@@ -149,7 +149,7 @@ export interface PitCallbacks {
   showMsg(text: string): void;
   queueMsgs(lines: string[]): void;
   onExit(): void;
-  onGateBlocked(look: string): void;
+  onGateBlocked(gate: GateDef, pit: PitDef, newMark: boolean): void;
   onBoneCollected(speciesId: string, boneId: string, stars: number): void;
   onBoneBroken(speciesId: string, boneId: string): void;
   onFirstReveal(): void;
@@ -866,11 +866,10 @@ export class PitMode {
         this.bedrockPulse.set(i, 1);
         const newMark = this.state.recordMark(this.def, lockedGate);
         const now = performance.now();
-        if (now - this.lastBedrockMsgAt > 900) {
+        if (newMark || now - this.lastBedrockMsgAt > 900) {
           this.lastBedrockMsgAt = now;
-          this.cb.onGateBlocked(lockedGate.look);
+          this.cb.onGateBlocked(lockedGate, this.def, newMark);
         }
-        if (newMark) this.cb.showMsg('📝 ノートの「きになるリスト」に かきとめた');
         return { damaged: false };
       }
       // こおった土(frostrock)は ひばなの石が あれば 1タップで「とける」(軸1: 氷)

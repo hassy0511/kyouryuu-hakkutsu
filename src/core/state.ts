@@ -95,6 +95,10 @@ export const RECIPES = gameJson.recipes as {
 export const PICK_MAX_HP = gameJson.pickMaxHp as number;
 export const GATE_LOOKS = gameJson.gateLooks as Record<string, { nameJa: string; color: string }>;
 export const NEED_LABELS = gameJson.needLabels as Record<string, string>;
+export type ToolKind = 'pump' | 'lamp' | 'chisel' | 'sieve' | 'firestone';
+export const TOOL_KINDS: ToolKind[] = ['pump', 'lamp', 'chisel', 'sieve', 'firestone'];
+/** どうぐの レシピが テントに ならぶ 島(その島に はじめて 上陸したとき に 解禁) */
+export const TOOL_ISLANDS = gameJson.toolIslands as Record<ToolKind, string>;
 export const STORY = storyJson;
 
 // 島パック: src/data/islands/*.json を置くだけで島が増える(柱6)

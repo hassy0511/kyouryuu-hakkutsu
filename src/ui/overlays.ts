@@ -11,11 +11,14 @@ import {
   RECIPES,
   SPECIES,
   STORY,
+  TOOL_ISLANDS,
   boneSiteLabel,
   islandById,
   pitById,
   speciesById,
+  type ToolKind,
 } from '../core/state';
+import { lockedIslandNote, missingBonesHint, needSourceLine, pitIsBonus } from './guide';
 
 // HTML オーバーレイ群: はかせのノート(図鑑・学習) / 博物館 / 復元 / クラフト / 開館式
 
@@ -161,9 +164,12 @@ export class Overlays {
               : `<li class="dim">❓ まだ みつけていない</li>`,
           )
           .join('');
+        // のこりが この島で さがせないとき(べつの島・封印の おく)だけ 道しるべを 出す
+        const hint = missingBonesHint(this.state, sp);
         return `<div class="nb-page">
           <div class="nb-head"><span class="nb-emoji sil">${sp.emoji}</span><b>${sp.nameJa}</b></div>
           <div class="nb-row">ホネ ${collected}/${sp.bones.length} — ぜんぶ あつめて はくぶつかんで ふくげんしよう!</div>
+          ${hint ? `<div class="nb-row">📍 ${hint}</div>` : ''}
           <ul class="nb-bones">${boneRows}</ul>
         </div>`;
       }
@@ -213,7 +219,10 @@ export class Overlays {
         const ok = this.state.meetsNeed(m.needs);
         const gate = GATE_LOOKS[m.look]?.nameJa ?? m.look;
         const need = NEED_LABELS[m.needs] ?? m.needs;
-        return `<li class="${ok ? '' : 'dim'}">${ok ? '✅ いける!' : '🔴'} ${pitById(m.pitId).nameJa}（${islandById(m.islandId).nameJa}）<div class="dim">${gate} — ${need}が いる</div></li>`;
+        // どうぐを どこで 手に入れるか まで 書く。おまけの現場(かくし種・素材だけ)は そう書く
+        const source = ok ? '' : `<div class="dim">👉 ${needSourceLine(this.state, m.needs)}</div>`;
+        const bonus = pitIsBonus(pitById(m.pitId)) ? '（おまけの げんば）' : '';
+        return `<li class="${ok ? '' : 'dim'}">${ok ? '✅ いける!' : '🔴'} ${pitById(m.pitId).nameJa}（${islandById(m.islandId).nameJa}）${bonus}<div class="dim">${gate} — ${need}が いる</div>${source}</li>`;
       })
       .join('');
     return `<div class="nb-page">
@@ -228,7 +237,11 @@ export class Overlays {
     const rows = ISLANDS.map((island) => {
       const here = island.id === this.state.data.currentIsland;
       const unlocked = this.state.islandUnlocked(island.id);
-      const note = here ? 'いま ここに いる' : unlocked ? '' : 'まだ いけない…';
+      const note = here
+        ? 'いま ここに いる'
+        : unlocked
+          ? ''
+          : lockedIslandNote(this.state, island.unlock);
       const label = here ? 'いまここ' : unlocked ? 'いく' : '？？？';
       return `<div class="recipe">
         <div>
@@ -308,14 +321,9 @@ export class Overlays {
     (el('craft-upgrade2') as HTMLButtonElement).disabled =
       level !== 2 || !knowsIron || !this.state.canAfford(RECIPES.upgrade2);
     // どうぐ(ピッケル以外): 章の島に到達でレシピ解禁。つくったら行ごと消える
-    const toolRows: [
-      'pump' | 'lamp' | 'chisel' | 'sieve' | 'firestone',
-      string,
-      [string, number, number][],
-    ][] = [
+    const toolRows: [ToolKind, [string, number, number][]][] = [
       [
         'pump',
-        'k3',
         [
           ['🪵', inv.wood, RECIPES.pump.wood],
           ['🔩', inv.iron, RECIPES.pump.iron],
@@ -324,7 +332,6 @@ export class Overlays {
       ],
       [
         'lamp',
-        'k4',
         [
           ['🪵', inv.wood, RECIPES.lamp.wood],
           ['🪨', inv.stone, RECIPES.lamp.stone],
@@ -333,7 +340,6 @@ export class Overlays {
       ],
       [
         'chisel',
-        'k4',
         [
           ['🪵', inv.wood, RECIPES.chisel.wood],
           ['🔩', inv.iron, RECIPES.chisel.iron],
@@ -342,7 +348,6 @@ export class Overlays {
       ],
       [
         'sieve',
-        'k5',
         [
           ['🪵', inv.wood, RECIPES.sieve.wood],
           ['🪨', inv.stone, RECIPES.sieve.stone],
@@ -351,7 +356,6 @@ export class Overlays {
       ],
       [
         'firestone',
-        'k9',
         [
           ['🪨', inv.stone, RECIPES.firestone.stone],
           ['🔩', inv.iron, RECIPES.firestone.iron],
@@ -359,8 +363,8 @@ export class Overlays {
         ],
       ],
     ];
-    for (const [kind, islandId, parts] of toolRows) {
-      const known = this.state.flag(`visited:${islandId}`);
+    for (const [kind, parts] of toolRows) {
+      const known = this.state.flag(`visited:${TOOL_ISLANDS[kind]}`);
       const has = this.state.flag(`item:${kind}`);
       el(`craft-${kind}-cost`).innerHTML = costHtml(parts);
       el(`craft-${kind}-row`).classList.toggle('hidden', !known || has);
@@ -507,10 +511,12 @@ export class Overlays {
         </div>`;
         }
         const found = this.state.collectedCount(sp.id);
+        const hint = found > 0 ? missingBonesHint(this.state, sp) : null;
         return `<div class="mu-card">
         <div class="mu-emoji sil">${sp.emoji}</div>
         <b>${found > 0 ? sp.nameJa : 'じゅんびちゅう'}</b>
         <div class="dim">ホネ ${found}/${sp.bones.length}</div>
+        ${hint ? `<div class="dim">📍 ${hint}</div>` : ''}
       </div>`;
       })
       .join('');

@@ -79,5 +79,12 @@
     "chisel": "🔨のみ（チゼル）",
     "sieve": "🧺ふるい",
     "firestone": "🔥ひばなの石"
+  },
+  "toolIslands": {
+    "pump": "k3",
+    "lamp": "k4",
+    "chisel": "k4",
+    "sieve": "k5",
+    "firestone": "k9"
   }
 }
